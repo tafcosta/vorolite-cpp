@@ -8,14 +8,45 @@
 #include "common_includes.h"
 #include "Mesh.h"
 
-Mesh::Mesh(std::string fileMeshIndices) : fileMeshIndices(fileMeshIndices) {
+Mesh::Mesh(std::string fileMeshIndices, std::string snapshot) : fileMeshIndices(fileMeshIndices), snapshot(snapshot) {
 
 	IdPairs = readVoronoiIndices(fileMeshIndices);
 	cellIDs = getCellIDs(IdPairs);
-	neighbourList = collectNeighbours(IdPairs, cellIDs);
-
 	numCells = cellIDs.size();
 
+	neighbourList = collectNeighbours(IdPairs, cellIDs);
+
+    readSnapshot(snapshot);
+}
+
+void Mesh::readSnapshot(const std::string& snapshot) {
+    try {
+        H5::H5File file(snapshot, H5F_ACC_RDONLY);
+
+        H5::DataSet densityDataset = file.openDataSet("/PartType0/Density");
+        H5::DataSet coordinatesDataset = file.openDataSet("/PartType0/Coordinates");
+
+        H5::DataSpace densitySpace = densityDataset.getSpace();
+        hsize_t numDensities;
+        densitySpace.getSimpleExtentDims(&numDensities);
+        cellDensity.resize(numDensities);
+        densityDataset.read(cellDensity.data(), H5::PredType::NATIVE_DOUBLE);
+
+        if (numCells != cellDensity.size()) {
+            std::cerr << "Error: numCells (" << numCells << ") does not match the number of cells from mesh output... (" << cellDensity.size() << ")" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        H5::DataSpace coordinatesSpace = coordinatesDataset.getSpace();
+        hsize_t numCoordinates[2];
+        coordinatesSpace.getSimpleExtentDims(numCoordinates);
+        cellCoordinates.resize(numCoordinates[0], std::vector<double>(3));
+        coordinatesDataset.read(cellCoordinates.data(), H5::PredType::NATIVE_DOUBLE);
+
+
+    } catch (H5::Exception& e) {
+        std::cerr << "HDF5 error: " << e.getDetailMsg() << std::endl;
+    }
 }
 
 std::vector<std::pair<int, int>> Mesh::readVoronoiIndices(const std::string& filename) {

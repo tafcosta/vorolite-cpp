@@ -8,7 +8,7 @@
 #include "common_includes.h"
 #include "Rays.h"
 
-Rays::Rays(int nRays, std::vector<double> sourcePosition) : nRays(nRays), sourcePosition(sourcePosition) {
+Rays::Rays(int nRays, std::vector<double> sourcePosition) : numRays(nRays), sourcePosition(sourcePosition) {
 	direction = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
 	initializeDirections();
 	position = std::vector<std::vector<double>>(nRays, sourcePosition);
@@ -24,7 +24,7 @@ void Rays::initializeDirections() {
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(0.0, 1.0);
 
-    for (int iRay = 0; iRay < nRays; ++iRay) {
+    for (int iRay = 0; iRay < numRays; ++iRay) {
         double phi = dis(gen) * 2.0 * M_PI;
         double theta = std::acos(1.0 - 2.0 * dis(gen));
 
@@ -33,6 +33,28 @@ void Rays::initializeDirections() {
         direction[iRay][2] = std::cos(theta);
     }
 }
+
+/*
+void Rays::doRayTracing(){
+	for(int iRay = 0; iRay < numRays; iRay++){
+
+		int iCell = startCell;
+		while(insideDomain[iRay]){
+
+			if(boundaryFlag[iCell]){
+				exitCell, distanceToExit = getDistanceToBoundary(domain, rays, iRay);
+				insideDomain[iRay] = false;
+			}
+			else{
+				exitCell, distanceToExit = findNextCell(iCell);
+			}
+
+		}
+
+	}
+
+}
+*/
 
 Rays::~Rays() {
 	// TODO Auto-generated destructor stub

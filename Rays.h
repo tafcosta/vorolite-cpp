@@ -10,10 +10,10 @@
 
 class Rays {
 public:
-	Rays(int nRays, std::vector<double> sourcePosition);
+	Rays(int numRays, std::vector<double> sourcePosition);
 	virtual ~Rays();
 
-	int nRays;
+	int numRays;
 	std::vector<double> sourcePosition;
 	std::vector<double> phi, theta;
 
@@ -23,6 +23,8 @@ public:
 	std::vector<double> opticalDepth;
 	std::vector<double> numTraversedCells;
 	std::vector<bool> insideDomain;
+
+	void doRayTracing();
 
 private:
     void initializeDirections();
