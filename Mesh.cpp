@@ -2,7 +2,7 @@
  * Mesh.cpp
  *
  *  Created on: 19 Jan 2025
- *      Author: ntc132
+ *      Author: Tiago Costa (Newcastle University)
  */
 
 #include "common_includes.h"
@@ -56,7 +56,7 @@ std::vector<std::pair<int, int>> Mesh::readVoronoiIndices(const std::string& fil
         data += numVertices * sizeof(int);
     }
 
-    std::cout << "Collected " << IdPairs.size() << " ID pairs." << std::endl;
+    std::cout << "Collected " << IdPairs.size() << " cell pairs..." << std::endl;
     return IdPairs;
 }
 

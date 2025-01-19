@@ -2,7 +2,7 @@
  * Mesh.h
  *
  *  Created on: 19 Jan 2025
- *      Author: ntc132
+ *      Author: Tiago Costa (Newcastle University)
  */
 
 #ifndef MESH_H_

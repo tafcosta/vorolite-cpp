@@ -2,12 +2,14 @@
  * common_includes.h
  *
  *  Created on: 19 Jan 2025
- *      Author: ntc132
+ *      Author: Tiago Costa (Newcastle University)
  */
 
 #ifndef COMMON_INCLUDES_H_
 #define COMMON_INCLUDES_H_
 
+#include <random>
+#include <cmath>
 #include <iostream>
 #include <fstream>
 #include <vector>
