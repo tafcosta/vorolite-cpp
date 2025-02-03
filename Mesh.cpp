@@ -133,7 +133,7 @@ std::vector<std::vector<int> > Mesh::collectNeighbours(const std::vector<std::pa
     return neighbourList;
 }
 
-double Mesh::squaredDistance(const std::vector<double>& point1, const std::vector<double>& point2) {
+double Mesh::squaredDistance(const std::vector<float>& point1, const std::vector<double>& point2) {
     double dist = 0.0;
     for (size_t i = 0; i < point1.size(); ++i) {
         dist += (point1[i] - point2[i]) * (point1[i] - point2[i]);
@@ -149,9 +149,7 @@ int Mesh::findHostCellID(const std::vector<double>& target) {
 
     for (int iCell = 0; iCell < numCells; iCell++) {
 
-    	std::cout << cellCoordinates[iCell][0] << std::endl;
-
-        //double dist = squaredDistance(cellCoordinates[iCell], target);
+        double dist = squaredDistance(cellCoordinates[iCell], target);
 
         /*
         if (dist < minDistance) {

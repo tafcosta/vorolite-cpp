@@ -29,7 +29,7 @@ private:
 	std::vector<std::pair<int, int>> readVoronoiIndices(const std::string& filename);
 
 	void readSnapshot(const std::string& snapshot);
-	double squaredDistance(const std::vector<double>& point1, const std::vector<double>& point2);
+	double squaredDistance(const std::vector<float>& point1, const std::vector<double>& point2);
 
 protected:
 	std::string fileMeshIndices;
