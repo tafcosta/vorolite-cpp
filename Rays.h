@@ -8,9 +8,11 @@
 #ifndef RAYS_H_
 #define RAYS_H_
 
+#include "Mesh.h"
+
 class Rays {
 public:
-	Rays(int numRays, std::vector<double> sourcePosition);
+	Rays(int numRays, std::vector<double> sourcePosition, Mesh& mesh);
 	virtual ~Rays();
 
 	int numRays;
@@ -24,7 +26,13 @@ public:
 	std::vector<double> numTraversedCells;
 	std::vector<bool> insideDomain;
 
+	Mesh& mesh;
+
 	void doRayTracing();
+
+protected:
+	int startCell;
+	void findNextCell(int iCell);
 
 private:
     void initializeDirections();

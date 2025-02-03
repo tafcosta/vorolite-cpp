@@ -14,6 +14,8 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot) : fileMeshIndices(
 	cellIDs = getCellIDs(IdPairs);
 	numCells = cellIDs.size();
 
+	isAtBoundary.resize(numCells, false);
+
 	neighbourList = collectNeighbours(IdPairs, cellIDs);
 
     readSnapshot(snapshot);
@@ -21,6 +23,8 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot) : fileMeshIndices(
 
 void Mesh::readSnapshot(const std::string& snapshot) {
     try {
+        std::cout << "Reading Arepo snapshot..." << std::endl;
+
         H5::H5File file(snapshot, H5F_ACC_RDONLY);
 
         H5::DataSet densityDataset = file.openDataSet("/PartType0/Density");
@@ -38,11 +42,21 @@ void Mesh::readSnapshot(const std::string& snapshot) {
         }
 
         H5::DataSpace coordinatesSpace = coordinatesDataset.getSpace();
-        hsize_t numCoordinates[2];
-        coordinatesSpace.getSimpleExtentDims(numCoordinates);
-        cellCoordinates.resize(numCoordinates[0], std::vector<double>(3));
-        coordinatesDataset.read(cellCoordinates.data(), H5::PredType::NATIVE_DOUBLE);
+        hsize_t dims[2];
+        coordinatesSpace.getSimpleExtentDims(dims);
+        std::vector<float> cellCoordinates1D(dims[0] * dims[1]);
+        coordinatesDataset.read(cellCoordinates1D.data(), H5::PredType::NATIVE_FLOAT);
 
+        cellCoordinates.resize(dims[0], std::vector<float>(dims[1]));
+
+        for (size_t row = 0; row < dims[0]; ++row) {
+             for (size_t col = 0; col < dims[1]; ++col) {
+                 size_t index = row * dims[1] + col;
+                 cellCoordinates[row][col] = cellCoordinates1D[index];
+             }
+         }
+
+        std::cout << "Done reading snapshot. There are " << cellDensity.size() << " cells." << std::endl;
 
     } catch (H5::Exception& e) {
         std::cerr << "HDF5 error: " << e.getDetailMsg() << std::endl;
@@ -117,6 +131,38 @@ std::vector<std::vector<int> > Mesh::collectNeighbours(const std::vector<std::pa
     }
 
     return neighbourList;
+}
+
+double Mesh::squaredDistance(const std::vector<double>& point1, const std::vector<double>& point2) {
+    double dist = 0.0;
+    for (size_t i = 0; i < point1.size(); ++i) {
+        dist += (point1[i] - point2[i]) * (point1[i] - point2[i]);
+    }
+    return dist;
+}
+
+
+int Mesh::findHostCellID(const std::vector<double>& target) {
+    int closestCellID;
+    double minDistance = std::numeric_limits<double>::infinity();
+
+
+    for (int iCell = 0; iCell < numCells; iCell++) {
+
+    	std::cout << cellCoordinates[iCell][0] << std::endl;
+
+        //double dist = squaredDistance(cellCoordinates[iCell], target);
+
+        /*
+        if (dist < minDistance) {
+            minDistance = dist;
+            closestCellID = cellIDs[iCell];
+        }
+        */
+
+    }
+
+    return closestCellID;
 }
 
 

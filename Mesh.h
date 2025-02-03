@@ -15,10 +15,13 @@ public:
 
 	int numCells;
 	std::vector<int> cellIDs;
-    std::vector<std::vector<double>> cellCoordinates;
+    std::vector<std::vector<float>> cellCoordinates;
     std::vector<double> cellDensity;
+    std::vector<bool> isAtBoundary;
 
 	std::vector<std::vector<int>> neighbourList;
+	int findHostCellID(const std::vector<double>& target);
+
 
 private:
 	std::vector<std::vector<int> > collectNeighbours(const std::vector<std::pair<int, int>>& IdPairs, std::vector<int> cellIDs);
@@ -26,6 +29,7 @@ private:
 	std::vector<std::pair<int, int>> readVoronoiIndices(const std::string& filename);
 
 	void readSnapshot(const std::string& snapshot);
+	double squaredDistance(const std::vector<double>& point1, const std::vector<double>& point2);
 
 protected:
 	std::string fileMeshIndices;

@@ -7,7 +7,7 @@ int main() {
 	std::cout << "Starting VoroLite++ (Version 0.1)!" << std::endl;
 
 	Mesh *mesh = new Mesh("./output/tess_001_indices.dat", "./output/snap_001.hdf5");
-	Rays *rays = new Rays(100, {0.5, 0.5, 0.5});
+	Rays *rays = new Rays(100, {0.5, 0.5, 0.5}, *mesh);
 
 	std::cout << "All done!" << std::endl;
   
