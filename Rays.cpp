@@ -19,6 +19,10 @@ Rays::Rays(int nRays, std::vector<double> sourcePosition, Mesh& mesh) : numRays(
 	insideDomain = std::vector<bool>(nRays, true);
 
 	startCell = mesh.findHostCellID(sourcePosition);
+	std::cout << "starting cell ID " << startCell << std::endl;
+
+	//std::cout << "starting cell neighbours " << neighbourList[startCell] << std::endl;
+
 }
 
 void Rays::initializeDirections() {

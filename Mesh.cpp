@@ -10,36 +10,28 @@
 
 Mesh::Mesh(std::string fileMeshIndices, std::string snapshot) : fileMeshIndices(fileMeshIndices), snapshot(snapshot) {
 
-	IdPairs = readVoronoiIndices(fileMeshIndices);
-	cellIDs = getCellIDs(IdPairs);
-	numCells = cellIDs.size();
+    readSnapshot(snapshot);
 
+	IdPairs = readVoronoiIndices(fileMeshIndices);
 	isAtBoundary.resize(numCells, false);
 
 	neighbourList = collectNeighbours(IdPairs, cellIDs);
-
-    readSnapshot(snapshot);
 }
 
 void Mesh::readSnapshot(const std::string& snapshot) {
     try {
-        std::cout << "Reading Arepo snapshot..." << std::endl;
-
         H5::H5File file(snapshot, H5F_ACC_RDONLY);
 
         H5::DataSet densityDataset = file.openDataSet("/PartType0/Density");
         H5::DataSet coordinatesDataset = file.openDataSet("/PartType0/Coordinates");
+        H5::DataSet idDataset = file.openDataSet("/PartType0/ParticleIDs");
 
         H5::DataSpace densitySpace = densityDataset.getSpace();
         hsize_t numDensities;
         densitySpace.getSimpleExtentDims(&numDensities);
         cellDensity.resize(numDensities);
         densityDataset.read(cellDensity.data(), H5::PredType::NATIVE_DOUBLE);
-
-        if (numCells != cellDensity.size()) {
-            std::cerr << "Error: numCells (" << numCells << ") does not match the number of cells from mesh output... (" << cellDensity.size() << ")" << std::endl;
-            exit(EXIT_FAILURE);
-        }
+        numCells = cellDensity.size();
 
         H5::DataSpace coordinatesSpace = coordinatesDataset.getSpace();
         hsize_t dims[2];
@@ -55,6 +47,12 @@ void Mesh::readSnapshot(const std::string& snapshot) {
                  cellCoordinates[row][col] = cellCoordinates1D[index];
              }
          }
+
+        H5::DataSpace idSpace = idDataset.getSpace();
+        hsize_t numIDs;
+        idSpace.getSimpleExtentDims(&numIDs);
+        cellIDs.resize(numIDs);
+        idDataset.read(cellIDs.data(), H5::PredType::NATIVE_INT);
 
         std::cout << "Done reading snapshot. There are " << cellDensity.size() << " cells." << std::endl;
 
@@ -105,15 +103,6 @@ std::vector<std::pair<int, int>> Mesh::readVoronoiIndices(const std::string& fil
     return IdPairs;
 }
 
-std::vector<int> Mesh::getCellIDs(const std::vector<std::pair<int, int>>& IdPairs) {
-  std::unordered_set<int> uniqueIDs;
-
-  for (const auto& pair : IdPairs)
-    uniqueIDs.insert(pair.first);
-
-  return std::vector<int> (uniqueIDs.begin(), uniqueIDs.end());
-}
-
 std::vector<std::vector<int> > Mesh::collectNeighbours(const std::vector<std::pair<int, int>>& IdPairs, std::vector<int> cellIDs) {
     std::unordered_map<int, std::vector<int>> neighboursMap;
     std::vector<std::vector<int>> neighbourList;
@@ -151,12 +140,10 @@ int Mesh::findHostCellID(const std::vector<double>& target) {
 
         double dist = squaredDistance(cellCoordinates[iCell], target);
 
-        /*
         if (dist < minDistance) {
             minDistance = dist;
             closestCellID = cellIDs[iCell];
         }
-        */
 
     }
 
