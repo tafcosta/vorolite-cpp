@@ -24,7 +24,7 @@ public:
 
 
 private:
-	std::vector<std::vector<int> > collectNeighbours(const std::vector<std::pair<int, int>>& IdPairs, std::vector<int> cellIDs);
+	std::vector<std::vector<int> > collectNeighbours(const std::vector<std::pair<int, int>>& IdPairs, std::vector<int>& cellIDs);
 	std::vector<int> getCellIDs(const std::vector<std::pair<int, int>>& IdPairs);
 	std::vector<std::pair<int, int>> readVoronoiIndices(const std::string& filename);
 

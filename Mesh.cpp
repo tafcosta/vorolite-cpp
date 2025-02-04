@@ -11,10 +11,9 @@
 Mesh::Mesh(std::string fileMeshIndices, std::string snapshot) : fileMeshIndices(fileMeshIndices), snapshot(snapshot) {
 
     readSnapshot(snapshot);
-
-	IdPairs = readVoronoiIndices(fileMeshIndices);
 	isAtBoundary.resize(numCells, false);
 
+	IdPairs       = readVoronoiIndices(fileMeshIndices);
 	neighbourList = collectNeighbours(IdPairs, cellIDs);
 }
 
@@ -103,20 +102,34 @@ std::vector<std::pair<int, int>> Mesh::readVoronoiIndices(const std::string& fil
     return IdPairs;
 }
 
-std::vector<std::vector<int> > Mesh::collectNeighbours(const std::vector<std::pair<int, int>>& IdPairs, std::vector<int> cellIDs) {
+std::vector<std::vector<int>> Mesh::collectNeighbours(const std::vector<std::pair<int, int>>& IdPairs, std::vector<int>& cellIDs)
+{
+    std::unordered_map<int, int> cellIDToIndex;
     std::unordered_map<int, std::vector<int>> neighboursMap;
     std::vector<std::vector<int>> neighbourList;
 
-    for (const auto& pair : IdPairs)
-      neighboursMap[pair.first].push_back(pair.second);
+    for (size_t i = 0; i < cellIDs.size(); ++i)
+        cellIDToIndex[cellIDs[i]] = i;
 
-    for (const int id : cellIDs) {
-        std::vector<int> row;
 
-        if (neighboursMap.find(id) != neighboursMap.end())
-            row = neighboursMap[id];
+    for (const auto& pair : IdPairs) {
+        int cell1 = pair.first;
+        int cell2 = pair.second;
 
-        neighbourList.push_back(row);
+        if (cellIDToIndex.find(cell1) != cellIDToIndex.end() && cellIDToIndex.find(cell2) != cellIDToIndex.end()) {
+            int index1 = cellIDToIndex[cell1];
+            int index2 = cellIDToIndex[cell2];
+
+            neighboursMap[index1].push_back(index2);
+        }
+    }
+
+    for (size_t i = 0; i < cellIDs.size(); ++i) {
+        if (neighboursMap.find(i) != neighboursMap.end()) {
+            neighbourList.push_back(neighboursMap[i]);
+        } else {
+            neighbourList.push_back({});
+        }
     }
 
     return neighbourList;

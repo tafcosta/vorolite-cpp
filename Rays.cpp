@@ -19,11 +19,6 @@ Rays::Rays(int nRays, std::vector<double> sourcePosition, Mesh& mesh) : numRays(
 	insideDomain = std::vector<bool>(nRays, true);
 
 	startCell = mesh.findHostCellID(sourcePosition);
-	std::cout << "starting cell ID " << mesh.cellCoordinates[startCell][0] << std::endl;
-
-    for (int neighbour : mesh.neighbourList[startCell]) {
-        std::cout << neighbour << " ";
-    }
 
 }
 
@@ -46,9 +41,27 @@ void Rays::initializeDirections() {
 
 	 double distanceToExit = std::numeric_limits<double>::max();
 	 int exitCell  = -1;
-	 int numberPossibleNeighbours =  0;
 
-	 std::cout << iCell << std::endl;
+	 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
+
+	 for (int neighbour : mesh.neighbourList[iCell]){
+		 std::vector<float> neighbourPos = mesh.cellCoordinates[neighbour];
+		 std::vector<float> normalVector (3, 0.0);
+
+	        if (cellPos.size() == neighbourPos.size()) {
+
+	        	normalVector[0] = cellPos[0] - neighbourPos[0];
+	        	normalVector[1] = cellPos[1] - neighbourPos[1];
+	        	normalVector[2] = cellPos[2] - neighbourPos[2];
+
+	            double distance = std::sqrt(normalVector[0] * normalVector[0] + normalVector[1] * normalVector[1] + normalVector[2] * normalVector[2]);
+	            std::cout << "cell pos: " << cellPos[1] << ", neighbour pos: " << neighbourPos[1] << std::endl;
+	        }
+	        else {
+	            std::cerr << "Error: Inconsistent vector sizes!" << std::endl;
+	        }
+
+	 }
 
 	 /*
     for iNeighbour in range(numberNeighbours[iCell]):
@@ -78,9 +91,13 @@ void Rays::initializeDirections() {
 
 void Rays::doRayTracing(){
 
+
 	for(int iRay = 0; iRay < numRays; iRay++){
 
 		int iCell = startCell;
+		findNextCell(iCell);
+
+		/*
 		while(insideDomain[iRay]){
 
 			if(mesh.isAtBoundary[iCell]){
@@ -92,8 +109,12 @@ void Rays::doRayTracing(){
 				insideDomain[iRay] = false;
 			}
 		}
+		*/
 
 	}
+
+
+	std::cout << "Do nothing" << std::endl;
 
 
 }
