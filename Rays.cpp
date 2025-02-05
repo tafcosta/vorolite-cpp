@@ -10,9 +10,9 @@
 #include "Mesh.h"
 
 Rays::Rays(int nRays, std::vector<double> sourcePosition, Mesh& mesh) : numRays(nRays), sourcePosition(sourcePosition), mesh(mesh) {
-	direction = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
+	rayDirection = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
 	initializeDirections();
-	position = std::vector<std::vector<double>>(nRays, sourcePosition);
+	rayPosition = std::vector<std::vector<double>>(nRays, sourcePosition);
 
 	opticalDepth = std::vector<double>(nRays, 0.0);
 	numTraversedCells = std::vector<double>(nRays, 0.0);
@@ -31,91 +31,77 @@ void Rays::initializeDirections() {
         double phi = dis(gen) * 2.0 * M_PI;
         double theta = std::acos(1.0 - 2.0 * dis(gen));
 
-        direction[iRay][0] = std::cos(phi) * std::sin(theta);
-        direction[iRay][1] = std::sin(phi) * std::sin(theta);
-        direction[iRay][2] = std::cos(theta);
+        rayDirection[iRay][0] = 0;//std::cos(phi) * std::sin(theta);
+        rayDirection[iRay][1] = 0;//std::sin(phi) * std::sin(theta);
+        rayDirection[iRay][2] = 1;//std::cos(theta);
     }
 }
 
- void Rays::findNextCell(int iCell){
+ int Rays::findNextCell(int iCell, int iRay){
 
 	 double distanceToExit = std::numeric_limits<double>::max();
+	 double distanceToExitTmp;
 	 int exitCell  = -1;
 
 	 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
 
+	 std::cout << "Ray Pos = " << rayPosition[iRay][0] << " " << rayPosition[iRay][1] << " " << rayPosition[iRay][2] << std::endl;
+	 std::cout << "number of neighbours = " << mesh.neighbourList[iCell].size() << std::endl;
+
 	 for (int neighbour : mesh.neighbourList[iCell]){
 		 std::vector<float> neighbourPos = mesh.cellCoordinates[neighbour];
-		 std::vector<float> normalVector (3, 0.0);
+		 std::vector<double> normalVector (3, 0.0);
+		 std::vector<double> pointOnInterface (3, 0.0);
 
-	        if (cellPos.size() == neighbourPos.size()) {
+		 for (int i = 0; i < 3; i++){
+		 normalVector[i] = cellPos[i] - neighbourPos[i];
+		 pointOnInterface[i]= 0.5 *(cellPos[i] + neighbourPos[i]);
+		 }
 
-	        	normalVector[0] = cellPos[0] - neighbourPos[0];
-	        	normalVector[1] = cellPos[1] - neighbourPos[1];
-	        	normalVector[2] = cellPos[2] - neighbourPos[2];
+		 double denominator = normalVector[0] * rayDirection[iRay][0] + normalVector[1] * rayDirection[iRay][1] + normalVector[2] * rayDirection[iRay][2];
 
-	            double distance = std::sqrt(normalVector[0] * normalVector[0] + normalVector[1] * normalVector[1] + normalVector[2] * normalVector[2]);
-	            std::cout << "cell pos: " << cellPos[1] << ", neighbour pos: " << neighbourPos[1] << std::endl;
-	        }
-	        else {
-	            std::cerr << "Error: Inconsistent vector sizes!" << std::endl;
-	        }
-
+		 if(fabs(denominator) > std::numeric_limits<double>::epsilon()){
+			 distanceToExitTmp = normalVector[0] * (pointOnInterface[0] - rayPosition[iRay][0])
+					 + normalVector[1] * (pointOnInterface[1] - rayPosition[iRay][1])
+					 + normalVector[2] * (pointOnInterface[2] - rayPosition[iRay][2]);
+	        distanceToExitTmp = distanceToExitTmp/denominator;
+		 } else
+			 continue;
+	        	
+		 if((distanceToExitTmp < distanceToExit) & (distanceToExitTmp > std::numeric_limits<double>::epsilon())){
+			 distanceToExit = distanceToExitTmp;
+			 exitCell = neighbour;
+		 }
 	 }
 
-	 /*
-    for iNeighbour in range(numberNeighbours[iCell]):
-        normalVector       = pointCloud[iCell] - pointCloud[indices[indptr[iCell]:indptr[iCell + 1]][iNeighbour]]
-        pointOnInterface   = (pointCloud[iCell] + pointCloud[indices[indptr[iCell]:indptr[iCell + 1]][iNeighbour]]) / 2.0
-        denominator        = np.dot(normalVector, np.array([rays.kx[iRay], rays.ky[iRay], rays.kz[iRay]]).ravel())
+  	std::cout <<  distanceToExit << std::endl;
 
-        if(np.abs(denominator) > sys.float_info.epsilon):
-            distanceToExitTmp  = np.dot(normalVector,  (pointOnInterface - np.array([rays.xPos[iRay], rays.yPos[iRay], rays.zPos[iRay]]).ravel())) / denominator
-        else:
-            continue
+ 	if(exitCell == -1){
+ 		std::cerr << "Error: no exit cell found!" << std::endl;
+ 		insideDomain[iRay] = false;
+ 	}
 
-        if ((distanceToExitTmp < distanceToExit) and (distanceToExitTmp > 0)):
-            distanceToExit = distanceToExitTmp
-            exitCell = indices[indptr[iCell]:indptr[iCell + 1]][iNeighbour]
-            numberPossibleNeighbours += 1
+ 	for (int i = 0; i < 3; i++)
+ 		rayPosition[iRay][i] += rayDirection[iRay][i] * distanceToExit * 1.0000001;
 
-    if(numberPossibleNeighbours == 0):
-        raise ValueError(f"Error: Loop terminated because no elligible neighbours were found.")
+ 	numTraversedCells[iRay] += 1;
 
-    if(exitCell == -1):
-        raise ValueError(f"No exit cell found.")
+    return exitCell;
 
-    */
  }
 
 
 void Rays::doRayTracing(){
 
-
 	for(int iRay = 0; iRay < numRays; iRay++){
 
 		int iCell = startCell;
-		findNextCell(iCell);
 
-		/*
 		while(insideDomain[iRay]){
-
-			if(mesh.isAtBoundary[iCell]){
-				//getDistanceToBoundary(domain, rays, iRay);
-				insideDomain[iRay] = false;
-			}
-			else{
-				findNextCell(iCell);
-				insideDomain[iRay] = false;
-			}
+			iCell = findNextCell(iCell, iRay);
+			std::cout << "exit = " << iCell << std::endl;
 		}
-		*/
-
 	}
-
-
-	std::cout << "Do nothing" << std::endl;
-
 
 }
 

@@ -19,8 +19,8 @@ public:
 	std::vector<double> sourcePosition;
 	std::vector<double> phi, theta;
 
-	std::vector<std::vector<double>> direction;
-	std::vector<std::vector<double>> position;
+	std::vector<std::vector<double>> rayDirection;
+	std::vector<std::vector<double>> rayPosition;
 
 	std::vector<double> opticalDepth;
 	std::vector<double> numTraversedCells;
@@ -32,7 +32,7 @@ public:
 
 protected:
 	int startCell;
-	void findNextCell(int iCell);
+	int findNextCell(int iCell, int iRay);
 
 private:
     void initializeDirections();

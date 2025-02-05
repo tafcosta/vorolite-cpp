@@ -105,12 +105,11 @@ std::vector<std::pair<int, int>> Mesh::readVoronoiIndices(const std::string& fil
 std::vector<std::vector<int>> Mesh::collectNeighbours(const std::vector<std::pair<int, int>>& IdPairs, std::vector<int>& cellIDs)
 {
     std::unordered_map<int, int> cellIDToIndex;
-    std::unordered_map<int, std::vector<int>> neighboursMap;
+    std::unordered_map<int, std::unordered_set<int>> neighboursMap;
     std::vector<std::vector<int>> neighbourList;
 
     for (size_t i = 0; i < cellIDs.size(); ++i)
         cellIDToIndex[cellIDs[i]] = i;
-
 
     for (const auto& pair : IdPairs) {
         int cell1 = pair.first;
@@ -120,13 +119,14 @@ std::vector<std::vector<int>> Mesh::collectNeighbours(const std::vector<std::pai
             int index1 = cellIDToIndex[cell1];
             int index2 = cellIDToIndex[cell2];
 
-            neighboursMap[index1].push_back(index2);
+            neighboursMap[index1].insert(index2);
+            neighboursMap[index2].insert(index1);
         }
     }
 
     for (size_t i = 0; i < cellIDs.size(); ++i) {
         if (neighboursMap.find(i) != neighboursMap.end()) {
-            neighbourList.push_back(neighboursMap[i]);
+            neighbourList.push_back(std::vector<int>(neighboursMap[i].begin(), neighboursMap[i].end()));
         } else {
             neighbourList.push_back({});
         }
@@ -134,6 +134,7 @@ std::vector<std::vector<int>> Mesh::collectNeighbours(const std::vector<std::pai
 
     return neighbourList;
 }
+
 
 double Mesh::squaredDistance(const std::vector<float>& point1, const std::vector<double>& point2) {
     double dist = 0.0;
