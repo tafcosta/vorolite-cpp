@@ -145,12 +145,14 @@ double Mesh::squaredDistance(const std::vector<float>& point1, const std::vector
 }
 
 
-int Mesh::findHostCellID(const std::vector<double>& target) {
+int Mesh::findHostCellID(const std::vector<double>& target, int cellSkip) {
     int closestCell;
     double minDistance = std::numeric_limits<double>::infinity();
 
-
     for (int iCell = 0; iCell < numCells; iCell++) {
+
+    	if(iCell == cellSkip)
+    		continue;
 
         double dist = squaredDistance(cellCoordinates[iCell], target);
 
@@ -158,7 +160,6 @@ int Mesh::findHostCellID(const std::vector<double>& target) {
             minDistance = dist;
             closestCell = iCell;
         }
-
     }
 
     return closestCell;

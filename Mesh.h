@@ -14,13 +14,15 @@ public:
 	virtual ~Mesh();
 
 	int numCells;
+	double boxSize = 1.;
+
 	std::vector<int> cellIDs;
     std::vector<std::vector<float>> cellCoordinates;
     std::vector<double> cellDensity;
     std::vector<bool> isAtBoundary;
 
 	std::vector<std::vector<int>> neighbourList;
-	int findHostCellID(const std::vector<double>& target);
+	int findHostCellID(const std::vector<double>& target, int cellSkip);
 
 
 private:
