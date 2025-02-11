@@ -25,6 +25,10 @@ void Mesh::readSnapshot(const std::string& snapshot) {
         H5::DataSet coordinatesDataset = file.openDataSet("/PartType0/Coordinates");
         H5::DataSet idDataset = file.openDataSet("/PartType0/ParticleIDs");
 
+        H5::Group headerGroup = file.openGroup("/Header");
+        H5::Attribute boxSizeAttribute = headerGroup.openAttribute("BoxSize");
+        boxSizeAttribute.read(H5::PredType::NATIVE_DOUBLE, &boxSize);
+
         H5::DataSpace densitySpace = densityDataset.getSpace();
         hsize_t numDensities;
         densitySpace.getSimpleExtentDims(&numDensities);

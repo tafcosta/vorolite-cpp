@@ -14,7 +14,7 @@ public:
 	virtual ~Mesh();
 
 	int numCells;
-	double boxSize = 1.;
+	double boxSize;
 
 	std::vector<int> cellIDs;
     std::vector<std::vector<float>> cellCoordinates;

@@ -5,6 +5,8 @@
 void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRadius,
                        std::vector<double>& sourceLocation, std::string& meshFile, std::string& snapFile);
 
+
+
 int main() {
 
     int nRays = 0;
@@ -19,6 +21,7 @@ int main() {
         return 1;
     }
 
+
 	std::cout << "Starting VoroLite++ (Version 0.1)!" << std::endl;
 	std::cout << "We are using " << nRays << " rays." << std::endl;
 
@@ -30,7 +33,7 @@ int main() {
   
 	delete mesh;
 	delete rays;
-	return 0;
+	//return 0;
 }
 
 void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRadius,
