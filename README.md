@@ -1,6 +1,6 @@
 # VoroLite++
 
-VoroLite++ is a C++ tool designed for ray tracing on a Voronoi grid. It performs ray tracing calculations and returns valuable information, including column densities and lists of densities along the rays. The tool works with snapshot files and requires a parameter file to configure the ray tracing process.
+VoroLite++ is a C++ tool designed for ray tracing on a Voronoi grid. It performs ray tracing calculations and returns valuable information, including column densities and lists of densities along the rays. The tool works with Arepo snapshot files and requires a parameter file to configure the ray tracing process.
   
 ## Requirements
 
