@@ -50,7 +50,7 @@ snapFile = ./output/snap_001.hdf5
 - `snapFile`: Path to the snapshot file (typically `.hdf5`).
 
 2. **Run the ray tracing**:
-- `./vorolite rays_param.txt`
+- `./vorolite`
 
 3. **Output**: The program will generate an output file named `ray_output.txt`, which contains various results, including column densities and a list of densities along each ray.
 
