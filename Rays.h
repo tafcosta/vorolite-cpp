@@ -12,23 +12,28 @@
 
 class Rays {
 public:
-	Rays(int numRays, std::vector<double> sourcePosition, Mesh& mesh);
+	Rays(int numRays, double maxRadius, std::vector<double> sourcePosition, Mesh& mesh);
 	virtual ~Rays();
 
 	int numRays;
+	double maxRadius;
+
 	std::vector<double> sourcePosition;
 	std::vector<double> phi, theta;
 
 	std::vector<std::vector<double>> rayDirection;
 	std::vector<std::vector<double>> rayPosition;
 
-	std::vector<double> opticalDepth;
+	std::vector<double> columnDensity;
 	std::vector<double> numTraversedCells;
+	std::vector<double> distanceTravelled;
+
 	std::vector<bool> insideDomain;
 
 	Mesh& mesh;
 
 	void doRayTracing();
+	void outputResults();
 
 protected:
 	int startCell;
