@@ -14,6 +14,8 @@ Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, Mesh
 	theta = std::vector<double>(nRays, 0.0);
 	phi = std::vector<double>(nRays, 0.0);
 
+	visitedCells = std::vector<std::vector<int>>(nRays);
+
 	initializeDirections();
 	rayPosition = std::vector<std::vector<double>>(nRays, sourcePosition);
 
@@ -125,6 +127,7 @@ void Rays::initializeDirections() {
 	 for (int i = 0; i < 3; i++)
 		 rayPosition[iRay][i] += rayDirection[iRay][i] * distanceToExit;
 
+	 visitedCells[iRay].push_back(iCell);
 	 columnDensity[iRay] += distanceToExit * mesh.cellDensity[iCell];
 	 distanceTravelled[iRay] += distanceToExit;
 	 numTraversedCells[iRay] += 1;

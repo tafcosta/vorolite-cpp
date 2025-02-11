@@ -23,10 +23,13 @@ public:
 
 	std::vector<std::vector<double>> rayDirection;
 	std::vector<std::vector<double>> rayPosition;
+	std::vector<std::vector<int>> visitedCells;
+
 
 	std::vector<double> columnDensity;
 	std::vector<double> numTraversedCells;
 	std::vector<double> distanceTravelled;
+
 
 	std::vector<bool> insideDomain;
 	std::vector<bool> ignoreRay;

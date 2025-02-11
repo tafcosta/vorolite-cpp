@@ -33,7 +33,7 @@ int main() {
   
 	delete mesh;
 	delete rays;
-	//return 0;
+	return 0;
 }
 
 void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRadius,
