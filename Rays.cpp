@@ -21,6 +21,7 @@ Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, Mesh
 	distanceTravelled = std::vector<double>(nRays, 0.0);
 	numTraversedCells = std::vector<double>(nRays, 0.0);
 	insideDomain = std::vector<bool>(nRays, true);
+	ignoreRay = std::vector<bool>(nRays, false);
 
 	startCell = mesh.findHostCellID(sourcePosition, -1);
 
@@ -133,8 +134,10 @@ void Rays::initializeDirections() {
 		 insideDomain[iRay] = false;
 		 exitCell = -1;
 	 } else {
-		 if(exitCell == -1)
+		 if(exitCell == -1){
 			 std::cerr << "Warning: inside domain, but no neighbours found. Ray number = " << iRay << std::endl;
+			 ignoreRay[iRay] = true;
+		 }
 	 }
 
 
@@ -168,13 +171,15 @@ void Rays::initializeDirections() {
          return;
      }
 
-     outputFile << "Ray Number\tTheta (radians)\tPhi (radians)\tColumn Density" << std::endl;
+     outputFile << "Ray\tTheta\tPhi\tColumn Density\t Ignore?" << std::endl;
 
      for (int i = 0; i < numRays; ++i) {
-         outputFile << i + 1 << "\t"  // Ray number
+         outputFile << i << "\t"  // Ray number
                     << std::fixed << std::setprecision(3) << theta[i] << "\t"
                     << std::fixed << std::setprecision(3) << phi[i] << "\t"
-                    << std::fixed << std::setprecision(6) << columnDensity[i] << std::endl;
+                    << std::fixed << std::setprecision(6) << columnDensity[i] << "\t"
+					<< std::fixed << ignoreRay[i] << std::endl;
+
      }
 
      outputFile.close();

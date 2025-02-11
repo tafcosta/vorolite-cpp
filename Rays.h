@@ -29,6 +29,8 @@ public:
 	std::vector<double> distanceTravelled;
 
 	std::vector<bool> insideDomain;
+	std::vector<bool> ignoreRay;
+
 
 	Mesh& mesh;
 
