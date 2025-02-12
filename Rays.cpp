@@ -102,7 +102,7 @@ void Rays::initializeDirections() {
 			 exitCell = neighbour;
 
 			 if(verbose)
-				 debugOutput << "New Neighbour candidate = " << neighbour;
+				 debugOutput << "New Neighbour candidate = " << neighbour << "\n";
 
 		 }
 	 }
@@ -117,7 +117,7 @@ void Rays::initializeDirections() {
 	 if(verbose){
 		 debugOutput << "Ray position (before update) = " << rayPosition[iRay][0] << ", "
 				 << rayPosition[iRay][1] << ", " << rayPosition[iRay][2]
-				 << " Cell based on ray position (before update) = " << mesh.findHostCellID(rayPosition[iRay], exitCell);
+				 << " Cell based on ray position (before update) = " << mesh.findHostCellID(rayPosition[iRay], exitCell) << "\n";
 	    }
 
 
@@ -153,7 +153,10 @@ void Rays::initializeDirections() {
 
 		 if(exitCell == -1 || exitCell != mesh.findHostCellID(rayPosition[iRay], iCell)){
 			 warningIssued = true;
-			 std::cerr << "Warning: either inside domain and no neighbours found or mismatch in ray and neigbour cells. Ray number = " << iRay << std::endl;
+
+			 if(verbose == false)
+				 std::cerr << "Warning: either inside domain and no neighbours found or mismatch in ray and neigbour cells. Ray number = " << iRay << std::endl;
+
 			 ignoreRay[iRay] = true;
 
 			 if(verbose)
@@ -239,7 +242,7 @@ void Rays::doRayTracing(){
 					rayPosition[iRay][i] = oldRayPosition[i];
 
 				iCell = findNextCell(iCellOld, iRay, true);
-
+				insideDomain[iRay] = false;
 			}
 
 		}
