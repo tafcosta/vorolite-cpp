@@ -16,17 +16,18 @@ Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, Mesh
 
 	visitedCells = std::vector<std::vector<int>>(nRays);
 
-	initializeDirections();
 	rayPosition = std::vector<std::vector<double>>(nRays, sourcePosition);
+	initializeDirections();
 
-	columnDensity = std::vector<double>(nRays, 0.0);
+	columnDensity     = std::vector<double>(nRays, 0.0);
 	distanceTravelled = std::vector<double>(nRays, 0.0);
+	insideDomain      = std::vector<bool>(nRays, true);
+	ignoreRay         = std::vector<bool>(nRays, false);
 	numTraversedCells = std::vector<double>(nRays, 0.0);
-	insideDomain = std::vector<bool>(nRays, true);
-	ignoreRay = std::vector<bool>(nRays, false);
 
 	startCell = mesh.findHostCellID(sourcePosition, -1);
 
+	warningIssued = false;
 }
 
 void Rays::initializeDirections() {
@@ -44,33 +45,29 @@ void Rays::initializeDirections() {
     }
 }
 
- int Rays::findNextCell(int iCell, int iRay){
+ int Rays::findNextCell(int iCell, int iRay, bool verbose){
 	 double distanceToExit = std::numeric_limits<double>::max();
 	 double distanceToExitTmp;
 	 std::ostringstream debugOutput;
 
 	 int exitCell  = -1;
-	 bool verbose = true;
 
 	 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
 	 std::vector<double> normalVector (3, 0.0);
 	 std::vector<double> pointOnInterface (3, 0.0);
 
 	 if(verbose){
-		 double distanceBetRayAndCell = sqrt((cellPos[0] - rayPosition[iRay][0]) * (cellPos[0] - rayPosition[iRay][0]) +
-				 (cellPos[1] - rayPosition[iRay][1]) * (cellPos[1] - rayPosition[iRay][1]) +
-				 (cellPos[2] - rayPosition[iRay][2]) * (cellPos[2] - rayPosition[iRay][2]));
-
-		 debugOutput << "Host Index = " << iCell
-				 << " Host Cell Position = " << cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << " Distance from Ray to Cell (before update) = " << distanceBetRayAndCell;
+		 double distanceBetRayAndCell = sqrt((cellPos[0] - rayPosition[iRay][0]) * (cellPos[0] - rayPosition[iRay][0]) + (cellPos[1] - rayPosition[iRay][1]) * (cellPos[1] - rayPosition[iRay][1]) + (cellPos[2] - rayPosition[iRay][2]) * (cellPos[2] - rayPosition[iRay][2]));
+		 debugOutput << "Host Index = " << iCell << " Host Cell Position = " << cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << " Distance from Ray to Cell (before update) = " << distanceBetRayAndCell << "\n";
 	 }
+
 
 	 for (int neighbour : mesh.neighbourList[iCell]){
 		 std::vector<float> neighbourPos = mesh.cellCoordinates[neighbour];
 
 		 if(verbose){
 			 debugOutput << "Neighbour Index = " << neighbour
-					 << ", Neighbour Position = " << neighbourPos[0] << ", " << neighbourPos[1] << ", " << neighbourPos[2];
+					     << ", Neighbour Position = " << neighbourPos[0] << ", " << neighbourPos[1] << ", " << neighbourPos[2] << "\n";
 		 }
 
 		 for (int i = 0; i < 3; i++){
@@ -86,7 +83,7 @@ void Rays::initializeDirections() {
 		 distanceToExitTmp = distanceToExitTmp/denominator;
 
 		 if(verbose)
-			 debugOutput << "Distance to Neighbour = " << distanceToExitTmp;
+			 debugOutput << "Distance to Neighbour = " << distanceToExitTmp  << "\n";
 
 
 		 if(denominator > 0.){
@@ -110,9 +107,6 @@ void Rays::initializeDirections() {
 		 }
 	 }
 
-	 if(verbose)
-		 debugOutput << "Exit Cell = " << exitCell;
-
 	 if(distanceToExit > mesh.boxSize){
 	 	insideDomain[iRay] = false;
 
@@ -126,6 +120,7 @@ void Rays::initializeDirections() {
 				 << " Cell based on ray position (before update) = " << mesh.findHostCellID(rayPosition[iRay], exitCell);
 	    }
 
+
 	 for (int i = 0; i < 3; i++)
 		 rayPosition[iRay][i] += rayDirection[iRay][i] * distanceToExit;
 
@@ -135,26 +130,30 @@ void Rays::initializeDirections() {
 	 numTraversedCells[iRay] += 1;
 
 	 if(verbose){
-
 		 debugOutput << "Ray position (after update) = " << rayPosition[iRay][0] << " "
 				 << rayPosition[iRay][1] << " "
 				 << rayPosition[iRay][2] << "\n"
 				 << "Cell based on ray position (after update) = "
 				 << mesh.findHostCellID(rayPosition[iRay], iCell) << "\n";
 
-		 std::vector<float> cellPos = mesh.cellCoordinates[exitCell];
-		 debugOutput << "Next cell from neighbour = " << exitCell << "\n"
-	        		<< "Position of cell (from neighbour search) = "
-					<< cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << "\n";
+		 if(exitCell != -1){
+			 std::vector<float> cellPos = mesh.cellCoordinates[exitCell];
+			 debugOutput << "Next cell from neighbour = " << exitCell << "\n"
+					 << "Position of cell (from neighbour search) = "
+					 << cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << "\n";
+		 }
 	 }
+
+
 
 	 if(rayPosition[iRay][0] > mesh.boxSize || rayPosition[iRay][0] < 0 || rayPosition[iRay][1] > mesh.boxSize || rayPosition[iRay][1] < 0 || rayPosition[iRay][2] > mesh.boxSize || rayPosition[iRay][2] < 0 || distanceTravelled[iRay] >= maxRadius){
 		 insideDomain[iRay] = false;
 		 exitCell = -1;
 	 } else {
 
-		 if(exitCell == -1){
-			 std::cerr << "Warning: inside domain, but no neighbours found. Ray number = " << iRay << std::endl;
+		 if(exitCell == -1 || exitCell != mesh.findHostCellID(rayPosition[iRay], iCell)){
+			 warningIssued = true;
+			 std::cerr << "Warning: either inside domain and no neighbours found or mismatch in ray and neigbour cells. Ray number = " << iRay << std::endl;
 			 ignoreRay[iRay] = true;
 
 			 if(verbose)
@@ -187,7 +186,6 @@ void Rays::initializeDirections() {
      }
 
      outputFile.close();
-
      std::cout << "Results have been written to 'ray_output.txt'" << std::endl;
 
 
@@ -219,14 +217,31 @@ void Rays::initializeDirections() {
 
 void Rays::doRayTracing(){
 
+	std::vector<double> oldRayPosition (3, 0.0);
+	int iCellOld = -1;
+
 	for(int iRay = 0; iRay < numRays; iRay++){
-
 		std::cout << "ray " << iRay << std::endl;
-
 		int iCell = startCell;
 
 		while(insideDomain[iRay]){
-			iCell = findNextCell(iCell, iRay);
+
+			iCellOld = iCell;
+			for(int i = 0; i < 3; i++)
+				oldRayPosition[i] = rayPosition[iRay][i];
+
+			warningIssued = false;
+			iCell = findNextCell(iCell, iRay, false);
+
+			if(warningIssued){
+
+				for(int i = 0; i < 3; i++)
+					rayPosition[iRay][i] = oldRayPosition[i];
+
+				iCell = findNextCell(iCellOld, iRay, true);
+
+			}
+
 		}
 	}
 

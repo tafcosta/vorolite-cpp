@@ -42,10 +42,11 @@ public:
 
 protected:
 	int startCell;
-	int findNextCell(int iCell, int iRay);
+	int findNextCell(int iCell, int iRay, bool verbose);
 
 private:
     void initializeDirections();
+    bool warningIssued;
 };
 
 #endif /* RAYS_H_ */
