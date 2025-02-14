@@ -151,31 +151,25 @@ double Mesh::squaredDistance(const std::vector<float>& point1, const std::vector
 
 std::vector<int> Mesh::findHostCellID(const std::vector<double>& target, int cellSkip) {
     std::vector<int> closestCells;
+    closestCells.reserve(numCells - 1);
+
     double minDistance = std::numeric_limits<double>::infinity();
+    std::vector<double> distances(numCells, std::numeric_limits<double>::infinity());
 
     for (int iCell = 0; iCell < numCells; iCell++) {
 
     	if(iCell == cellSkip)
     		continue;
 
-        double dist = squaredDistance(cellCoordinates[iCell], target);
+    	distances[iCell] = squaredDistance(cellCoordinates[iCell], target);
 
-        if (dist < minDistance) {
-        	closestCells = {iCell};
-        	minDistance = dist;
+        if (distances[iCell] < minDistance) {
+            closestCells = {iCell};
+            minDistance = distances[iCell];
         }
-    }
-
-    for (int iCell = 0; iCell < numCells; iCell++) {
-
-    	if(iCell == cellSkip)
-    		continue;
-
-        double dist = sqrt(squaredDistance(cellCoordinates[iCell], target));
-
-        if (fabs(dist - minDistance) < 1.e-2)
-        	closestCells.push_back(iCell);
-
+        else if (std::fabs(distances[iCell] - minDistance) < 1.e-10) {
+            closestCells.push_back(iCell);
+        }
     }
 
     return closestCells;
