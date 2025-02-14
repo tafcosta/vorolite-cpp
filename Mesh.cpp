@@ -149,8 +149,8 @@ double Mesh::squaredDistance(const std::vector<float>& point1, const std::vector
 }
 
 
-int Mesh::findHostCellID(const std::vector<double>& target, int cellSkip) {
-    int closestCell;
+std::vector<int> Mesh::findHostCellID(const std::vector<double>& target, int cellSkip) {
+    std::vector<int> closestCells;
     double minDistance = std::numeric_limits<double>::infinity();
 
     for (int iCell = 0; iCell < numCells; iCell++) {
@@ -161,12 +161,58 @@ int Mesh::findHostCellID(const std::vector<double>& target, int cellSkip) {
         double dist = squaredDistance(cellCoordinates[iCell], target);
 
         if (dist < minDistance) {
-            minDistance = dist;
-            closestCell = iCell;
+        	closestCells = {iCell};
+        	minDistance = dist;
         }
     }
 
-    return closestCell;
+    for (int iCell = 0; iCell < numCells; iCell++) {
+
+    	if(iCell == cellSkip)
+    		continue;
+
+        double dist = sqrt(squaredDistance(cellCoordinates[iCell], target));
+
+        if (fabs(dist - minDistance) < 1.e-2)
+        	closestCells.push_back(iCell);
+
+    }
+
+    return closestCells;
+}
+
+double Mesh::getDistanceToCell(const std::vector<double>& target, int cellIndex) {
+    double distTarget = -1.;
+
+    for (int iCell = 0; iCell < numCells; iCell++) {
+        double dist = sqrt(squaredDistance(cellCoordinates[iCell], target));
+
+        if(iCell == cellIndex)
+        	distTarget = dist;
+    }
+
+    return distTarget;
+
+}
+
+void Mesh::saveVoronoiIndices(const std::string& filename, const std::vector<std::pair<int, int>>& IdPairs) {
+    std::ofstream file(filename, std::ios::binary);
+
+    if (!file) {
+        std::cerr << "Error opening file for writing: " << filename << std::endl;
+        return;
+    }
+
+    size_t size = IdPairs.size();
+    file.write(reinterpret_cast<const char*>(&size), sizeof(size));
+
+    for (const auto& pair : IdPairs) {
+        file.write(reinterpret_cast<const char*>(&pair.first), sizeof(pair.first));
+        file.write(reinterpret_cast<const char*>(&pair.second), sizeof(pair.second));
+    }
+
+    file.close();
+    std::cout << "Saved " << IdPairs.size() << " cell pairs to " << filename << std::endl;
 }
 
 

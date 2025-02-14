@@ -43,6 +43,7 @@ public:
 protected:
 	int startCell;
 	int findNextCell(int iCell, int iRay, bool verbose);
+	int findNextCellWhileJumpingFromCellToCell(int iCell, int iRay, bool verbose);
 
 private:
     void initializeDirections();

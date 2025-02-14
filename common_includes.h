@@ -8,6 +8,7 @@
 #ifndef COMMON_INCLUDES_H_
 #define COMMON_INCLUDES_H_
 
+#include <algorithm>
 #include <random>
 #include <cmath>
 #include <H5Cpp.h>

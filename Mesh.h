@@ -22,7 +22,8 @@ public:
     std::vector<bool> isAtBoundary;
 
 	std::vector<std::vector<int>> neighbourList;
-	int findHostCellID(const std::vector<double>& target, int cellSkip);
+	std::vector<int> findHostCellID(const std::vector<double>& target, int cellSkip);
+	double getDistanceToCell(const std::vector<double>& target, int cellIndex);
 
 
 private:
@@ -30,6 +31,7 @@ private:
 	std::vector<int> getCellIDs(const std::vector<std::pair<int, int>>& IdPairs);
 	std::vector<std::pair<int, int>> readVoronoiIndices(const std::string& filename);
 
+	void saveVoronoiIndices(const std::string& filename, const std::vector<std::pair<int, int>>& IdPairs);
 	void readSnapshot(const std::string& snapshot);
 	double squaredDistance(const std::vector<float>& point1, const std::vector<double>& point2);
 
