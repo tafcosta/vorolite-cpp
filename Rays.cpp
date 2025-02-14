@@ -57,151 +57,6 @@ void Rays::initializeDirections() {
 }
 
  int Rays::findNextCell(int iCell, int iRay, bool verbose){
-	 double distanceToExit = std::numeric_limits<double>::max();
-	 double distanceToExitTmp;
-	 std::ostringstream debugOutput;
-
-	 int exitCell  = -1;
-
-	 std::vector<int> closestCells;
-	 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
-	 std::vector<double> normalVector (3, 0.0);
-	 std::vector<double> pointOnInterface (3, 0.0);
-
-	 if(verbose){
-		 double distanceBetRayAndCell = sqrt((cellPos[0] - rayPosition[iRay][0]) * (cellPos[0] - rayPosition[iRay][0]) + (cellPos[1] - rayPosition[iRay][1]) * (cellPos[1] - rayPosition[iRay][1]) + (cellPos[2] - rayPosition[iRay][2]) * (cellPos[2] - rayPosition[iRay][2]));
-		 debugOutput << "Host Index = " << iCell << " Host Cell Position = " << cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << " Distance from Ray to Cell (before update) = " << distanceBetRayAndCell << "\n";
-	 }
-
-	 for (int neighbour : mesh.neighbourList[iCell]){
-		 std::vector<float> neighbourPos = mesh.cellCoordinates[neighbour];
-
-		 if(verbose){
-			 debugOutput << "Neighbour Index = " << neighbour
-					     << ", Neighbour Position = " << neighbourPos[0] << ", " << neighbourPos[1] << ", " << neighbourPos[2] << "\n";
-		 }
-
-		 for (int i = 0; i < 3; i++){
-			 normalVector[i] = neighbourPos[i] - cellPos[i];
-			 pointOnInterface[i] = 0.5 * (cellPos[i] + neighbourPos[i]);
-		 }
-
-		 double denominator = normalVector[0] * rayDirection[iRay][0] + normalVector[1] * rayDirection[iRay][1] + normalVector[2] * rayDirection[iRay][2];
-
-		 distanceToExitTmp = normalVector[0] * (pointOnInterface[0] - rayPosition[iRay][0])
-				 + normalVector[1] * (pointOnInterface[1] - rayPosition[iRay][1])
-				 + normalVector[2] * (pointOnInterface[2] - rayPosition[iRay][2]);
-		 distanceToExitTmp = distanceToExitTmp/denominator;
-
-		 if(verbose)
-			 debugOutput << std::scientific << std::setprecision(12) << "Distance to Neighbour = " << distanceToExitTmp << " denominator = " << denominator << "\n";
-
-
-		 if(denominator > 0.){
-		 } else
-			 continue;
-
-		 if((distanceToExitTmp <= distanceToExit) && (distanceToExitTmp >= -1.e-14)){
-
-			 if(distanceToExitTmp >= -1.e-14){
-				 if((neighbourPos[0] - rayPosition[iRay][0]) * rayDirection[iRay][0] + (neighbourPos[1] - rayPosition[iRay][1]) * rayDirection[iRay][1] + (neighbourPos[2] - rayPosition[iRay][2]) * rayDirection[iRay][2] < 0)
-					 continue;
-			 }
-
-			 distanceToExit = distanceToExitTmp;
-			 exitCell = neighbour;
-
-			 if(verbose)
-				 debugOutput << "New Neighbour candidate = " << neighbour << "\n";
-
-		 }
-	 }
-
-	 if(distanceToExit > mesh.boxSize){
-	 	insideDomain[iRay] = false;
-
-	 	distanceToExit = 0.0;
-	 	exitCell = -1;
-	 }
-
-	 //closestCells = mesh.findHostCellID(rayPosition[iRay], -1);
-
-	 /*
-	 debugOutput  << "Closest cells (before update) = ";
-	 for(int i = 0; i < closestCells.size(); i++)
-		 debugOutput << closestCells[i] << ", ";
-	 debugOutput  << "\n";
-	 */
-
-	 if(verbose){
-		 debugOutput << "Ray position (before update) = " << rayPosition[iRay][0] << ", "
-				 << rayPosition[iRay][1] << ", " << rayPosition[iRay][2] << "\n";
-	    }
-
-
-	 for (int i = 0; i < 3; i++)
-		 rayPosition[iRay][i] += rayDirection[iRay][i] * distanceToExit;
-
-	 visitedCells[iRay].push_back(iCell);
-	 columnDensity[iRay] += distanceToExit * mesh.cellDensity[iCell];
-	 distanceTravelled[iRay] += distanceToExit;
-	 numTraversedCells[iRay] += 1;
-
-	 //closestCells = mesh.findHostCellID(rayPosition[iRay], -1);
-	 //
-
-	 if(verbose){
-		 double distanceToCell = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
-
-		 debugOutput << "Ray position (after update) = " << rayPosition[iRay][0] << " "
-				 << rayPosition[iRay][1] << " "
-				 << rayPosition[iRay][2] << "\n";
-
-
-		 debugOutput  << "Closest cells = ";
-		 for(int i = 0; i < closestCells.size(); i++)
-			 debugOutput << closestCells[i] << ", ";
-		 debugOutput  << "\n";
-
-		 debugOutput  << "Distance from ray to exit cell = " << distanceToCell << "\n";
-
-
-		 if(exitCell != -1){
-			 std::vector<float> cellPos = mesh.cellCoordinates[exitCell];
-			 debugOutput << "Next cell (from neighbour) = " << exitCell << "\n"
-					 << "Position of cell (from neighbour search) = "
-					 << cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << "\n";
-		 }
-	 }
-
-	 if(rayPosition[iRay][0] > mesh.boxSize || rayPosition[iRay][0] < 0 || rayPosition[iRay][1] > mesh.boxSize || rayPosition[iRay][1] < 0 || rayPosition[iRay][2] > mesh.boxSize || rayPosition[iRay][2] < 0 || distanceTravelled[iRay] >= maxRadius){
-		 insideDomain[iRay] = false;
-		 exitCell = -1;
-	 } else {
-		 bool contains = std::find(closestCells.begin(), closestCells.end(), exitCell) != closestCells.end();
-
-		 if(exitCell == -1){ //contains == false ||
-			 warningIssued = true;
-
-			 /*
-			 if(verbose == false)
-				 std::cerr << "Warning: either inside domain and no neighbours found or mismatch in ray and neigbour cells. Ray number = " << iRay << ", exitCell = " << exitCell << std::endl;
-*/
-
-			 if(verbose)
-				 std::cout << debugOutput.str() << std::endl;  // Output all debug information at once
-
-			 ignoreRay[iRay] = true;
-		 }
-
-	 }
-
-
-	 return exitCell;
-
- }
-
- int Rays::findNextCellWhileJumpingFromCellToCell(int iCell, int iRay, bool verbose){
 
 	 double distanceToExit = std::numeric_limits<double>::max();
 	 double distanceToExitTmp;
@@ -283,7 +138,6 @@ void Rays::initializeDirections() {
 
 		overshoot /= 2;
 
-		//std::cout << mesh.findHostCellID(positionTmp, -1)[0] << ", " << exitCell << std::endl;
 	} while (mesh.findHostCellID(positionTmp, -1)[0] != exitCell);  // todo maybe replace by a check of the entire list, but a priori there should only be one cell as we no longer are on an edge
 
 
@@ -426,8 +280,7 @@ void Rays::doRayTracing(){
 				oldRayPosition[i] = rayPosition[iRay][i];
 
 			warningIssued = false;
-			//iCell = findNextCell(iCell, iRay, false);
-			iCell = findNextCellWhileJumpingFromCellToCell(iCellOld, iRay, false);
+			iCell = findNextCell(iCellOld, iRay, false);
 
 			if(debug){
 				if(warningIssued){
@@ -435,8 +288,7 @@ void Rays::doRayTracing(){
 					for(int i = 0; i < 3; i++)
 						rayPosition[iRay][i] = oldRayPosition[i];
 
-					//iCell = findNextCell(iCellOld, iRay, true);
-					iCell = findNextCellWhileJumpingFromCellToCell(iCellOld, iRay, true);
+					iCell = findNextCell(iCellOld, iRay, true);
 					insideDomain[iRay] = false;
 				}
 			}
