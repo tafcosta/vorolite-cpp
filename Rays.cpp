@@ -20,9 +20,6 @@ Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, Mesh
 	    doubleCoordinates.push_back(static_cast<double>(value));
 
 
-
-
-
 	rayDirection = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
 	theta = std::vector<double>(nRays, 0.0);
 	phi = std::vector<double>(nRays, 0.0);
@@ -36,7 +33,7 @@ Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, Mesh
 	distanceTravelled = std::vector<double>(nRays, 0.0);
 	insideDomain      = std::vector<bool>(nRays, true);
 	ignoreRay         = std::vector<bool>(nRays, false);
-	numTraversedCells = std::vector<double>(nRays, 0.0);
+	numTraversedCells = std::vector<int>(nRays, 0.0);
 
 	warningIssued = false;
 }
@@ -60,30 +57,27 @@ void Rays::initializeDirections() {
 
 	 double distanceToExit = std::numeric_limits<double>::max();
 	 double distanceToExitTmp;
-	 double overshoot; // new
+	 double overshoot;
 
 	 std::ostringstream debugOutput;
 	 int exitCell  = -1;
 
-	 std::vector<int> closestCells;
 	 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
 	 std::vector<double> normalVector (3, 0.0);
 	 std::vector<double> pointOnInterface (3, 0.0);
-	 std::vector<double> positionTmp (3, 0.0); // new
+	 std::vector<double> positionTmp (3, 0.0);
 
 	 if(verbose){
 		 double distanceBetRayAndCell = sqrt((cellPos[0] - rayPosition[iRay][0]) * (cellPos[0] - rayPosition[iRay][0]) + (cellPos[1] - rayPosition[iRay][1]) * (cellPos[1] - rayPosition[iRay][1]) + (cellPos[2] - rayPosition[iRay][2]) * (cellPos[2] - rayPosition[iRay][2]));
 		 debugOutput << "Host Index = " << iCell << " Host Cell Position = " << cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << " Distance from Ray to Cell (before update) = " << distanceBetRayAndCell << "\n";
 	 }
 
-
 	 for (int neighbour : mesh.neighbourList[iCell]){
+
 		 std::vector<float> neighbourPos = mesh.cellCoordinates[neighbour];
 
-		 if(verbose){
+		 if(verbose)
 			 debugOutput << "Neighbour Index = " << neighbour << ", Neighbour Position = " << neighbourPos[0] << ", " << neighbourPos[1] << ", " << neighbourPos[2] << "\n";
-		 }
-
 
 		 for (int i = 0; i < 3; i++){
 			 normalVector[i] = neighbourPos[i] - cellPos[i];
@@ -92,22 +86,19 @@ void Rays::initializeDirections() {
 
 		 double denominator = normalVector[0] * rayDirection[iRay][0] + normalVector[1] * rayDirection[iRay][1] + normalVector[2] * rayDirection[iRay][2];
 
+		 if(denominator <= 0.)
+			 continue;
+
 		 distanceToExitTmp = normalVector[0] * (pointOnInterface[0] - rayPosition[iRay][0])
 				 + normalVector[1] * (pointOnInterface[1] - rayPosition[iRay][1])
 				 + normalVector[2] * (pointOnInterface[2] - rayPosition[iRay][2]);
-
-		 if(denominator <= 0.)
-			 continue;
 
 		 distanceToExitTmp = distanceToExitTmp/denominator;
 
 		 if(verbose)
 			 debugOutput << std::scientific << std::setprecision(12) << "Distance to Neighbour = " << distanceToExitTmp << " denominator = " << denominator << "\n";
 
-
 		 if((distanceToExitTmp <= distanceToExit) && (distanceToExitTmp > 0)){
-			 // there was another test here that I have removed as it should not be needed anymore; however I was not sure whether it was correct in the original version of the function
-
 			 distanceToExit = distanceToExitTmp;
 			 exitCell = neighbour;
 
@@ -121,17 +112,18 @@ void Rays::initializeDirections() {
 	 	insideDomain[iRay] = false;
 	 	distanceToExit = 0.0;
 	 	exitCell = -1;
-	 	std::cout << "distance to exit larger than box size; stopped!" << "\n";
+	 	std::cout << "Distance to exit larger than box size; stopped!" << "\n";
 	 }
 
 	 if (distanceToExit < 1e-10)
-	 	std::cout << "distanceToExit = " << distanceToExit << "You seem to have ended up on an edge, how did you do that?!" << "\n";
+	 	std::cout << "distanceToExit = " << distanceToExit << "You seem to have ended up on an edge; how did you do that?!" << "\n";
 
 	columnDensity[iRay] += distanceToExit * mesh.cellDensity[iCell]; // we add up whatever density we have encountered on the way out of the cell
 
 	// we now know where we would pierce the face of the cell; we want to continue onwards
 
 	overshoot = distanceToExit / 10;
+
 	do {
 		for (int i = 0; i < 3; i++)
 			 positionTmp[i] = rayPosition[iRay][i] + rayDirection[iRay][i] * (distanceToExit + overshoot);
@@ -140,76 +132,61 @@ void Rays::initializeDirections() {
 
 	} while (mesh.findHostCellID(positionTmp, -1)[0] != exitCell);  // todo maybe replace by a check of the entire list, but a priori there should only be one cell as we no longer are on an edge
 
+    if(verbose)
+    	debugOutput << "Ray position (before update) = " << rayPosition[iRay][0] << ", "  << rayPosition[iRay][1] << ", " << rayPosition[iRay][2] << "\n";
+
+    for (int i = 0; i < 3; i++)
+    	rayPosition[iRay][i] += rayDirection[iRay][i] * (distanceToExit + overshoot);
+
+    visitedCells[iRay].push_back(iCell);
+    columnDensity[iRay] += overshoot * mesh.cellDensity[exitCell]; // we add up all the density we encounter in the next cell up to the new position
+    distanceTravelled[iRay] += distanceToExit + overshoot;
+    numTraversedCells[iRay] += 1;
+
+    if(verbose){
+    	double distanceToCell = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
+    	std::vector<int> closestCells;
+
+    	debugOutput << "Ray position (after update) = " << rayPosition[iRay][0] << " "
+    			<< rayPosition[iRay][1] << " "
+				<< rayPosition[iRay][2] << "\n";
+
+        closestCells = mesh.findHostCellID(positionTmp, -1);
+    	debugOutput  << "Closest cells = ";
+
+    	for(int i = 0; i < closestCells.size(); i++)
+    		debugOutput << closestCells[i] << ", ";
+
+    	debugOutput  << "\n";
+
+    	debugOutput  << "Distance from ray to exit cell = " << distanceToCell << "\n";
+
+    	if(exitCell != -1){
+    		std::vector<float> cellPos = mesh.cellCoordinates[exitCell];
+    		debugOutput << "Next cell (from neighbour) = " << exitCell << "\n"
+    				<< "Position of cell (from neighbour search) = "
+					<< cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << "\n";
+    	}
+    }
 
 
+    if(rayPosition[iRay][0] > mesh.boxSize || rayPosition[iRay][0] < 0 || rayPosition[iRay][1] > mesh.boxSize || rayPosition[iRay][1] < 0 || rayPosition[iRay][2] > mesh.boxSize || rayPosition[iRay][2] < 0 || distanceTravelled[iRay] >= maxRadius){
+    	insideDomain[iRay] = false;
+    	exitCell = -1;
+    	//std::cout << "new position outside box; stopped" << "\n";
+    } else {
 
+    	if(exitCell == -1){
+    		warningIssued = true;
 
-	 if(verbose){
-		 debugOutput << "Ray position (before update) = " << rayPosition[iRay][0] << ", "
-				 << rayPosition[iRay][1] << ", " << rayPosition[iRay][2] << "\n";
-	    }
+    		if(verbose)
+    			std::cout << debugOutput.str() << std::endl;
 
+    		ignoreRay[iRay] = true;
+    	}
+    }
 
-	 for (int i = 0; i < 3; i++)
-		 rayPosition[iRay][i] += rayDirection[iRay][i] * (distanceToExit + overshoot);
-
-
-	 visitedCells[iRay].push_back(iCell);
-	 columnDensity[iRay] += overshoot * mesh.cellDensity[exitCell]; // we add up all the density we encounter in the next cell up to the new position
-	 distanceTravelled[iRay] += distanceToExit + overshoot;
-	 numTraversedCells[iRay] += 1;
-
-	 closestCells = mesh.findHostCellID(positionTmp, -1);
-
-	 if(verbose){
-		 double distanceToCell = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
-
-		 debugOutput << "Ray position (after update) = " << rayPosition[iRay][0] << " "
-				 << rayPosition[iRay][1] << " "
-				 << rayPosition[iRay][2] << "\n";
-
-		 debugOutput  << "Closest cells = ";
-
-		 for(int i = 0; i < closestCells.size(); i++)
-			 debugOutput << closestCells[i] << ", ";
-
-		 debugOutput  << "\n";
-
-		 debugOutput  << "Distance from ray to exit cell = " << distanceToCell << "\n";
-
-		 if(exitCell != -1){
-			 std::vector<float> cellPos = mesh.cellCoordinates[exitCell];
-			 debugOutput << "Next cell (from neighbour) = " << exitCell << "\n"
-					 << "Position of cell (from neighbour search) = "
-					 << cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << "\n";
-		 }
-	 }
-
-
-	 if(rayPosition[iRay][0] > mesh.boxSize || rayPosition[iRay][0] < 0 || rayPosition[iRay][1] > mesh.boxSize || rayPosition[iRay][1] < 0 || rayPosition[iRay][2] > mesh.boxSize || rayPosition[iRay][2] < 0 || distanceTravelled[iRay] >= maxRadius){
-		 insideDomain[iRay] = false;
-		 exitCell = -1;
-		std::cout << "new position outside box; stopped" << "\n";
-	 } else {
-
-		 bool contains = std::find(closestCells.begin(), closestCells.end(), exitCell) != closestCells.end();
-
-		 if(exitCell == -1){ //contains == false ||
-			 warningIssued = true;
-
-			 /*
-			 if(verbose == false)
-				 std::cerr << "Warning: either inside domain and no neighbours found or mismatch in ray and neigbour cells. Ray number = " << iRay << ", exitCell = " << exitCell << std::endl;
-			*/
-
-			 if(verbose)
-				 std::cout << debugOutput.str() << std::endl;  // Output all debug information at once
-
-			 ignoreRay[iRay] = true;
-		 }
-	 }
-
-	 return exitCell;
+    return exitCell;
  }
 
 
@@ -222,14 +199,16 @@ void Rays::initializeDirections() {
          return;
      }
 
-     outputFile << "Ray\tTheta\tPhi\tColumn\tIgnore" << std::endl;
+     outputFile << "Ray\tTheta\tPhi\tColumn\tIgnore\tNumVisitedCells" << std::endl;
 
      for (int i = 0; i < numRays; ++i) {
          outputFile << i << "\t"  // Ray number
                     << std::fixed << std::setprecision(3) << theta[i] << "\t"
                     << std::fixed << std::setprecision(3) << phi[i] << "\t"
                     << std::fixed << std::setprecision(6) << columnDensity[i] << "\t"
-					<< std::fixed << ignoreRay[i] << std::endl;
+					<< std::fixed << ignoreRay[i] << "\t"
+					<< std::fixed << numTraversedCells[i] << "\t"
+					<< std::endl;
 
      }
 

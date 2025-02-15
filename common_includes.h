@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <random>
 #include <cmath>
+#include <chrono>
 #include <H5Cpp.h>
 #include <fstream>
 #include <iostream>
