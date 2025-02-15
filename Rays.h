@@ -27,7 +27,7 @@ public:
 
 
 	std::vector<double> columnDensity;
-	std::vector<double> numTraversedCells;
+	std::vector<int> numTraversedCells;
 	std::vector<double> distanceTravelled;
 
 
