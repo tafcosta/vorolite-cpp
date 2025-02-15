@@ -52,6 +52,6 @@ snapFile = ./output/snap_001.hdf5
 2. **Run the ray tracing**:
 - `./vorolite`
 
-3. **Output**: The program will generate an output file named `ray_output.txt`, which contains various results, including column densities and ray directions.
+3. **Output**: The program will generate an output file named `ray_output.txt`, which contains various results, including column densities, ray directions and number of cells traversed by each ray.
 
    
