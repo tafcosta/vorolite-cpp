@@ -149,6 +149,39 @@ double Mesh::squaredDistance(const std::vector<float>& point1, const std::vector
 }
 
 
+std::vector<int> Mesh::findHostCellID(const std::vector<double>& target, int cellGuess) {
+    std::vector<int> closestCells;
+    std::vector<int> possibleCells;
+    closestCells.reserve(numCells);
+    possibleCells.reserve(numCells);
+
+    if (cellGuess != -1) {
+    	possibleCells.push_back(cellGuess);
+    	for (int neighbour : neighbourList[cellGuess])
+    		possibleCells.push_back(neighbour);
+    }
+    else{
+    	possibleCells.resize(numCells);
+        std::iota(possibleCells.begin(), possibleCells.end(), 0);
+    }
+
+    double minDistance = std::numeric_limits<double>::infinity();
+
+    for (int iCell : possibleCells) {
+        double distance = squaredDistance(cellCoordinates[iCell], target);
+
+    	if (distance < minDistance) {
+    		closestCells = {iCell};
+    		minDistance = distance;
+    	}
+    	else if (std::fabs(distance - minDistance) < 1.e-10)
+    		closestCells.push_back(iCell);
+    }
+
+    return closestCells;
+}
+
+/*
 std::vector<int> Mesh::findHostCellID(const std::vector<double>& target, int cellSkip) {
     std::vector<int> closestCells;
     closestCells.reserve(numCells - 1);
@@ -174,6 +207,7 @@ std::vector<int> Mesh::findHostCellID(const std::vector<double>& target, int cel
 
     return closestCells;
 }
+*/
 
 double Mesh::getDistanceToCell(const std::vector<double>& target, int cellIndex) {
     double distTarget = -1.;

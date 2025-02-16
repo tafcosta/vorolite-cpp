@@ -22,7 +22,7 @@ public:
     std::vector<bool> isAtBoundary;
 
 	std::vector<std::vector<int>> neighbourList;
-	std::vector<int> findHostCellID(const std::vector<double>& target, int cellSkip);
+	std::vector<int> findHostCellID(const std::vector<double>& target, int cellGuess);
 	double getDistanceToCell(const std::vector<double>& target, int cellIndex);
 
 

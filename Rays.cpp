@@ -121,7 +121,6 @@ void Rays::initializeDirections() {
 	columnDensity[iRay] += distanceToExit * mesh.cellDensity[iCell]; // we add up whatever density we have encountered on the way out of the cell
 
 	// we now know where we would pierce the face of the cell; we want to continue onwards
-
 	overshoot = distanceToExit / 10;
 
 	do {
@@ -130,7 +129,8 @@ void Rays::initializeDirections() {
 
 		overshoot /= 2;
 
-	} while (mesh.findHostCellID(positionTmp, -1)[0] != exitCell);  // todo maybe replace by a check of the entire list, but a priori there should only be one cell as we no longer are on an edge
+	} while (mesh.findHostCellID(positionTmp, exitCell)[0] != exitCell);  // todo maybe replace by a check of the entire list, but a priori there should only be one cell as we no longer are on an edge
+
 
     if(verbose)
     	debugOutput << "Ray position (before update) = " << rayPosition[iRay][0] << ", "  << rayPosition[iRay][1] << ", " << rayPosition[iRay][2] << "\n";
@@ -151,7 +151,7 @@ void Rays::initializeDirections() {
     			<< rayPosition[iRay][1] << " "
 				<< rayPosition[iRay][2] << "\n";
 
-        closestCells = mesh.findHostCellID(positionTmp, -1);
+        closestCells = mesh.findHostCellID(positionTmp, iCell);
     	debugOutput  << "Closest cells = ";
 
     	for(int i = 0; i < closestCells.size(); i++)
@@ -173,7 +173,6 @@ void Rays::initializeDirections() {
     if(rayPosition[iRay][0] > mesh.boxSize || rayPosition[iRay][0] < 0 || rayPosition[iRay][1] > mesh.boxSize || rayPosition[iRay][1] < 0 || rayPosition[iRay][2] > mesh.boxSize || rayPosition[iRay][2] < 0 || distanceTravelled[iRay] >= maxRadius){
     	insideDomain[iRay] = false;
     	exitCell = -1;
-    	//std::cout << "new position outside box; stopped" << "\n";
     } else {
 
     	if(exitCell == -1){
@@ -202,7 +201,7 @@ void Rays::initializeDirections() {
      outputFile << "Ray\tTheta\tPhi\tColumn\tIgnore\tNumVisitedCells" << std::endl;
 
      for (int i = 0; i < numRays; ++i) {
-         outputFile << i << "\t"  // Ray number
+         outputFile << i << "\t"
                     << std::fixed << std::setprecision(3) << theta[i] << "\t"
                     << std::fixed << std::setprecision(3) << phi[i] << "\t"
                     << std::fixed << std::setprecision(6) << columnDensity[i] << "\t"
