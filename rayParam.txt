@@ -1,4 +1,4 @@
-numRays = 100
+numRays = 1000
 maxRadius = 0.13
 sourceLocation = 0.5, 0.5, 0.5
 meshFile = ./output/tess_001_indices.dat

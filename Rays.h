@@ -46,6 +46,7 @@ protected:
 
 private:
     void initializeDirections();
+    void initializePositions();
     bool warningIssued;
 };
 

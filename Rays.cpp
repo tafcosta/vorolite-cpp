@@ -12,23 +12,15 @@
 Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, Mesh& mesh) : numRays(nRays), maxRadius(maxRadius), sourcePosition(sourcePosition), mesh(mesh) {
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
 
-	std::vector<float> floatCoordinates = mesh.cellCoordinates[startCell];
-	std::vector<double> doubleCoordinates;
-	doubleCoordinates.reserve(floatCoordinates.size());
-
-	for (float value : floatCoordinates)
-	    doubleCoordinates.push_back(static_cast<double>(value));
-
-
 	rayDirection = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
 	theta = std::vector<double>(nRays, 0.0);
 	phi = std::vector<double>(nRays, 0.0);
-
-	visitedCells = std::vector<std::vector<int>>(nRays);
-
-	rayPosition = std::vector<std::vector<double>>(nRays, doubleCoordinates);
 	initializeDirections();
 
+	rayPosition = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
+	initializePositions();
+
+	visitedCells      = std::vector<std::vector<int>>(nRays);
 	columnDensity     = std::vector<double>(nRays, 0.0);
 	distanceTravelled = std::vector<double>(nRays, 0.0);
 	insideDomain      = std::vector<bool>(nRays, true);
@@ -51,6 +43,37 @@ void Rays::initializeDirections() {
         rayDirection[iRay][1] = std::sin(phi[iRay]) * std::sin(theta[iRay]);
         rayDirection[iRay][2] = std::cos(theta[iRay]);
     }
+}
+
+void Rays::initializePositions() {
+
+    for (int iRay = 0; iRay < numRays; ++iRay)
+        for (int i = 0; i < 3; ++i)
+        	rayPosition[iRay][i] = 	mesh.cellCoordinates[startCell][i];
+
+
+    /*
+	std::vector<double> positionTmp (3, 0.);
+	std::vector<int> possibleCells = mesh.findHostCellID(sourcePosition, -1);
+	std::unordered_set<int> possibleCellsSet(possibleCells.begin(), possibleCells.end());
+
+	double offset = sqrt((sourcePosition[0] -  mesh.cellCoordinates[startCell][0]) * (sourcePosition[0] -  mesh.cellCoordinates[startCell][0])
+			+ (sourcePosition[1] -  mesh.cellCoordinates[startCell][1]) * (sourcePosition[1] -  mesh.cellCoordinates[startCell][1])
+			+ (sourcePosition[2] -  mesh.cellCoordinates[startCell][2]) * (sourcePosition[2] -  mesh.cellCoordinates[startCell][2]));
+
+    for (int iRay = 0; iRay < numRays; ++iRay) {
+
+    	do {
+    		for (int i = 0; i < 3; i++)
+    			positionTmp[i] = sourcePosition[i] + rayDirection[iRay][i] * offset;
+
+    		offset /= 2;
+    	} while (!possibleCellsSet.contains(mesh.findHostCellID(positionTmp, -1)[0]));
+
+    	for (int i = 0; i < 3; i++)
+    		rayPosition[iRay][i] = sourcePosition[i] + rayDirection[iRay][i] * offset;
+    	}
+*/
 }
 
  int Rays::findNextCell(int iCell, int iRay, bool verbose){
