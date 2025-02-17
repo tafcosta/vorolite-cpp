@@ -48,6 +48,8 @@ private:
     void initializeDirections();
     void initializePositions();
     bool warningIssued;
+
+    int maxnIter = 100;
 };
 
 #endif /* RAYS_H_ */

@@ -46,11 +46,9 @@ void Rays::initializeDirections() {
 }
 
 void Rays::initializePositions() {
-
     for (int iRay = 0; iRay < numRays; ++iRay)
         for (int i = 0; i < 3; ++i)
         	rayPosition[iRay][i] = 	mesh.cellCoordinates[startCell][i];
-
 
     /*
 	std::vector<double> positionTmp (3, 0.);
@@ -77,7 +75,6 @@ void Rays::initializePositions() {
 }
 
  int Rays::findNextCell(int iCell, int iRay, bool verbose){
-
 	 double distanceToExit = std::numeric_limits<double>::max();
 	 double distanceToExitTmp;
 	 double overshoot;
@@ -146,14 +143,29 @@ void Rays::initializePositions() {
 	// we now know where we would pierce the face of the cell; we want to continue onwards
 	overshoot = distanceToExit / 10;
 
+	int nIter = 0;
 	do {
 		for (int i = 0; i < 3; i++)
 			 positionTmp[i] = rayPosition[iRay][i] + rayDirection[iRay][i] * (distanceToExit + overshoot);
 
+		nIter +=1;
+
+		if(nIter == maxnIter){
+			bool test = mesh.checkIfExitCellNeighboursCurrentCell(iCell, exitCell);
+			std::cout << "test = " << test << std::endl;
+			std::cout << "initial overshoot = " << distanceToExit/10 << std::endl;
+			std::cout << "distance from current location to ExitCell = " << mesh.getDistanceToCell(positionTmp, exitCell) << std::endl;;
+			std::cout << "current cells = " ;
+			for (int i = 0; i < mesh.findHostCellID(positionTmp, exitCell).size(); i++)
+				std::cout << mesh.findHostCellID(positionTmp, exitCell)[i] << " ";
+			std::cout << ", iCell " << iCell << ", exitCell " << exitCell << std::endl;
+
+			ignoreRay[iRay] = true;
+		}
+
 		overshoot /= 2;
 
-	} while (mesh.findHostCellID(positionTmp, exitCell)[0] != exitCell);  // todo maybe replace by a check of the entire list, but a priori there should only be one cell as we no longer are on an edge
-
+	} while ((mesh.findHostCellID(positionTmp, exitCell)[0] != exitCell) && (nIter < maxnIter));  // todo maybe replace by a check of the entire list, but a priori there should only be one cell as we no longer are on an edge
 
     if(verbose)
     	debugOutput << "Ray position (before update) = " << rayPosition[iRay][0] << ", "  << rayPosition[iRay][1] << ", " << rayPosition[iRay][2] << "\n";
@@ -174,7 +186,7 @@ void Rays::initializePositions() {
     			<< rayPosition[iRay][1] << " "
 				<< rayPosition[iRay][2] << "\n";
 
-        closestCells = mesh.findHostCellID(positionTmp, iCell);
+        closestCells = mesh.findHostCellID(positionTmp, -1);
     	debugOutput  << "Closest cells = ";
 
     	for(int i = 0; i < closestCells.size(); i++)

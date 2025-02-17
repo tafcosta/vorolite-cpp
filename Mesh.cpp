@@ -148,7 +148,6 @@ double Mesh::squaredDistance(const std::vector<float>& point1, const std::vector
     return dist;
 }
 
-
 std::vector<int> Mesh::findHostCellID(const std::vector<double>& target, int cellGuess) {
     std::vector<int> closestCells;
     std::vector<int> possibleCells;
@@ -170,16 +169,17 @@ std::vector<int> Mesh::findHostCellID(const std::vector<double>& target, int cel
     for (int iCell : possibleCells) {
         double distance = squaredDistance(cellCoordinates[iCell], target);
 
-    	if (distance < minDistance) {
-    		closestCells = {iCell};
-    		minDistance = distance;
-    	}
-    	else if (std::fabs(distance - minDistance) < 1.e-10)
-    		closestCells.push_back(iCell);
+        if (std::fabs(distance - minDistance) < 1.e-10) {
+            closestCells.push_back(iCell);
+        } else if (distance < minDistance) {
+            closestCells = {iCell};
+            minDistance = distance;
+        }
     }
 
     return closestCells;
 }
+
 
 /*
 std::vector<int> Mesh::findHostCellID(const std::vector<double>& target, int cellSkip) {
@@ -209,17 +209,35 @@ std::vector<int> Mesh::findHostCellID(const std::vector<double>& target, int cel
 }
 */
 
-double Mesh::getDistanceToCell(const std::vector<double>& target, int cellIndex) {
-    double distTarget = -1.;
+bool Mesh::checkIfExitCellNeighboursCurrentCell(int iCell, int exitCell){
+    bool test = false;
+    std::vector<int> possibleCells;
 
-    for (int iCell = 0; iCell < numCells; iCell++) {
-        double dist = sqrt(squaredDistance(cellCoordinates[iCell], target));
+	possibleCells.push_back(iCell);
+    possibleCells.insert(possibleCells.end(), neighbourList[iCell].begin(), neighbourList[iCell].end());
 
-        if(iCell == cellIndex)
-        	distTarget = dist;
+    for (int cell : possibleCells) {
+    	if(cell == exitCell)
+    		test = true;
     }
 
-    return distTarget;
+    return test;
+}
+
+double Mesh::getDistanceToCell(const std::vector<double>& target, int cellIndex) {
+    return sqrt(squaredDistance(cellCoordinates[cellIndex], target));
+
+}
+
+double Mesh::getDistanceBetweenCells(int iCell, int jCell) {
+
+	double dist = (cellCoordinates[iCell][0] - cellCoordinates[jCell][0]) * (cellCoordinates[iCell][0] - cellCoordinates[jCell][0])
+        		+ (cellCoordinates[iCell][1] - cellCoordinates[jCell][1]) * (cellCoordinates[iCell][1] - cellCoordinates[jCell][1])
+        		+ (cellCoordinates[iCell][2] - cellCoordinates[jCell][2]) * (cellCoordinates[iCell][2] - cellCoordinates[jCell][2]);
+
+	dist = sqrt(dist);
+
+    return dist;
 
 }
 

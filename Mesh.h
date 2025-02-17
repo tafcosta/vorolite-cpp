@@ -23,7 +23,10 @@ public:
 
 	std::vector<std::vector<int>> neighbourList;
 	std::vector<int> findHostCellID(const std::vector<double>& target, int cellGuess);
+	bool checkIfExitCellNeighboursCurrentCell(int iCell, int exitCell);
+
 	double getDistanceToCell(const std::vector<double>& target, int cellIndex);
+	double getDistanceBetweenCells(int iCell, int jCell);
 
 
 private:
