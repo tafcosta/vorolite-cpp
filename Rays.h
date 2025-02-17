@@ -32,7 +32,7 @@ public:
 
 
 	std::vector<bool> insideDomain;
-	std::vector<bool> ignoreRay;
+	std::vector<bool> flagRay;
 
 
 	Mesh& mesh;

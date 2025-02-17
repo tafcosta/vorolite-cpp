@@ -24,7 +24,7 @@ Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, Mesh
 	columnDensity     = std::vector<double>(nRays, 0.0);
 	distanceTravelled = std::vector<double>(nRays, 0.0);
 	insideDomain      = std::vector<bool>(nRays, true);
-	ignoreRay         = std::vector<bool>(nRays, false);
+	flagRay         = std::vector<bool>(nRays, false);
 	numTraversedCells = std::vector<int>(nRays, 0.0);
 
 	warningIssued = false;
@@ -128,6 +128,47 @@ void Rays::initializePositions() {
 	 }
 
 
+
+
+	 // Handle rays that want to travel along cell interfaces
+	 for (int i = 0; i < 3; i++)
+		 positionTmp[i] = rayPosition[iRay][i] + rayDirection[iRay][i] * distanceToExit;
+
+	 if(mesh.findHostCellID(positionTmp, exitCell)[0] != exitCell && mesh.findHostCellID(positionTmp, exitCell)[0] != iCell){
+		 std::cout << "Here there's an issue. iCell = " << iCell << ", exitCell = " << exitCell << ", wants to be in cell = " <<  mesh.findHostCellID(positionTmp, exitCell)[0] << std::endl;
+
+		 for (int neighbour : mesh.neighbourList[iCell]){
+
+			 std::vector<float> neighbourPos = mesh.cellCoordinates[neighbour];
+
+			 for (int i = 0; i < 3; i++){
+				 normalVector[i] = neighbourPos[i] - cellPos[i];
+				 pointOnInterface[i] = 0.5 * (cellPos[i] + neighbourPos[i]);
+			 }
+
+			 double denominator = normalVector[0] * rayDirection[iRay][0] + normalVector[1] * rayDirection[iRay][1] + normalVector[2] * rayDirection[iRay][2];
+
+			 if(denominator <= 0.)
+				 continue;
+
+			 distanceToExitTmp = normalVector[0] * (pointOnInterface[0] - rayPosition[iRay][0])
+					 + normalVector[1] * (pointOnInterface[1] - rayPosition[iRay][1])
+					 + normalVector[2] * (pointOnInterface[2] - rayPosition[iRay][2]);
+
+			 distanceToExitTmp = distanceToExitTmp/denominator;
+
+			 std::cout << "cell index = " << neighbour << ", distance = " << distanceToExitTmp << std::endl;
+
+			 if((distanceToExitTmp < 0) && (distanceToExitTmp > -1.e-8))
+				 exitCell = neighbour;
+
+			 }
+		 }
+
+
+
+
+
 	 if(distanceToExit > mesh.boxSize){
 	 	insideDomain[iRay] = false;
 	 	distanceToExit = 0.0;
@@ -141,10 +182,13 @@ void Rays::initializePositions() {
 	columnDensity[iRay] += distanceToExit * mesh.cellDensity[iCell]; // we add up whatever density we have encountered on the way out of the cell
 
 	// we now know where we would pierce the face of the cell; we want to continue onwards
-	overshoot = distanceToExit / 10;
+	double distanceRayToExitCellCentre = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
+	overshoot = distanceRayToExitCellCentre / 10;
 
-	if(overshoot < 1.e-6)
-		overshoot = 1.e-6;
+	/*
+	if(overshoot < 1.e-5)
+		overshoot = 1.e-5;
+*/
 
 	int nIter = 0;
 	do {
@@ -152,20 +196,8 @@ void Rays::initializePositions() {
 			 positionTmp[i] = rayPosition[iRay][i] + rayDirection[iRay][i] * (distanceToExit + overshoot);
 
 		nIter +=1;
-
-		if(nIter == maxnIter){
-			bool test = mesh.checkIfExitCellNeighboursCurrentCell(iCell, exitCell);
-			std::cout << "test = " << test << std::endl;
-			std::cout << "initial overshoot = " << distanceToExit/10 << std::endl;
-			std::cout << "distance from current location to ExitCell = " << mesh.getDistanceToCell(positionTmp, exitCell) << std::endl;;
-			std::cout << "current cells = " ;
-			for (int i = 0; i < mesh.findHostCellID(positionTmp, exitCell).size(); i++)
-				std::cout << mesh.findHostCellID(positionTmp, exitCell)[i] << " ";
-			std::cout << ", iCell " << iCell << ", exitCell " << exitCell << std::endl;
-			std::cout << "current ray location gives cell " << mesh.findHostCellID(rayPosition[iRay], exitCell)[0] << std::endl;
-
-			ignoreRay[iRay] = true;
-		}
+		if(nIter == maxnIter)
+			flagRay[iRay] = true;
 
 		overshoot /= 2;
 
@@ -220,7 +252,7 @@ void Rays::initializePositions() {
     		if(verbose)
     			std::cout << debugOutput.str() << std::endl;
 
-    		ignoreRay[iRay] = true;
+    		flagRay[iRay] = true;
     	}
     }
 
@@ -237,14 +269,14 @@ void Rays::initializePositions() {
          return;
      }
 
-     outputFile << "Ray\tTheta\tPhi\tColumn\tIgnore\tNumVisitedCells" << std::endl;
+     outputFile << "Ray\tTheta\tPhi\tColumn\Flag\tNumVisitedCells" << std::endl;
 
      for (int i = 0; i < numRays; ++i) {
          outputFile << i << "\t"
                     << std::fixed << std::setprecision(3) << theta[i] << "\t"
                     << std::fixed << std::setprecision(3) << phi[i] << "\t"
                     << std::fixed << std::setprecision(6) << columnDensity[i] << "\t"
-					<< std::fixed << ignoreRay[i] << "\t"
+					<< std::fixed << flagRay[i] << "\t"
 					<< std::fixed << numTraversedCells[i] << "\t"
 					<< std::endl;
 
