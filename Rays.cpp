@@ -74,7 +74,7 @@ void Rays::initializePositions() {
 */
 }
 
- int Rays::findNextCell(int iCell, int iRay, bool verbose){
+ int Rays::travelToNextCell(int iCell, int iRay, bool verbose){
 	 double distanceToExit = std::numeric_limits<double>::max();
 	 double distanceToExitTmp;
 	 double overshoot;
@@ -143,6 +143,9 @@ void Rays::initializePositions() {
 	// we now know where we would pierce the face of the cell; we want to continue onwards
 	overshoot = distanceToExit / 10;
 
+	if(overshoot < 1.e-6)
+		overshoot = 1.e-6;
+
 	int nIter = 0;
 	do {
 		for (int i = 0; i < 3; i++)
@@ -159,6 +162,7 @@ void Rays::initializePositions() {
 			for (int i = 0; i < mesh.findHostCellID(positionTmp, exitCell).size(); i++)
 				std::cout << mesh.findHostCellID(positionTmp, exitCell)[i] << " ";
 			std::cout << ", iCell " << iCell << ", exitCell " << exitCell << std::endl;
+			std::cout << "current ray location gives cell " << mesh.findHostCellID(rayPosition[iRay], exitCell)[0] << std::endl;
 
 			ignoreRay[iRay] = true;
 		}
@@ -293,7 +297,7 @@ void Rays::doRayTracing(){
 				oldRayPosition[i] = rayPosition[iRay][i];
 
 			warningIssued = false;
-			iCell = findNextCell(iCellOld, iRay, false);
+			iCell = travelToNextCell(iCellOld, iRay, false);
 
 			if(debug){
 				if(warningIssued){
@@ -301,7 +305,7 @@ void Rays::doRayTracing(){
 					for(int i = 0; i < 3; i++)
 						rayPosition[iRay][i] = oldRayPosition[i];
 
-					iCell = findNextCell(iCellOld, iRay, true);
+					iCell = travelToNextCell(iCellOld, iRay, true);
 					insideDomain[iRay] = false;
 				}
 			}
