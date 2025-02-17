@@ -49,6 +49,7 @@ private:
     void initializePositions();
     bool warningIssued;
 
+    double minTolerance = 1.e-7;
     int maxnIter = 100;
 };
 

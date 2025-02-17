@@ -130,12 +130,15 @@ void Rays::initializePositions() {
 
 
 
-	 // Handle rays that want to travel along cell interfaces
+	 // Handle rare rays that want to travel along cell interfaces
 	 for (int i = 0; i < 3; i++)
 		 positionTmp[i] = rayPosition[iRay][i] + rayDirection[iRay][i] * distanceToExit;
 
-	 if(mesh.findHostCellID(positionTmp, exitCell)[0] != exitCell && mesh.findHostCellID(positionTmp, exitCell)[0] != iCell){
-		 std::cout << "Here there's an issue. iCell = " << iCell << ", exitCell = " << exitCell << ", wants to be in cell = " <<  mesh.findHostCellID(positionTmp, exitCell)[0] << std::endl;
+	 int targetCell = mesh.findHostCellID(positionTmp, exitCell)[0];
+
+	 if(targetCell != exitCell && targetCell != iCell){
+		 std::cout << "Here there's an issue. iCell = " << iCell << ", exitCell = " << exitCell << ", wants to be in cell = " <<  targetCell << std::endl;
+		 flagRay[iRay] = true;
 
 		 for (int neighbour : mesh.neighbourList[iCell]){
 
@@ -159,7 +162,9 @@ void Rays::initializePositions() {
 
 			 std::cout << "cell index = " << neighbour << ", distance = " << distanceToExitTmp << std::endl;
 
-			 if((distanceToExitTmp < 0) && (distanceToExitTmp > -1.e-8))
+			 if((distanceToExitTmp < 0) && (distanceToExitTmp > -minTolerance))
+				 exitCell = neighbour;
+			 else if ((neighbour == targetCell) && (fabs(distanceToExitTmp - distanceToExit) < minTolerance))
 				 exitCell = neighbour;
 
 			 }
@@ -184,11 +189,6 @@ void Rays::initializePositions() {
 	// we now know where we would pierce the face of the cell; we want to continue onwards
 	double distanceRayToExitCellCentre = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
 	overshoot = distanceRayToExitCellCentre / 10;
-
-	/*
-	if(overshoot < 1.e-5)
-		overshoot = 1.e-5;
-*/
 
 	int nIter = 0;
 	do {
@@ -269,7 +269,7 @@ void Rays::initializePositions() {
          return;
      }
 
-     outputFile << "Ray\tTheta\tPhi\tColumn\Flag\tNumVisitedCells" << std::endl;
+     outputFile << "Ray\tTheta\tPhi\tColumn\tFlag\tNumCells\t" << std::endl;
 
      for (int i = 0; i < numRays; ++i) {
          outputFile << i << "\t"
