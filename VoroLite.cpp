@@ -3,33 +3,50 @@
 #include "Rays.h"
 
 void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRadius,
-                       std::vector<double>& sourceLocation, std::string& meshFile, std::string& snapFile);
+                       std::vector<double>& sourceLocation, std::string& meshFile, 
+                       std::string& snapFile, std::string& ofileName);
 
 
+// Parts of the main() function, as well as corresponding class functions like Rays.outputResults(), have been modified by L. Tortora
+// Main changes: made the parameter file an input, to vary the inputs and outputs of VoroLite++
+int main(int argc, char* argv[]) {
 
-int main() {
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <parameter_file>" << std::endl;
+        return 1;
+    }
+
+    std::string paramFile = argv[1];
+    
+    std::cout << "We are getting our parameters from \'" << paramFile << "\'" <<  std::endl;
 
     int nRays = 0;
     double maxRadius = 0.0;
     std::vector<double> sourceLocation(3, 0.5);
-    std::string meshFile, snapFile;
+    std::string meshFile, snapFile, ofileName;
 
-    parseRayParamFile("rayParam.txt", nRays, maxRadius, sourceLocation, meshFile, snapFile);
+    // parseRayParamFile("rayParam.txt", nRays, maxRadius, sourceLocation, meshFile, snapFile);
+    // parseRayParamFile("rays_param.txt", nRays, maxRadius, sourceLocation, meshFile, snapFile);
+    parseRayParamFile(paramFile, nRays, maxRadius, sourceLocation, meshFile, snapFile, ofileName);
 
     if (nRays == 0 || maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
         std::cerr << "Error: Missing or invalid parameters in rayParam.txt" << std::endl;
         return 1;
     }
 
-
 	std::cout << "Starting VoroLite++ (Version 0.1)!" << std::endl;
 	std::cout << "We are using " << nRays << " rays." << std::endl;
+    std::cout << "The source is at position " << sourceLocation[0] << ", " << sourceLocation[1] << ", " << sourceLocation[2] << " (code units)" << std::endl;
+    std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
-	Mesh *mesh = new Mesh("./output/tess_001_indices.dat", "./output/snap_001.hdf5");
-	Rays *rays = new Rays(nRays, maxRadius, {0.5, 0.5, 0.5}, *mesh);
+	// Mesh *mesh = new Mesh("./output/tess_001_indices.dat", "./output/snap_001.hdf5");
+	// Rays *rays = new Rays(nRays, maxRadius, {0.5, 0.5, 0.5}, *mesh);
+
+    Mesh *mesh = new Mesh(meshFile, snapFile);
+	Rays *rays = new Rays(nRays, maxRadius, sourceLocation, *mesh);
 
 	rays->doRayTracing();
-	rays->outputResults();
+	rays->outputResults(ofileName);
   
 	delete mesh;
 	delete rays;
@@ -37,7 +54,8 @@ int main() {
 }
 
 void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRadius,
-                       std::vector<double>& sourceLocation, std::string& meshFile, std::string& snapFile) {
+                       std::vector<double>& sourceLocation, std::string& meshFile, 
+                       std::string& snapFile, std::string& ofileName) {
     std::ifstream inputFile(fileName);
     std::string line;
 
@@ -52,7 +70,6 @@ void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRad
         std::string value;
 
         if (line.empty() || line[0] == '#') continue;
-
         std::getline(ss, key, '=');
         std::getline(ss, value);
 
@@ -80,6 +97,9 @@ void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRad
         }
         else if (key == "snapFile") {
             snapFile = value;
+        }
+        else if (key == "outputFile") {
+            ofileName = value;
         }
     }
 }

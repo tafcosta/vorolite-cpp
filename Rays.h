@@ -38,7 +38,7 @@ public:
 	Mesh& mesh;
 
 	void doRayTracing();
-	void outputResults();
+	void outputResults(std::string& ofileName);
 
 protected:
 	int startCell;

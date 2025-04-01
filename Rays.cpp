@@ -24,7 +24,7 @@ Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, Mesh
 	columnDensity     = std::vector<double>(nRays, 0.0);
 	distanceTravelled = std::vector<double>(nRays, 0.0);
 	insideDomain      = std::vector<bool>(nRays, true);
-	flagRay         = std::vector<bool>(nRays, false);
+	flagRay           = std::vector<bool>(nRays, false);
 	numTraversedCells = std::vector<int>(nRays, 0.0);
 
 	warningIssued = false;
@@ -261,8 +261,12 @@ void Rays::initializePositions() {
 
 
 
-	 void Rays::outputResults() {
-     std::ofstream outputFile("ray_output.txt");
+	 void Rays::outputResults(std::string& ofileName) {
+    //  std::ofstream outputFile("ray_output.txt");
+	// std::ofstream outputFile("noagn-snap_126-ray_output.txt");
+	// std::ofstream outputFile("fable-snap_126-ray_output.txt");
+	// std::ofstream outputFile("ref-snap_126-ray_output.txt");
+	std::ofstream outputFile(ofileName);
 
      if (!outputFile.is_open()) {
          std::cerr << "Error opening file for output!" << std::endl;
@@ -279,11 +283,10 @@ void Rays::initializePositions() {
 					<< std::fixed << flagRay[i] << "\t"
 					<< std::fixed << numTraversedCells[i] << "\t"
 					<< std::endl;
-
      }
 
      outputFile.close();
-     std::cout << "Results have been written to 'ray_output.txt'" << std::endl;
+     std::cout << "Results have been written to \'" << ofileName << "\'" << std::endl;
 
 
      /*
@@ -349,4 +352,3 @@ void Rays::doRayTracing(){
 Rays::~Rays() {
 	// TODO Auto-generated destructor stub
 }
-
