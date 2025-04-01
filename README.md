@@ -41,6 +41,7 @@ maxRadius = 0.5
 sourceLocation = 0.5, 0.5, 0.5
 meshFile = ./output/tess_001_indices.dat
 snapFile = ./output/snap_001.hdf5
+outputFile = ./output/rays_output_001.txt
 ```
 
 - `numRays`: Number of rays to trace.
@@ -48,9 +49,10 @@ snapFile = ./output/snap_001.hdf5
 - `sourceLocation`: The starting point of the rays (in x, y, z coordinates).
 - `meshFile`: Path to the Voronoi mesh file (typically `.dat`).
 - `snapFile`: Path to the snapshot file (typically `.hdf5`).
+- `outputFile`: Path to the output file.
 
 2. **Run the ray tracing**:
-- `./vorolite`
+- `./vorolite rays_param.txt`
 
 3. **Output**: The program will generate an output file named `ray_output.txt`, which contains various results, including column densities, ray directions and number of cells traversed by each ray.
 
