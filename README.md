@@ -54,6 +54,6 @@ outputFile = ./output/rays_output_001.txt
 2. **Run the ray tracing**:
 - `./vorolite rays_param.txt`
 
-3. **Output**: The program will generate an output file named `ray_output.txt`, which contains various results, including column densities, ray directions and number of cells traversed by each ray.
+3. **Output**: The program will generate an output file based on the one given as an input parameter in `rays_param.txt` (`outputFile`), which contains various results, including column densities, ray directions and number of cells traversed by each ray.
 
    
