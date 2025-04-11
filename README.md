@@ -49,6 +49,7 @@ outputFile = ./output/rays_output_001.txt
 - `maxRadius`: Maximum radius for ray tracing.
 - `sourceLocation`: The starting point of the rays (in x, y, z coordinates).
 - `flowFilter`: Mask to include only outflow (set to 1), only inflow (set to -1) or all gas (set to 0).
+- `maxColumn`: Rays stop being traversed when cumulative column density becomes equal to or exceeds this critical value.
 - `meshFile`: Path to the Voronoi mesh file (typically `.dat`).
 - `snapFile`: Path to the snapshot file (typically `.hdf5`).
 - `outputFile`: Path to the output file.
@@ -56,6 +57,6 @@ outputFile = ./output/rays_output_001.txt
 2. **Run the ray tracing**:
 - `./vorolite rays_param.txt`
 
-3. **Output**: The program will generate an output file based on the one given as an input parameter in `rays_param.txt` (`outputFile`), which contains various results, including column densities, column density weighted line of sight velocity along rays, ray directions and number of cells traversed by each ray.
+3. **Output**: The program will generate an output file based on the one given as an input parameter in `rays_param.txt` (`outputFile`), which contains various results, including column densities, line of sight velocity along rays (weighted by column density), total distance travelled by rays, ray directions and number of cells traversed by each ray.
 
    
