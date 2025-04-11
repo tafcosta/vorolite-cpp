@@ -273,7 +273,7 @@ void Rays::initializePositions() {
          return;
      }
 
-     outputFile << "Ray\tTheta\tPhi\tColumn\tFlag\tNumCells\t" << std::endl;
+     outputFile << "Ray\tTheta\tPhi\tColumn\tFlag\tNumCells" << std::endl;
 
      for (int i = 0; i < numRays; ++i) {
          outputFile << i << "\t"
