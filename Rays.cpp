@@ -22,6 +22,8 @@ Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, Mesh
 
 	visitedCells      = std::vector<std::vector<int>>(nRays);
 	columnDensity     = std::vector<double>(nRays, 0.0);
+	columnVelocity    = std::vector<double>(nRays, 0.0);
+
 	distanceTravelled = std::vector<double>(nRays, 0.0);
 	insideDomain      = std::vector<bool>(nRays, true);
 	flagRay           = std::vector<bool>(nRays, false);
@@ -185,6 +187,7 @@ void Rays::initializePositions() {
 	 	std::cout << "distanceToExit = " << distanceToExit << "You seem to have ended up on an edge; how did you do that?!" << "\n";
 
 	columnDensity[iRay] += distanceToExit * mesh.cellDensity[iCell]; // we add up whatever density we have encountered on the way out of the cell
+	columnVelocity[iRay] += distanceToExit * mesh.cellDensity[iCell] * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
 
 	// we now know where we would pierce the face of the cell; we want to continue onwards
 	double distanceRayToExitCellCentre = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
@@ -211,6 +214,8 @@ void Rays::initializePositions() {
 
     visitedCells[iRay].push_back(iCell);
     columnDensity[iRay] += overshoot * mesh.cellDensity[exitCell]; // we add up all the density we encounter in the next cell up to the new position
+	columnVelocity[iRay] += overshoot * mesh.cellDensity[exitCell] * (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2]);
+
     distanceTravelled[iRay] += distanceToExit + overshoot;
     numTraversedCells[iRay] += 1;
 
@@ -280,6 +285,7 @@ void Rays::initializePositions() {
                     << std::fixed << std::setprecision(3) << theta[i] << "\t"
                     << std::fixed << std::setprecision(3) << phi[i] << "\t"
                     << std::fixed << std::setprecision(6) << columnDensity[i] << "\t"
+                    << std::fixed << std::setprecision(6) << columnVelocity[i] << "\t"
 					<< std::fixed << flagRay[i] << "\t"
 					<< std::fixed << numTraversedCells[i] << "\t"
 					<< std::endl;
@@ -345,6 +351,11 @@ void Rays::doRayTracing(){
 				}
 			}
 		}
+
+		if(columnDensity[iRay] > 0.)
+			columnVelocity[iRay] = columnVelocity[iRay] / columnDensity[iRay];
+		else
+			columnVelocity[iRay] = 0.;
 	}
 }
 
