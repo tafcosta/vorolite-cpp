@@ -296,7 +296,6 @@ void Rays::initializePositions() {
     else if(columnDensity[iRay] >= maxColumn){
     	insideDomain[iRay] = false;
     	exitCell = -1;
-    	std::cout << "here" << std::endl;
     }
     else {
 
