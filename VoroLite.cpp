@@ -3,7 +3,7 @@
 #include "Rays.h"
 
 void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRadius,
-                       std::vector<double>& sourceLocation, int& flowFilter, double maxColumn, std::string& meshFile,
+                       std::vector<double>& sourceLocation, int& flowFilter, double& maxColumn, std::string& meshFile,
                        std::string& snapFile, std::string& ofileName);
 
 
@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
 
     int nRays = 0;
     double maxRadius = 0.0;
-    double maxColumn = 1.e20;
+    double maxColumn = 0.0;
     std::vector<double> sourceLocation(3, 0.5);
     int flowFilter = 0;
     std::string meshFile, snapFile, ofileName;
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
 }
 
 void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRadius,
-                       std::vector<double>& sourceLocation, int& flowFilter, double maxColumn, std::string& meshFile,
+                       std::vector<double>& sourceLocation, int& flowFilter, double& maxColumn, std::string& meshFile,
                        std::string& snapFile, std::string& ofileName) {
     std::ifstream inputFile(fileName);
     std::string line;
@@ -94,7 +94,7 @@ void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRad
         	flowFilter = std::stoi(value);
         }
         else if (key == "maxColumn") {
-        	flowFilter = std::stod(value);
+        	maxColumn = std::stod(value);
         }
         else if (key == "meshFile") {
             meshFile = value;
