@@ -191,7 +191,7 @@ void Rays::initializePositions() {
 
 
 
-	 if(flowFilter){
+	 if(flowFilter != 0){
 
 		 if(flowFilter == 1){
 			 if (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2] < 0.)
@@ -207,7 +207,7 @@ void Rays::initializePositions() {
 
 
 
-	columnDensity[iRay] += distanceToExit * mesh.cellDensity[iCell] * filter; // we add up whatever density we have encountered on the way out of the cell
+	columnDensity[iRay] += distanceToExit * mesh.cellDensity[iCell]  * filter; // we add up whatever density we have encountered on the way out of the cell
 	columnVelocity[iRay] += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
 
 	// we now know where we would pierce the face of the cell; we want to continue onwards
@@ -237,7 +237,7 @@ void Rays::initializePositions() {
 
 
 
-	 if(flowFilter){
+	 if(flowFilter != 0){
 
 		 if(flowFilter == 1){
 			 if (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2] < 0.)
@@ -252,7 +252,7 @@ void Rays::initializePositions() {
 	 }
 
 
-    columnDensity[iRay] += overshoot * mesh.cellDensity[exitCell] * filter; // we add up all the density we encounter in the next cell up to the new position
+    columnDensity[iRay] += overshoot * mesh.cellDensity[exitCell]  * filter; // we add up all the density we encounter in the next cell up to the new position
 	columnVelocity[iRay] += overshoot * mesh.cellDensity[exitCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2]);
 
     distanceTravelled[iRay] += distanceToExit + overshoot;
