@@ -52,12 +52,14 @@ void Mesh::readSnapshot(const std::string& snapshot) {
              }
          }
 
+
+
         H5::DataSpace velocitiesSpace = velocitiesDataset.getSpace();
         velocitiesSpace.getSimpleExtentDims(dims);
         std::vector<float> cellVelocities1D(dims[0] * dims[1]);
         velocitiesDataset.read(cellVelocities1D.data(), H5::PredType::NATIVE_DOUBLE);
 
-        cellCoordinates.resize(dims[0], std::vector<float>(dims[1]));
+        cellVelocities.resize(dims[0], std::vector<double>(dims[1]));
 
         for (size_t row = 0; row < dims[0]; ++row) {
              for (size_t col = 0; col < dims[1]; ++col) {
