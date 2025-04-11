@@ -40,6 +40,7 @@ numRays = 10000
 maxRadius = 0.5
 sourceLocation = 0.5, 0.5, 0.5
 flowFilter = 1
+maxColumn = 100
 meshFile = ./output/tess_001_indices.dat
 snapFile = ./output/snap_001.hdf5
 outputFile = ./output/rays_output_001.txt
