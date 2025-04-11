@@ -9,7 +9,7 @@
 #include "Rays.h"
 #include "Mesh.h"
 
-Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, int flowFilter, Mesh& mesh) : numRays(nRays), maxRadius(maxRadius), sourcePosition(sourcePosition), flowFilter(flowFilter), mesh(mesh) {
+Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, int flowFilter, double maxColumn, Mesh& mesh) : numRays(nRays), maxRadius(maxRadius), sourcePosition(sourcePosition), flowFilter(flowFilter), maxColumn(maxColumn), mesh(mesh) {
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
 
 	rayDirection = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
@@ -258,6 +258,10 @@ void Rays::initializePositions() {
     distanceTravelled[iRay] += distanceToExit + overshoot;
     numTraversedCells[iRay] += 1;
 
+
+
+
+
     if(verbose){
     	double distanceToCell = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
     	std::vector<int> closestCells;
@@ -288,7 +292,12 @@ void Rays::initializePositions() {
     if(rayPosition[iRay][0] > mesh.boxSize || rayPosition[iRay][0] < 0 || rayPosition[iRay][1] > mesh.boxSize || rayPosition[iRay][1] < 0 || rayPosition[iRay][2] > mesh.boxSize || rayPosition[iRay][2] < 0 || distanceTravelled[iRay] >= maxRadius){
     	insideDomain[iRay] = false;
     	exitCell = -1;
-    } else {
+    }
+    else if(columnDensity[iRay] >= maxColumn){
+    	insideDomain[iRay] = false;
+    	exitCell = -1;
+    }
+    else {
 
     	if(exitCell == -1){
     		warningIssued = true;
@@ -312,7 +321,7 @@ void Rays::initializePositions() {
          return;
      }
 
-     outputFile << "Ray\tTheta\tPhi\tColumn\tFlag\tNumCells" << std::endl;
+     outputFile << "Ray\tTheta\tPhi\tColumn\tVelocity\tDistance\tFlag\tNumCells" << std::endl;
 
      for (int i = 0; i < numRays; ++i) {
          outputFile << i << "\t"
@@ -320,6 +329,7 @@ void Rays::initializePositions() {
                     << std::fixed << std::setprecision(3) << phi[i] << "\t"
                     << std::fixed << std::setprecision(6) << columnDensity[i] << "\t"
                     << std::fixed << std::setprecision(6) << columnVelocity[i] << "\t"
+                    << std::fixed << std::setprecision(6) << distanceTravelled[i] << "\t"
 					<< std::fixed << flagRay[i] << "\t"
 					<< std::fixed << numTraversedCells[i] << "\t"
 					<< std::endl;
