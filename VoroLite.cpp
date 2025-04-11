@@ -3,7 +3,7 @@
 #include "Rays.h"
 
 void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRadius,
-                       std::vector<double>& sourceLocation, std::string& meshFile, 
+                       std::vector<double>& sourceLocation, int& flowFilter, std::string& meshFile,
                        std::string& snapFile, std::string& ofileName);
 
 
@@ -23,11 +23,10 @@ int main(int argc, char* argv[]) {
     int nRays = 0;
     double maxRadius = 0.0;
     std::vector<double> sourceLocation(3, 0.5);
+    int flowFilter = 0;
     std::string meshFile, snapFile, ofileName;
 
-    // parseRayParamFile("rayParam.txt", nRays, maxRadius, sourceLocation, meshFile, snapFile);
-    // parseRayParamFile("rays_param.txt", nRays, maxRadius, sourceLocation, meshFile, snapFile);
-    parseRayParamFile(paramFile, nRays, maxRadius, sourceLocation, meshFile, snapFile, ofileName);
+    parseRayParamFile(paramFile, nRays, maxRadius, sourceLocation, flowFilter, meshFile, snapFile, ofileName);
 
     if (nRays == 0 || maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
         std::cerr << "Error: Missing or invalid parameters in rayParam.txt" << std::endl;
@@ -39,11 +38,8 @@ int main(int argc, char* argv[]) {
     std::cout << "The source is at position " << sourceLocation[0] << ", " << sourceLocation[1] << ", " << sourceLocation[2] << " (code units)" << std::endl;
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
-	// Mesh *mesh = new Mesh("./output/tess_001_indices.dat", "./output/snap_001.hdf5");
-	// Rays *rays = new Rays(nRays, maxRadius, {0.5, 0.5, 0.5}, *mesh);
-
     Mesh *mesh = new Mesh(meshFile, snapFile);
-	Rays *rays = new Rays(nRays, maxRadius, sourceLocation, *mesh);
+	Rays *rays = new Rays(nRays, maxRadius, sourceLocation, flowFilter, *mesh);
 
 	rays->doRayTracing();
 	rays->outputResults(ofileName);
@@ -54,7 +50,7 @@ int main(int argc, char* argv[]) {
 }
 
 void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRadius,
-                       std::vector<double>& sourceLocation, std::string& meshFile, 
+                       std::vector<double>& sourceLocation, int& flowFilter, std::string& meshFile,
                        std::string& snapFile, std::string& ofileName) {
     std::ifstream inputFile(fileName);
     std::string line;
@@ -91,6 +87,9 @@ void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRad
             char comma;
             locStream >> x >> comma >> y >> comma >> z;
             sourceLocation = {x, y, z};
+        }
+        else if (key == "flowFilter") {
+        	flowFilter = std::stoi(value);
         }
         else if (key == "meshFile") {
             meshFile = value;

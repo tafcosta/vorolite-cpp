@@ -53,7 +53,6 @@ void Mesh::readSnapshot(const std::string& snapshot) {
          }
 
 
-
         H5::DataSpace velocitiesSpace = velocitiesDataset.getSpace();
         velocitiesSpace.getSimpleExtentDims(dims);
         std::vector<float> cellVelocities1D(dims[0] * dims[1]);

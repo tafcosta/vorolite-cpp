@@ -9,7 +9,7 @@
 #include "Rays.h"
 #include "Mesh.h"
 
-Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, Mesh& mesh) : numRays(nRays), maxRadius(maxRadius), sourcePosition(sourcePosition), mesh(mesh) {
+Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, int flowFilter, Mesh& mesh) : numRays(nRays), maxRadius(maxRadius), sourcePosition(sourcePosition), flowFilter(flowFilter), mesh(mesh) {
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
 
 	rayDirection = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
@@ -76,6 +76,7 @@ void Rays::initializePositions() {
 */
 }
 
+
  int Rays::travelToNextCell(int iCell, int iRay, bool verbose){
 	 double distanceToExit = std::numeric_limits<double>::max();
 	 double distanceToExitTmp;
@@ -88,6 +89,7 @@ void Rays::initializePositions() {
 	 std::vector<double> normalVector (3, 0.0);
 	 std::vector<double> pointOnInterface (3, 0.0);
 	 std::vector<double> positionTmp (3, 0.0);
+	 double filter = 1.;
 
 	 if(verbose){
 		 double distanceBetRayAndCell = sqrt((cellPos[0] - rayPosition[iRay][0]) * (cellPos[0] - rayPosition[iRay][0]) + (cellPos[1] - rayPosition[iRay][1]) * (cellPos[1] - rayPosition[iRay][1]) + (cellPos[2] - rayPosition[iRay][2]) * (cellPos[2] - rayPosition[iRay][2]));
@@ -186,8 +188,27 @@ void Rays::initializePositions() {
 	 if (distanceToExit < 1e-10)
 	 	std::cout << "distanceToExit = " << distanceToExit << "You seem to have ended up on an edge; how did you do that?!" << "\n";
 
-	columnDensity[iRay] += distanceToExit * mesh.cellDensity[iCell]; // we add up whatever density we have encountered on the way out of the cell
-	columnVelocity[iRay] += distanceToExit * mesh.cellDensity[iCell] * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
+
+
+
+	 if(flowFilter){
+
+		 if(flowFilter == 1){
+			 if (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2] < 0.)
+					 filter = 0.;
+		 }
+
+		 else if(flowFilter == -1){
+			 if (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2] > 0.)
+					 filter = 0.;
+		 }
+
+	 }
+
+
+
+	columnDensity[iRay] += distanceToExit * mesh.cellDensity[iCell] * filter; // we add up whatever density we have encountered on the way out of the cell
+	columnVelocity[iRay] += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
 
 	// we now know where we would pierce the face of the cell; we want to continue onwards
 	double distanceRayToExitCellCentre = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
@@ -213,8 +234,26 @@ void Rays::initializePositions() {
     	rayPosition[iRay][i] += rayDirection[iRay][i] * (distanceToExit + overshoot);
 
     visitedCells[iRay].push_back(iCell);
-    columnDensity[iRay] += overshoot * mesh.cellDensity[exitCell]; // we add up all the density we encounter in the next cell up to the new position
-	columnVelocity[iRay] += overshoot * mesh.cellDensity[exitCell] * (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2]);
+
+
+
+	 if(flowFilter){
+
+		 if(flowFilter == 1){
+			 if (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2] < 0.)
+					 filter = 0.;
+		 }
+
+		 else if(flowFilter == -1){
+			 if (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2] > 0.)
+					 filter = 0.;
+		 }
+
+	 }
+
+
+    columnDensity[iRay] += overshoot * mesh.cellDensity[exitCell] * filter; // we add up all the density we encounter in the next cell up to the new position
+	columnVelocity[iRay] += overshoot * mesh.cellDensity[exitCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2]);
 
     distanceTravelled[iRay] += distanceToExit + overshoot;
     numTraversedCells[iRay] += 1;
@@ -265,13 +304,8 @@ void Rays::initializePositions() {
  }
 
 
-
-	 void Rays::outputResults(std::string& ofileName) {
-    //  std::ofstream outputFile("ray_output.txt");
-	// std::ofstream outputFile("noagn-snap_126-ray_output.txt");
-	// std::ofstream outputFile("fable-snap_126-ray_output.txt");
-	// std::ofstream outputFile("ref-snap_126-ray_output.txt");
-	std::ofstream outputFile(ofileName);
+ void Rays::outputResults(std::string& ofileName) {
+	 std::ofstream outputFile(ofileName);
 
      if (!outputFile.is_open()) {
          std::cerr << "Error opening file for output!" << std::endl;

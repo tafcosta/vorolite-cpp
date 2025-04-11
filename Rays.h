@@ -12,11 +12,12 @@
 
 class Rays {
 public:
-	Rays(int numRays, double maxRadius, std::vector<double> sourcePosition, Mesh& mesh);
+	Rays(int numRays, double maxRadius, std::vector<double> sourcePosition, int flowFilter, Mesh& mesh);
 	virtual ~Rays();
 
 	int numRays;
 	double maxRadius;
+	int flowFilter;
 
 	std::vector<double> sourcePosition;
 	std::vector<double> phi, theta;
