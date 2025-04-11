@@ -40,7 +40,8 @@ int main(int argc, char* argv[]) {
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
     Mesh *mesh = new Mesh(meshFile, snapFile);
-	Rays *rays = new Rays(nRays, maxRadius, sourceLocation, flowFilter, maxColumn, *mesh);
+
+    Rays *rays = new Rays(nRays, maxRadius, sourceLocation, flowFilter, maxColumn, *mesh);
 
 	rays->doRayTracing();
 	rays->outputResults(ofileName);
