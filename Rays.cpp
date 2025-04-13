@@ -189,22 +189,8 @@ void Rays::initializePositions() {
 	 	std::cout << "distanceToExit = " << distanceToExit << "You seem to have ended up on an edge; how did you do that?!" << "\n";
 
 
-
-
-	 if(flowFilter != 0){
-
-		 if(flowFilter == 1){
-			 if (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2] < 0.)
-					 filter = 0.;
-		 }
-
-		 else if(flowFilter == -1){
-			 if (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2] > 0.)
-					 filter = 0.;
-		 }
-
-	 }
-
+	 if(flowFilter != 0)
+		 filter = getFilterForVelocity(flowFilter, iCell, iRay);
 
 
 	columnDensity[iRay] += distanceToExit * mesh.cellDensity[iCell]  * filter; // we add up whatever density we have encountered on the way out of the cell
@@ -236,20 +222,8 @@ void Rays::initializePositions() {
     visitedCells[iRay].push_back(iCell);
 
 
-
-	 if(flowFilter != 0){
-
-		 if(flowFilter == 1){
-			 if (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2] < 0.)
-					 filter = 0.;
-		 }
-
-		 else if(flowFilter == -1){
-			 if (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2] > 0.)
-					 filter = 0.;
-		 }
-
-	 }
+	 if(flowFilter != 0)
+		 filter = getFilterForVelocity(flowFilter, exitCell, iRay);
 
 
     columnDensity[iRay] += overshoot * mesh.cellDensity[exitCell]  * filter; // we add up all the density we encounter in the next cell up to the new position
@@ -361,6 +335,24 @@ void Rays::initializePositions() {
 
      visitedCellsFile.close();
      */
+
+ }
+
+ double Rays::getFilterForVelocity(int cellIndex, int flowFilter, int iRay){
+
+	 double filter = 1;;
+
+	 if(flowFilter == 1){
+		 if (rayDirection[iRay][0] * mesh.cellVelocities[cellIndex][0] + rayDirection[iRay][1] * mesh.cellVelocities[cellIndex][1] + rayDirection[iRay][2] * mesh.cellVelocities[cellIndex][2] < 0.)
+				 filter = 0.;
+	 }
+
+	 else if(flowFilter == -1){
+		 if (rayDirection[iRay][0] * mesh.cellVelocities[cellIndex][0] + rayDirection[iRay][1] * mesh.cellVelocities[cellIndex][1] + rayDirection[iRay][2] * mesh.cellVelocities[cellIndex][2] > 0.)
+				 filter = 0.;
+	 }
+
+	 return filter;
 
  }
 
