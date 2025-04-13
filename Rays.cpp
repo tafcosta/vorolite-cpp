@@ -84,12 +84,12 @@ void Rays::initializePositions() {
 
 	 std::ostringstream debugOutput;
 	 int exitCell  = -1;
+	 double filter = 1.;
 
 	 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
 	 std::vector<double> normalVector (3, 0.0);
 	 std::vector<double> pointOnInterface (3, 0.0);
 	 std::vector<double> positionTmp (3, 0.0);
-	 double filter = 1.;
 
 	 if(verbose){
 		 double distanceBetRayAndCell = sqrt((cellPos[0] - rayPosition[iRay][0]) * (cellPos[0] - rayPosition[iRay][0]) + (cellPos[1] - rayPosition[iRay][1]) * (cellPos[1] - rayPosition[iRay][1]) + (cellPos[2] - rayPosition[iRay][2]) * (cellPos[2] - rayPosition[iRay][2]));
@@ -195,6 +195,9 @@ void Rays::initializePositions() {
 
 	columnDensity[iRay] += distanceToExit * mesh.cellDensity[iCell]  * filter; // we add up whatever density we have encountered on the way out of the cell
 	columnVelocity[iRay] += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
+
+
+
 
 	// we now know where we would pierce the face of the cell; we want to continue onwards
 	double distanceRayToExitCellCentre = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
@@ -340,20 +343,14 @@ void Rays::initializePositions() {
 
  double Rays::getFilterForVelocity(int cellIndex, int flowFilter, int iRay){
 
-	 double filter = 1;;
+	 if (flowFilter == 0) return 1.0;
 
-	 if(flowFilter == 1){
-		 if (rayDirection[iRay][0] * mesh.cellVelocities[cellIndex][0] + rayDirection[iRay][1] * mesh.cellVelocities[cellIndex][1] + rayDirection[iRay][2] * mesh.cellVelocities[cellIndex][2] < 0.)
-				 filter = 0.;
-	 }
+	 const auto& rayDir = rayDirection[iRay];
+	 const auto& velocity = mesh.cellVelocities[cellIndex];
 
-	 else if(flowFilter == -1){
-		 if (rayDirection[iRay][0] * mesh.cellVelocities[cellIndex][0] + rayDirection[iRay][1] * mesh.cellVelocities[cellIndex][1] + rayDirection[iRay][2] * mesh.cellVelocities[cellIndex][2] > 0.)
-				 filter = 0.;
-	 }
+	 double dotProduct = rayDir[0] * velocity[0] + rayDir[1] * velocity[1] + rayDir[2] * velocity[2];
 
-	 return filter;
-
+	 return (flowFilter * dotProduct >= 0.0) ? 1.0 : 0.0;
  }
 
 
