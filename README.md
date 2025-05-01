@@ -26,7 +26,7 @@ To compile and run VoroLite++, follow these steps:
 2. Ensure you have a C++20 compatible compiler and the required libraries (HDF5) installed.
 
 3. Compile the code:
-   - `g++ -std=c++20 -lhdf5_cpp -lhdf5  -o vorolite vorolite++.cpp`
+   - `g++ -std=c++20 VoroLite.cpp Mesh.cpp Rays.cpp -lhdf5_cpp -lhdf5 -o vorolite`
 
 4. The executable `vorolite` will be created.
 
