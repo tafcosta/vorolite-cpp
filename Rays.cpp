@@ -290,56 +290,45 @@ void Rays::initializePositions() {
  }
 
 
- void Rays::outputResults(std::string& ofileName) {
-	 std::ofstream outputFile(ofileName);
+#include <iomanip> // Make sure this is included for formatting
 
-     if (!outputFile.is_open()) {
-         std::cerr << "Error opening file for output!" << std::endl;
-         return;
-     }
+void Rays::outputResults(std::string& ofileName) {
+    std::ofstream outputFile(ofileName);
 
-     outputFile << "Ray\tTheta\tPhi\tColumn\tVelocity\tDistance\tFlag\tNumCells" << std::endl;
+    if (!outputFile.is_open()) {
+        std::cerr << "Error opening file for output!" << std::endl;
+        return;
+    }
 
-     for (int i = 0; i < numRays; ++i) {
-         outputFile << i << "\t"
-                    << std::fixed << std::setprecision(3) << theta[i] << "\t"
-                    << std::fixed << std::setprecision(3) << phi[i] << "\t"
-                    << std::fixed << std::setprecision(6) << columnDensity[i] << "\t"
-                    << std::fixed << std::setprecision(6) << columnVelocity[i] << "\t"
-                    << std::fixed << std::setprecision(6) << distanceTravelled[i] << "\t"
-					<< std::fixed << flagRay[i] << "\t"
-					<< std::fixed << numTraversedCells[i] << "\t"
-					<< std::endl;
-     }
+    // Print column headers with fixed widths
+    outputFile << std::left
+               << std::setw(6)  << "Ray"
+               << std::setw(10) << "Theta"
+               << std::setw(10) << "Phi"
+               << std::setw(15) << "Column"
+               << std::setw(15) << "Velocity"
+               << std::setw(15) << "Distance"
+               << std::setw(6)  << "Flag"
+               << std::setw(10) << "NumCells"
+               << std::endl;
 
-     outputFile.close();
-     std::cout << "Results have been written to \'" << ofileName << "\'" << std::endl;
+    for (int i = 0; i < numRays; ++i) {
+        outputFile << std::left
+                   << std::setw(6)  << i
+                   << std::setw(10) << std::fixed << std::setprecision(3) << theta[i]
+                   << std::setw(10) << std::fixed << std::setprecision(3) << phi[i]
+                   << std::setw(15) << std::fixed << std::setprecision(6) << columnDensity[i]
+                   << std::setw(15) << std::fixed << std::setprecision(6) << columnVelocity[i]
+                   << std::setw(15) << std::fixed << std::setprecision(6) << distanceTravelled[i]
+                   << std::setw(6)  << flagRay[i]
+                   << std::setw(10) << numTraversedCells[i]
+                   << std::endl;
+    }
 
+    outputFile.close();
+    std::cout << "Results have been written to '" << ofileName << "'" << std::endl;
+}
 
-     /*
-     std::ofstream visitedCellsFile("ray_visited_cells.txt");
-
-     if (!visitedCellsFile.is_open()) {
-         std::cerr << "Error opening file for visited cells output!" << std::endl;
-         return;
-     }
-
-     visitedCellsFile << "Ray\tVisitedCells" << std::endl;
-
-     for (int i = 0; i < numRays; ++i) {
-         visitedCellsFile << i << "\t";  // Ray number
-
-         // Output the visited cells for this ray
-         for (int visitedCell : visitedCells[i]) {
-             visitedCellsFile << visitedCell << " ";
-         }
-         visitedCellsFile << std::endl;
-     }
-
-     visitedCellsFile.close();
-     */
-
- }
 
  double Rays::getFilterForVelocity(int cellIndex, int flowFilter, int iRay){
 

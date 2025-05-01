@@ -18,7 +18,7 @@ public:
 
 	std::vector<int> cellIDs;
     std::vector<std::vector<float>> cellCoordinates;
-    std::vector<std::vector<double>> cellVelocities;
+    std::vector<std::vector<float>> cellVelocities;
     std::vector<double> cellDensity;
     std::vector<bool> isAtBoundary;
 
