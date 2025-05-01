@@ -193,7 +193,7 @@ void Rays::initializePositions() {
 		 filter = getFilterForVelocity(flowFilter, iCell, iRay);
 
 
-	columnDensity[iRay] += distanceToExit * mesh.cellDensity[iCell]  * filter; // we add up whatever density we have encountered on the way out of the cell
+	columnDensity[iRay]  += distanceToExit * mesh.cellDensity[iCell] * filter; // we add up whatever density we have encountered on the way out of the cell
 	columnVelocity[iRay] += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
 
 
@@ -229,7 +229,7 @@ void Rays::initializePositions() {
 		 filter = getFilterForVelocity(flowFilter, exitCell, iRay);
 
 
-    columnDensity[iRay] += overshoot * mesh.cellDensity[exitCell]  * filter; // we add up all the density we encounter in the next cell up to the new position
+    columnDensity[iRay]  += overshoot * mesh.cellDensity[exitCell] * filter; // we add up all the density we encounter in the next cell up to the new position
 	columnVelocity[iRay] += overshoot * mesh.cellDensity[exitCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2]);
 
     distanceTravelled[iRay] += distanceToExit + overshoot;
