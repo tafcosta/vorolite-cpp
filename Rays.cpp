@@ -266,11 +266,7 @@ void Rays::initializePositions() {
     }
 
 
-    if(rayPosition[iRay][0] > mesh.boxSize || rayPosition[iRay][0] < 0 || rayPosition[iRay][1] > mesh.boxSize || rayPosition[iRay][1] < 0 || rayPosition[iRay][2] > mesh.boxSize || rayPosition[iRay][2] < 0 || distanceTravelled[iRay] >= maxRadius){
-    	insideDomain[iRay] = false;
-    	exitCell = -1;
-    }
-    else if(columnDensity[iRay] >= maxColumn){
+    if(rayPosition[iRay][0] > mesh.boxSize || rayPosition[iRay][0] < 0 || rayPosition[iRay][1] > mesh.boxSize || rayPosition[iRay][1] < 0 || rayPosition[iRay][2] > mesh.boxSize || rayPosition[iRay][2] < 0 || distanceTravelled[iRay] >= maxRadius || columnDensity[iRay] >= maxColumn){
     	insideDomain[iRay] = false;
     	exitCell = -1;
     }
