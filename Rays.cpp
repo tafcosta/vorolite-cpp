@@ -182,7 +182,7 @@ void Rays::initializePositions() {
 	 	insideDomain[iRay] = false;
 	 	distanceToExit = 0.0;
 	 	exitCell = -1;
-
+	    numTraversedCells[iRay] += 1;
 	 	std::cout << "Distance to exit larger than box size; stopped!" << "\n";
 	 	return exitCell;
 	 }
@@ -206,7 +206,7 @@ void Rays::initializePositions() {
 	overshoot = distanceRayToExitCellCentre / 10;
 
 	int nIter = 0;
-	while ((mesh.findHostCellID(positionTmp, exitCell)[0] != exitCell) && (nIter < maxnIter)) {
+	do {
 		for (int i = 0; i < 3; i++)
 			positionTmp[i] = rayPosition[iRay][i] + rayDirection[iRay][i] * (distanceToExit + overshoot);
 
@@ -215,7 +215,8 @@ void Rays::initializePositions() {
 			flagRay[iRay] = true;
 
 		overshoot /= 2;
-	} // todo maybe replace by a check of the entire list, but a priori there should only be one cell as we no longer are on an edge
+
+	} while ((mesh.findHostCellID(positionTmp, exitCell)[0] != exitCell) && (nIter < maxnIter));  // todo maybe replace by a check of the entire list, but a priori there should only be one cell as we no longer are on an edge
 
     if(verbose)
     	debugOutput << "Ray position (before update) = " << rayPosition[iRay][0] << ", "  << rayPosition[iRay][1] << ", " << rayPosition[iRay][2] << "\n";
@@ -225,8 +226,9 @@ void Rays::initializePositions() {
 
     visitedCells[iRay].push_back(iCell);
 
-    if(flowFilter != 0)
-    	filter = getFilterForVelocity(flowFilter, exitCell, iRay);
+
+	 if(flowFilter != 0)
+		 filter = getFilterForVelocity(flowFilter, exitCell, iRay);
 
 
     columnDensity[iRay]  += overshoot * mesh.cellDensity[exitCell] * filter; // we add up all the density we encounter in the next cell up to the new position
