@@ -325,10 +325,8 @@ void Rays::outputResults(std::string& ofileName) {
 
 	 double dotProduct = rayDir[0] * velocity[0] + rayDir[1] * velocity[1] + rayDir[2] * velocity[2];
 
-	 if(flowFilter == 1)
+	 if(flowFilter != 0)
 		 return (flowFilter * dotProduct > 0.0) ? 1.0 : 0.0;
-	 if(flowFilter == -1)
-		 return (flowFilter * dotProduct < 0.0) ? 1.0 : 0.0;
 
 	 return 1.0;
  }
