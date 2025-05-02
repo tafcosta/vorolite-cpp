@@ -182,7 +182,9 @@ void Rays::initializePositions() {
 	 	insideDomain[iRay] = false;
 	 	distanceToExit = 0.0;
 	 	exitCell = -1;
+
 	 	std::cout << "Distance to exit larger than box size; stopped!" << "\n";
+	 	return exitCell;
 	 }
 
 	 if (distanceToExit < 1e-10)
