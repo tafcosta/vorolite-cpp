@@ -84,7 +84,7 @@ void Rays::initializePositions() {
 
 	 std::ostringstream debugOutput;
 	 int exitCell  = -1;
-	 double filter = 1.;
+	 double filter = 1;
 
 	 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
 	 std::vector<double> normalVector (3, 0.0);
@@ -132,8 +132,6 @@ void Rays::initializePositions() {
 	 }
 
 
-
-
 	 // Handle rare rays that want to travel along cell interfaces
 	 for (int i = 0; i < 3; i++)
 		 positionTmp[i] = rayPosition[iRay][i] + rayDirection[iRay][i] * distanceToExit;
@@ -174,10 +172,6 @@ void Rays::initializePositions() {
 			 }
 		 }
 
-
-
-
-
 	 if(distanceToExit > mesh.boxSize){
 	 	insideDomain[iRay] = false;
 	 	distanceToExit = 0.0;
@@ -197,8 +191,6 @@ void Rays::initializePositions() {
 
 	columnDensity[iRay]  += distanceToExit * mesh.cellDensity[iCell] * filter; // we add up whatever density we have encountered on the way out of the cell
 	columnVelocity[iRay] += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
-
-
 
 
 	// we now know where we would pierce the face of the cell; we want to continue onwards
@@ -227,8 +219,8 @@ void Rays::initializePositions() {
     visitedCells[iRay].push_back(iCell);
 
 
-	 if(flowFilter != 0)
-		 filter = getFilterForVelocity(flowFilter, exitCell, iRay);
+    if(flowFilter != 0)
+    	filter = getFilterForVelocity(flowFilter, exitCell, iRay);
 
 
     columnDensity[iRay]  += overshoot * mesh.cellDensity[exitCell] * filter; // we add up all the density we encounter in the next cell up to the new position
@@ -236,8 +228,6 @@ void Rays::initializePositions() {
 
     distanceTravelled[iRay] += distanceToExit + overshoot;
     numTraversedCells[iRay] += 1;
-
-
 
 
 
@@ -256,7 +246,6 @@ void Rays::initializePositions() {
     		debugOutput << closestCells[i] << ", ";
 
     	debugOutput  << "\n";
-
     	debugOutput  << "Distance from ray to exit cell = " << distanceToCell << "\n";
 
     	if(exitCell != -1){
@@ -266,6 +255,7 @@ void Rays::initializePositions() {
 					<< cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << "\n";
     	}
     }
+
 
 
     if(rayPosition[iRay][0] > mesh.boxSize || rayPosition[iRay][0] < 0 || rayPosition[iRay][1] > mesh.boxSize || rayPosition[iRay][1] < 0 || rayPosition[iRay][2] > mesh.boxSize || rayPosition[iRay][2] < 0 || distanceTravelled[iRay] >= maxRadius || columnDensity[iRay] >= maxColumn){
@@ -328,16 +318,19 @@ void Rays::outputResults(std::string& ofileName) {
 }
 
 
- double Rays::getFilterForVelocity(int cellIndex, int flowFilter, int iRay){
-
-	 if (flowFilter == 0) return 1.0;
+ double Rays::getFilterForVelocity(int flowFilter, int cellIndex, int iRay){
 
 	 const auto& rayDir = rayDirection[iRay];
 	 const auto& velocity = mesh.cellVelocities[cellIndex];
 
 	 double dotProduct = rayDir[0] * velocity[0] + rayDir[1] * velocity[1] + rayDir[2] * velocity[2];
 
-	 return (flowFilter * dotProduct >= 0.0) ? 1.0 : 0.0;
+	 if(flowFilter == 1)
+		 return (flowFilter * dotProduct > 0.0) ? 1.0 : 0.0;
+	 if(flowFilter == -1)
+		 return (flowFilter * dotProduct < 0.0) ? 1.0 : 0.0;
+
+	 return 1.0;
  }
 
 
