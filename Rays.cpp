@@ -193,20 +193,23 @@ void Rays::initializePositions() {
 		 filter = getFilterForVelocity(flowFilter, iCell, iRay);
 
 
-	columnDensity[iRay]  += distanceToExit * mesh.cellDensity[iCell] * filter; // we add up whatever density we have encountered on the way out of the cell
+	columnDensity[iRay]  += distanceToExit * mesh.cellDensity[iCell] * filter;
 	columnVelocity[iRay] += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
-
 
     if((columnDensity[iRay] >= maxColumn) && (maxColumn > 0.)){
 
     	double excessColumn = columnDensity[iRay]/maxColumn;
+
+    	columnDensity[iRay]  -= distanceToExit * mesh.cellDensity[iCell] * filter;
+    	columnVelocity[iRay] -= distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
+
+
     	distanceToExit = distanceToExit/excessColumn;
 
+    	columnDensity[iRay]     += distanceToExit * mesh.cellDensity[iCell] * filter;
+    	columnVelocity[iRay]    += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
         distanceTravelled[iRay] += distanceToExit;
         numTraversedCells[iRay] += 1;
-
-        columnDensity[iRay]  /= excessColumn;
-        columnVelocity[iRay] /= excessColumn;
 
         for (int i = 0; i < 3; i++)
         	rayPosition[iRay][i] += rayDirection[iRay][i] * distanceToExit;
@@ -215,6 +218,10 @@ void Rays::initializePositions() {
     	insideDomain[iRay] = false;
 	 	return exitCell;
     }
+
+
+
+
 
 
 	// we now know where we would pierce the face of the cell; we want to continue onwards
@@ -252,6 +259,28 @@ void Rays::initializePositions() {
 
     distanceTravelled[iRay] += distanceToExit + overshoot;
     numTraversedCells[iRay] += 1;
+
+
+    if((columnDensity[iRay] >= maxColumn) && (maxColumn > 0.)){
+
+    	double excessColumn = columnDensity[iRay]/maxColumn;
+
+    	columnDensity[iRay]  -= overshoot * mesh.cellDensity[exitCell] * filter;
+    	columnVelocity[iRay] -= overshoot * mesh.cellDensity[exitCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2]);
+        distanceTravelled[iRay] -= overshoot;
+
+        overshoot = overshoot/excessColumn;
+
+    	columnDensity[iRay]     += overshoot * mesh.cellDensity[exitCell] * filter;
+    	columnVelocity[iRay]    += overshoot * mesh.cellDensity[exitCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2]);
+        distanceTravelled[iRay] += overshoot;
+        numTraversedCells[iRay] += 1;
+
+    }
+
+
+    for (int i = 0; i < 3; i++)
+    	rayPosition[iRay][i] += rayDirection[iRay][i] * overshoot;
 
 
 
