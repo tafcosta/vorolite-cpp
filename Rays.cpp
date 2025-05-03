@@ -81,10 +81,10 @@ void Rays::initializePositions() {
 	 double distanceToExit = std::numeric_limits<double>::max();
 	 double distanceToExitTmp;
 	 double overshoot;
+	 double filter = 1;
 
 	 std::ostringstream debugOutput;
 	 int exitCell  = -1;
-	 double filter = 1;
 
 	 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
 	 std::vector<double> normalVector (3, 0.0);
@@ -109,7 +109,6 @@ void Rays::initializePositions() {
 		 }
 
 		 double denominator = normalVector[0] * rayDirection[iRay][0] + normalVector[1] * rayDirection[iRay][1] + normalVector[2] * rayDirection[iRay][2];
-
 		 if(denominator <= 0.)
 			 continue;
 
@@ -185,12 +184,25 @@ void Rays::initializePositions() {
 	 	std::cout << "distanceToExit = " << distanceToExit << "You seem to have ended up on an edge; how did you do that?!" << "\n";
 
 
+
+
+
+
 	 if(flowFilter != 0)
 		 filter = getFilterForVelocity(flowFilter, iCell, iRay);
 
 
 	columnDensity[iRay]  += distanceToExit * mesh.cellDensity[iCell] * filter; // we add up whatever density we have encountered on the way out of the cell
 	columnVelocity[iRay] += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
+
+
+    if(columnDensity[iRay] >= maxColumn){
+    	insideDomain[iRay] = false;
+        distanceTravelled[iRay] += distanceToExit;
+        numTraversedCells[iRay] += 1;
+    	exitCell = -1;
+	 	return exitCell;
+    }
 
 
 	// we now know where we would pierce the face of the cell; we want to continue onwards
