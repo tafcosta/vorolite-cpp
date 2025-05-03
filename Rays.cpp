@@ -243,9 +243,6 @@ void Rays::initializePositions() {
     if(verbose)
     	debugOutput << "Ray position (before update) = " << rayPosition[iRay][0] << ", "  << rayPosition[iRay][1] << ", " << rayPosition[iRay][2] << "\n";
 
-    for (int i = 0; i < 3; i++)
-    	rayPosition[iRay][i] += rayDirection[iRay][i] * (distanceToExit + overshoot);
-
     visitedCells[iRay].push_back(iCell);
 
 
@@ -256,16 +253,33 @@ void Rays::initializePositions() {
     if(flowFilter != 0)
     	filter = getFilterForVelocity(flowFilter, exitCell, iRay);
 
+    newColumnDensity  = columnDensity[iRay]  + overshoot * mesh.cellDensity[exitCell] * filter;
+    newColumnVelocity = columnVelocity[iRay] + overshoot * mesh.cellDensity[exitCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2]);
 
-    columnDensity[iRay]  += overshoot * mesh.cellDensity[exitCell] * filter; // we add up all the density we encounter in the next cell up to the new position
-	columnVelocity[iRay] += overshoot * mesh.cellDensity[exitCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2]);
+    if((newColumnDensity >= maxColumn) && (maxColumn > 0.)){
+
+    	double fractionalColumn = (maxColumn - columnDensity[iRay])/(newColumnDensity - columnDensity[iRay]);
+
+    	overshoot *= fractionalColumn;
+
+    	columnDensity[iRay]     += overshoot * mesh.cellDensity[iCell] * filter;
+    	columnVelocity[iRay]    += overshoot * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
+
+        for (int i = 0; i < 3; i++)
+        	rayPosition[iRay][i] += rayDirection[iRay][i] * distanceToExit;
+
+
+    } else {
+    	columnDensity[iRay] = newColumnDensity;
+    	columnVelocity[iRay] = newColumnVelocity;
+    }
+
 
     distanceTravelled[iRay] += distanceToExit + overshoot;
     numTraversedCells[iRay] += 1;
 
-
     for (int i = 0; i < 3; i++)
-    	rayPosition[iRay][i] += rayDirection[iRay][i] * overshoot;
+    	rayPosition[iRay][i] += rayDirection[iRay][i] * (distanceToExit + overshoot);
 
 
 
