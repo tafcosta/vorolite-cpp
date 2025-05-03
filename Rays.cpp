@@ -176,6 +176,7 @@ void Rays::initializePositions() {
 	 	distanceToExit = 0.0;
 	 	exitCell = -1;
 	    numTraversedCells[iRay] += 1;
+
 	 	std::cout << "Distance to exit larger than box size; stopped!" << "\n";
 	 	return exitCell;
 	 }
@@ -196,11 +197,22 @@ void Rays::initializePositions() {
 	columnVelocity[iRay] += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
 
 
-    if(columnDensity[iRay] >= maxColumn){
-    	insideDomain[iRay] = false;
+    if((columnDensity[iRay] >= maxColumn) && (maxColumn > 0.)){
+
+    	double excessColumn = columnDensity[iRay]/maxColumn;
+    	distanceToExit = distanceToExit/excessColumn;
+
         distanceTravelled[iRay] += distanceToExit;
         numTraversedCells[iRay] += 1;
+
+        columnDensity[iRay]  /= excessColumn;
+        columnVelocity[iRay] /= excessColumn;
+
+        for (int i = 0; i < 3; i++)
+        	rayPosition[iRay][i] += rayDirection[iRay][i] * distanceToExit;
+
     	exitCell = -1;
+    	insideDomain[iRay] = false;
 	 	return exitCell;
     }
 
