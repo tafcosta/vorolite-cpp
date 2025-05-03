@@ -138,7 +138,10 @@ void Rays::initializePositions() {
 	 int targetCell = mesh.findHostCellID(positionTmp, exitCell)[0];
 
 	 if(targetCell != exitCell && targetCell != iCell){
-		 std::cout << "Here there's an issue. iCell = " << iCell << ", exitCell = " << exitCell << ", wants to be in cell = " <<  targetCell << std::endl;
+
+		 if(verbose)
+			 std::cout << "Here there's an issue. iCell = " << iCell << ", exitCell = " << exitCell << ", wants to be in cell = " <<  targetCell << std::endl;
+
 		 flagRay[iRay] = true;
 
 		 for (int neighbour : mesh.neighbourList[iCell]){
@@ -161,7 +164,8 @@ void Rays::initializePositions() {
 
 			 distanceToExitTmp = distanceToExitTmp/denominator;
 
-			 std::cout << "cell index = " << neighbour << ", distance = " << distanceToExitTmp << std::endl;
+			 if(verbose)
+				 std::cout << "cell index = " << neighbour << ", distance = " << distanceToExitTmp << std::endl;
 
 			 if((distanceToExitTmp < 0) && (distanceToExitTmp > -minTolerance))
 				 exitCell = neighbour;
