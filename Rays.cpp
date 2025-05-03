@@ -193,18 +193,14 @@ void Rays::initializePositions() {
 		 filter = getFilterForVelocity(flowFilter, iCell, iRay);
 
 
-	columnDensity[iRay]  += distanceToExit * mesh.cellDensity[iCell] * filter;
-	columnVelocity[iRay] += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
+	double newColumnDensity  = columnDensity[iRay]  + distanceToExit * mesh.cellDensity[iCell] * filter;
+	double newColumnVelocity = columnVelocity[iRay] + distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
 
-    if((columnDensity[iRay] >= maxColumn) && (maxColumn > 0.)){
+    if((newColumnDensity >= maxColumn) && (maxColumn > 0.)){
 
-    	double excessColumn = columnDensity[iRay]/maxColumn;
+    	double fractionalColumn = (maxColumn - columnDensity[iRay])/(newColumnDensity - columnDensity[iRay]);
 
-    	columnDensity[iRay]  -= distanceToExit * mesh.cellDensity[iCell] * filter;
-    	columnVelocity[iRay] -= distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
-
-
-    	distanceToExit = distanceToExit/excessColumn;
+    	distanceToExit *= fractionalColumn;
 
     	columnDensity[iRay]     += distanceToExit * mesh.cellDensity[iCell] * filter;
     	columnVelocity[iRay]    += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
@@ -217,6 +213,9 @@ void Rays::initializePositions() {
     	exitCell = -1;
     	insideDomain[iRay] = false;
 	 	return exitCell;
+    } else {
+    	columnDensity[iRay] = newColumnDensity;
+    	columnVelocity[iRay] = newColumnVelocity;
     }
 
 
@@ -250,6 +249,10 @@ void Rays::initializePositions() {
     visitedCells[iRay].push_back(iCell);
 
 
+
+
+
+
     if(flowFilter != 0)
     	filter = getFilterForVelocity(flowFilter, exitCell, iRay);
 
@@ -259,24 +262,6 @@ void Rays::initializePositions() {
 
     distanceTravelled[iRay] += distanceToExit + overshoot;
     numTraversedCells[iRay] += 1;
-
-
-    if((columnDensity[iRay] >= maxColumn) && (maxColumn > 0.)){
-
-    	double excessColumn = columnDensity[iRay]/maxColumn;
-
-    	columnDensity[iRay]  -= overshoot * mesh.cellDensity[exitCell] * filter;
-    	columnVelocity[iRay] -= overshoot * mesh.cellDensity[exitCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2]);
-        distanceTravelled[iRay] -= overshoot;
-
-        overshoot = overshoot/excessColumn;
-
-    	columnDensity[iRay]     += overshoot * mesh.cellDensity[exitCell] * filter;
-    	columnVelocity[iRay]    += overshoot * mesh.cellDensity[exitCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2]);
-        distanceTravelled[iRay] += overshoot;
-        numTraversedCells[iRay] += 1;
-
-    }
 
 
     for (int i = 0; i < 3; i++)
