@@ -272,7 +272,6 @@ void Rays::initializePositions() {
         for (int i = 0; i < 3; i++)
         	rayPosition[iRay][i] += rayDirection[iRay][i] * distanceToExit;
 
-
     } else {
     	columnDensity[iRay] = newColumnDensity;
     	columnVelocity[iRay] = newColumnVelocity;
@@ -285,7 +284,7 @@ void Rays::initializePositions() {
     for (int i = 0; i < 3; i++)
     	rayPosition[iRay][i] += rayDirection[iRay][i] * (distanceToExit + overshoot);
 
-
+    mesh.cellFlux[exitCell] = exp(-columnDensity[iRay]);
 
     if(verbose){
     	double distanceToCell = mesh.getDistanceToCell(rayPosition[iRay], exitCell);

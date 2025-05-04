@@ -14,6 +14,8 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot) : fileMeshIndices(
 
 	IdPairs       = readVoronoiIndices(fileMeshIndices);
 	neighbourList = collectNeighbours(IdPairs, cellIDs);
+
+
 }
 
 void Mesh::readSnapshot(const std::string& snapshot) {
@@ -35,6 +37,9 @@ void Mesh::readSnapshot(const std::string& snapshot) {
         cellDensity.resize(numDensities);
         densityDataset.read(cellDensity.data(), H5::PredType::NATIVE_DOUBLE);
         numCells = cellDensity.size();
+
+        cellFlux.resize(numDensities, 0.0);
+
 
         H5::DataSpace coordinatesSpace = coordinatesDataset.getSpace();
         hsize_t dims[2];
