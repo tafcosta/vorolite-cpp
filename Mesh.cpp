@@ -11,7 +11,6 @@
 Mesh::Mesh(std::string fileMeshIndices, std::string snapshot) : fileMeshIndices(fileMeshIndices), snapshot(snapshot) {
 
     readSnapshot(snapshot);
-	isAtBoundary.resize(numCells, false);
 
 	IdPairs       = readVoronoiIndices(fileMeshIndices);
 	neighbourList = collectNeighbours(IdPairs, cellIDs);
