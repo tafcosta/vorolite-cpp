@@ -12,13 +12,11 @@
 
 class Rays {
 public:
-	Rays(int numRays, double maxRadius, std::vector<double> sourcePosition, int flowFilter, double maxColumn, Mesh& mesh);
+	Rays(int numRays, double maxRadius, std::vector<double> sourcePosition, Mesh& mesh);
 	virtual ~Rays();
 
 	int numRays;
 	double maxRadius;
-	int flowFilter;
-	double maxColumn;
 
 	std::vector<double> sourcePosition;
 	std::vector<double> phi, theta;
@@ -53,8 +51,6 @@ private:
     void initializeDirections();
     void initializePositions();
     bool warningIssued;
-
-    double getFilterForVelocity(int flowFilter, int cellIndex, int iRay);
 
     double minTolerance = 1.e-7;
     int maxnIter = 100;

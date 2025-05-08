@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     nRays = mesh->numCells;
 	std::cout << "We are using " << nRays << " rays." << std::endl;
 
-    Rays *rays = new Rays(nRays, maxRadius, sourceLocation, flowFilter, maxColumn, *mesh);
+    Rays *rays = new Rays(nRays, maxRadius, sourceLocation, *mesh);
 
 	rays->doRayTracing();
 	rays->outputResults(ofileName);

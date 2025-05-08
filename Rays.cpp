@@ -9,7 +9,7 @@
 #include "Rays.h"
 #include "Mesh.h"
 
-Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, int flowFilter, double maxColumn, Mesh& mesh) : numRays(nRays), maxRadius(maxRadius), sourcePosition(sourcePosition), flowFilter(flowFilter), maxColumn(maxColumn), mesh(mesh) {
+Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, Mesh& mesh) : numRays(nRays), maxRadius(maxRadius), sourcePosition(sourcePosition), mesh(mesh) {
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
 
 	rayFinalCell = std::vector<int> (nRays);
@@ -47,8 +47,7 @@ void Rays::initializeDirections() {
 
     for (int iRay = 0; iRay < numRays; ++iRay) {
 
-    	cellPos = mesh.cellCoordinates[iRay];
-
+    	cellPos   = mesh.cellCoordinates[iRay];
     	xDistance = cellPos[0] - sourcePosition[0];
     	yDistance = cellPos[1] - sourcePosition[1];
     	zDistance = cellPos[2] - sourcePosition[2];
@@ -60,10 +59,7 @@ void Rays::initializeDirections() {
 
         phi[iRay]   = std::atan2(yDistance, xDistance);
         theta[iRay] = std::acos(zDistance / rDistance);
-
-        std::cout << xDistance << " " << yDistance << " " << rDistance << " " << phi[iRay] << std::endl;
     }
-    abort();
 }
 
 void Rays::initializePositions() {
@@ -211,38 +207,10 @@ void Rays::initializePositions() {
 
 
 
-
-	 if(flowFilter != 0)
-		 filter = getFilterForVelocity(flowFilter, iCell, iRay);
-
-
-	double newColumnDensity  = columnDensity[iRay]  + distanceToExit * mesh.cellDensity[iCell] * filter;
-	double newColumnVelocity = columnVelocity[iRay] + distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
-
-    if((newColumnDensity >= maxColumn) && (maxColumn > 0.)){
-
-    	double fractionalColumn = (maxColumn - columnDensity[iRay])/(newColumnDensity - columnDensity[iRay]);
-
-    	distanceToExit *= fractionalColumn;
-
-    	columnDensity[iRay]     += distanceToExit * mesh.cellDensity[iCell] * filter;
-    	columnVelocity[iRay]    += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
-        distanceTravelled[iRay] += distanceToExit;
-        numTraversedCells[iRay] += 1;
-
-        for (int i = 0; i < 3; i++)
-        	rayPosition[iRay][i] += rayDirection[iRay][i] * distanceToExit;
-
-    	exitCell = -1;
-    	insideDomain[iRay] = false;
-	 	return exitCell;
-    } else {
-    	columnDensity[iRay] = newColumnDensity;
-    	columnVelocity[iRay] = newColumnVelocity;
-    }
-
-
-
+	double newColumnDensity  = columnDensity[iRay]  + distanceToExit * mesh.cellDensity[iCell];
+	double newColumnVelocity = columnVelocity[iRay] + distanceToExit * mesh.cellDensity[iCell] * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
+	columnDensity[iRay]  = newColumnDensity;
+	columnVelocity[iRay] = newColumnVelocity;
 
 
 
@@ -273,28 +241,11 @@ void Rays::initializePositions() {
 
 
 
-    if(flowFilter != 0)
-    	filter = getFilterForVelocity(flowFilter, exitCell, iRay);
+    newColumnDensity  = columnDensity[iRay]  + overshoot * mesh.cellDensity[exitCell];
+    newColumnVelocity = columnVelocity[iRay] + overshoot * mesh.cellDensity[exitCell] * (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2]);
+    columnDensity[iRay]  = newColumnDensity;
+    columnVelocity[iRay] = newColumnVelocity;
 
-    newColumnDensity  = columnDensity[iRay]  + overshoot * mesh.cellDensity[exitCell] * filter;
-    newColumnVelocity = columnVelocity[iRay] + overshoot * mesh.cellDensity[exitCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2]);
-
-    if((newColumnDensity >= maxColumn) && (maxColumn > 0.)){
-
-    	double fractionalColumn = (maxColumn - columnDensity[iRay])/(newColumnDensity - columnDensity[iRay]);
-
-    	overshoot *= fractionalColumn;
-
-    	columnDensity[iRay]     += overshoot * mesh.cellDensity[iCell] * filter;
-    	columnVelocity[iRay]    += overshoot * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
-
-        for (int i = 0; i < 3; i++)
-        	rayPosition[iRay][i] += rayDirection[iRay][i] * distanceToExit;
-
-    } else {
-    	columnDensity[iRay] = newColumnDensity;
-    	columnVelocity[iRay] = newColumnVelocity;
-    }
 
 
     distanceTravelled[iRay] += distanceToExit + overshoot;
@@ -332,7 +283,7 @@ void Rays::initializePositions() {
 
 
 
-    if(rayPosition[iRay][0] > mesh.boxSize || rayPosition[iRay][0] < 0 || rayPosition[iRay][1] > mesh.boxSize || rayPosition[iRay][1] < 0 || rayPosition[iRay][2] > mesh.boxSize || rayPosition[iRay][2] < 0 || distanceTravelled[iRay] >= maxRadius || columnDensity[iRay] >= maxColumn){
+    if(rayPosition[iRay][0] > mesh.boxSize || rayPosition[iRay][0] < 0 || rayPosition[iRay][1] > mesh.boxSize || rayPosition[iRay][1] < 0 || rayPosition[iRay][2] > mesh.boxSize || rayPosition[iRay][2] < 0 || distanceTravelled[iRay] >= maxRadius){
     	insideDomain[iRay] = false;
     	exitCell = -1;
     }
@@ -391,19 +342,6 @@ void Rays::outputResults(std::string& ofileName) {
     std::cout << "Results have been written to '" << ofileName << "'" << std::endl;
 }
 
-
- double Rays::getFilterForVelocity(int flowFilter, int cellIndex, int iRay){
-
-	 const auto& rayDir = rayDirection[iRay];
-	 const auto& velocity = mesh.cellVelocities[cellIndex];
-
-	 double dotProduct = rayDir[0] * velocity[0] + rayDir[1] * velocity[1] + rayDir[2] * velocity[2];
-
-	 if(flowFilter != 0)
-		 return (flowFilter * dotProduct > 0.0) ? 1.0 : 0.0;
-
-	 return 1.0;
- }
 
 
 void Rays::doRayTracing(){
