@@ -27,7 +27,6 @@ public:
 	std::vector<std::vector<double>> rayPosition;
 	std::vector<std::vector<int>> visitedCells;
 
-
 	std::vector<double> columnDensity;
 	std::vector<double> columnVelocity;
 
@@ -47,6 +46,8 @@ public:
 protected:
 	int startCell;
 	int travelToNextCell(int iCell, int iRay, bool verbose);
+	std::vector<int> rayFinalCell;
+
 
 private:
     void initializeDirections();

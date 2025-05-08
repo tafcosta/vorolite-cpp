@@ -82,6 +82,8 @@ void Mesh::readSnapshot(const std::string& snapshot) {
     } catch (H5::Exception& e) {
         std::cerr << "HDF5 error: " << e.getDetailMsg() << std::endl;
     }
+
+    //todo: save relevant IC data to prevent reading from snapshot every time.
 }
 
 std::vector<std::pair<int, int>> Mesh::readVoronoiIndices(const std::string& filename) {

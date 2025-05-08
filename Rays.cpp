@@ -12,9 +12,13 @@
 Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, int flowFilter, double maxColumn, Mesh& mesh) : numRays(nRays), maxRadius(maxRadius), sourcePosition(sourcePosition), flowFilter(flowFilter), maxColumn(maxColumn), mesh(mesh) {
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
 
+	rayFinalCell = std::vector<int> (nRays);
+    for (int iRay = 0; iRay < numRays; ++iRay)
+    	rayFinalCell[iRay] = iRay;
+
 	rayDirection = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
 	theta = std::vector<double>(nRays, 0.0);
-	phi = std::vector<double>(nRays, 0.0);
+	phi   = std::vector<double>(nRays, 0.0);
 	initializeDirections();
 
 	rayPosition = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
@@ -37,14 +41,29 @@ void Rays::initializeDirections() {
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(0.0, 1.0);
 
-    for (int iRay = 0; iRay < numRays; ++iRay) {
-        phi[iRay] = dis(gen) * 2.0 * M_PI;
-        theta[iRay] = std::acos(1.0 - 2.0 * dis(gen));
+	std::vector<float> cellPos;
+    double xDistance, yDistance, zDistance;
+    double rDistance;
 
-        rayDirection[iRay][0] = std::cos(phi[iRay]) * std::sin(theta[iRay]);
-        rayDirection[iRay][1] = std::sin(phi[iRay]) * std::sin(theta[iRay]);
-        rayDirection[iRay][2] = std::cos(theta[iRay]);
+    for (int iRay = 0; iRay < numRays; ++iRay) {
+
+    	cellPos = mesh.cellCoordinates[iRay];
+
+    	xDistance = cellPos[0] - sourcePosition[0];
+    	yDistance = cellPos[1] - sourcePosition[1];
+    	zDistance = cellPos[2] - sourcePosition[2];
+    	rDistance = std::sqrt(xDistance*xDistance + yDistance*yDistance + zDistance*zDistance);
+
+        rayDirection[iRay][0] = xDistance / rDistance;
+        rayDirection[iRay][1] = yDistance / rDistance;
+        rayDirection[iRay][2] = zDistance / rDistance;
+
+        phi[iRay]   = std::atan2(yDistance, xDistance);
+        theta[iRay] = std::acos(zDistance / rDistance);
+
+        std::cout << xDistance << " " << yDistance << " " << rDistance << " " << phi[iRay] << std::endl;
     }
+    abort();
 }
 
 void Rays::initializePositions() {
