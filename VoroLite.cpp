@@ -20,9 +20,7 @@ int main(int argc, char* argv[]) {
 
     int nRays = 0;
     double maxRadius = 0.0;
-    double maxColumn = 0.0;
     std::vector<double> sourcePosition(3, 0.5);
-    int flowFilter = 0;
     std::string meshFile, snapFile, ofileName;
 
     parseRayParamFile(paramFile, maxRadius, sourcePosition, meshFile, snapFile, ofileName);

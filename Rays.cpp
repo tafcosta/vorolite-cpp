@@ -26,7 +26,6 @@ Rays::Rays(double maxRadius, std::vector<double> sourcePosition, Mesh& mesh) : m
 	rayPosition = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
 	initializePositions();
 
-	visitedCells      = std::vector<std::vector<int>>(nRays);
 	columnDensity     = std::vector<double>(nRays, 0.0);
 
 	distanceTravelled = std::vector<double>(nRays, 0.0);
@@ -44,10 +43,6 @@ void Rays::setNumRays(){
 }
 
 void Rays::initializeDirections() {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> dis(0.0, 1.0);
-
 	std::vector<float> cellPos;
     double xDistance, yDistance, zDistance;
     double rDistance;
@@ -55,14 +50,18 @@ void Rays::initializeDirections() {
     for (int iRay = 0; iRay < nRays; ++iRay) {
 
     	cellPos   = mesh.cellCoordinates[iRay];
-    	xDistance = cellPos[0] - sourcePosition[0];
-    	yDistance = cellPos[1] - sourcePosition[1];
-    	zDistance = cellPos[2] - sourcePosition[2];
+    	xDistance = cellPos[0] - mesh.cellCoordinates[startCell][0];//sourcePosition[0];
+    	yDistance = cellPos[1] - mesh.cellCoordinates[startCell][1];//sourcePosition[1];
+    	zDistance = cellPos[2] - mesh.cellCoordinates[startCell][2];//sourcePosition[2];
     	rDistance = std::sqrt(xDistance*xDistance + yDistance*yDistance + zDistance*zDistance);
 
         rayDirection[iRay][0] = xDistance / rDistance;
         rayDirection[iRay][1] = yDistance / rDistance;
         rayDirection[iRay][2] = zDistance / rDistance;
+
+        if(iRay == 9261){
+        	std::cout << "DEBUG: Setting Ray Dir = " << rayDirection[iRay][0] << " " << rayDirection[iRay][1] << " " << rayDirection[iRay][2] << std::endl;
+        }
 
         phi[iRay]   = std::atan2(yDistance, xDistance);
         theta[iRay] = std::acos(zDistance / rDistance);
@@ -73,29 +72,7 @@ void Rays::initializePositions() {
     for (int iRay = 0; iRay < nRays; ++iRay)
         for (int i = 0; i < 3; ++i)
         	rayPosition[iRay][i] = 	mesh.cellCoordinates[startCell][i];
-
-    /*
-	std::vector<double> positionTmp (3, 0.);
-	std::vector<int> possibleCells = mesh.findHostCellID(sourcePosition, -1);
-	std::unordered_set<int> possibleCellsSet(possibleCells.begin(), possibleCells.end());
-
-	double offset = sqrt((sourcePosition[0] -  mesh.cellCoordinates[startCell][0]) * (sourcePosition[0] -  mesh.cellCoordinates[startCell][0])
-			+ (sourcePosition[1] -  mesh.cellCoordinates[startCell][1]) * (sourcePosition[1] -  mesh.cellCoordinates[startCell][1])
-			+ (sourcePosition[2] -  mesh.cellCoordinates[startCell][2]) * (sourcePosition[2] -  mesh.cellCoordinates[startCell][2]));
-
-    for (int iRay = 0; iRay < numRays; ++iRay) {
-
-    	do {
-    		for (int i = 0; i < 3; i++)
-    			positionTmp[i] = sourcePosition[i] + rayDirection[iRay][i] * offset;
-
-    		offset /= 2;
-    	} while (!possibleCellsSet.contains(mesh.findHostCellID(positionTmp, -1)[0]));
-
-    	for (int i = 0; i < 3; i++)
-    		rayPosition[iRay][i] = sourcePosition[i] + rayDirection[iRay][i] * offset;
-    	}
-*/
+        //	rayPosition[iRay][i] = 	sourcePosition[i];
 }
 
 
@@ -103,7 +80,6 @@ void Rays::initializePositions() {
 	 double distanceToExit = std::numeric_limits<double>::max();
 	 double distanceToExitTmp;
 	 double overshoot;
-	 double filter = 1;
 
 	 std::ostringstream debugOutput;
 	 int exitCell  = -1;
@@ -113,17 +89,20 @@ void Rays::initializePositions() {
 	 std::vector<double> pointOnInterface (3, 0.0);
 	 std::vector<double> positionTmp (3, 0.0);
 
+
 	 if(verbose){
 		 double distanceBetRayAndCell = sqrt((cellPos[0] - rayPosition[iRay][0]) * (cellPos[0] - rayPosition[iRay][0]) + (cellPos[1] - rayPosition[iRay][1]) * (cellPos[1] - rayPosition[iRay][1]) + (cellPos[2] - rayPosition[iRay][2]) * (cellPos[2] - rayPosition[iRay][2]));
 		 debugOutput << "Host Index = " << iCell << " Host Cell Position = " << cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << " Distance from Ray to Cell (before update) = " << distanceBetRayAndCell << "\n";
+
 	 }
 
 	 for (int neighbour : mesh.neighbourList[iCell]){
 
 		 std::vector<float> neighbourPos = mesh.cellCoordinates[neighbour];
 
-		 if(verbose)
+		 if(verbose){
 			 debugOutput << "Neighbour Index = " << neighbour << ", Neighbour Position = " << neighbourPos[0] << ", " << neighbourPos[1] << ", " << neighbourPos[2] << "\n";
+		 }
 
 		 for (int i = 0; i < 3; i++){
 			 normalVector[i] = neighbourPos[i] - cellPos[i];
@@ -140,8 +119,9 @@ void Rays::initializePositions() {
 
 		 distanceToExitTmp = distanceToExitTmp/denominator;
 
-		 if(verbose)
+		 if(verbose){
 			 debugOutput << std::scientific << std::setprecision(12) << "Distance to Neighbour = " << distanceToExitTmp << " denominator = " << denominator << "\n";
+		 }
 
 		 if((distanceToExitTmp <= distanceToExit) && (distanceToExitTmp > 0)){
 			 distanceToExit = distanceToExitTmp;
@@ -153,14 +133,19 @@ void Rays::initializePositions() {
 	 }
 
 
-	 if(distanceTravelled[iRay] + distanceToExit >= maxRadius){
+	 if(distanceTravelled[iRay] + distanceToExit >= maxRadius && iRay != exitCell){
 		 insideDomain[iRay] = false;
 		 lastVisitedCell[iRay] = iCell;
-		 exitCell = -1;
+
 		 std::cout << "-----" << "\n";
-		 std::cout << iCell << " " << exitCell << " " << rayFinalCell[iRay] << "\n";
+		 std::cout << iCell << " " << exitCell << " " << iRay << " " << distanceToExit << "\n";
+		 std::cout << mesh.cellCoordinates[iRay][0]  - sourcePosition[0]  << " " << mesh.cellCoordinates[iRay][1] - sourcePosition[1] << " " << mesh.cellCoordinates[iRay][2]  - sourcePosition[2] << " "<< "\n";
+		 std::cout << mesh.cellCoordinates[iCell][0] - sourcePosition[0] << " " << mesh.cellCoordinates[iCell][1] - sourcePosition[1] << " " << mesh.cellCoordinates[iCell][2] - sourcePosition[2] << "\n";
+		 std::cout << flagRay[iRay] << "\n";
+
 		 std::cout << "-----" << "\n";
 
+		 exitCell = -1;
 		 return exitCell;
 	 }
 
@@ -249,8 +234,6 @@ void Rays::initializePositions() {
     if(verbose)
     	debugOutput << "Ray position (before update) = " << rayPosition[iRay][0] << ", "  << rayPosition[iRay][1] << ", " << rayPosition[iRay][2] << "\n";
 
-    visitedCells[iRay].push_back(iCell);
-
 
 
 
@@ -329,10 +312,10 @@ void Rays::outputResults(std::string& ofileName) {
                << std::setw(10) << "Theta"
                << std::setw(10) << "Phi"
                << std::setw(15) << "Column"
-               << std::setw(15) << "Velocity"
                << std::setw(15) << "Distance"
                << std::setw(6)  << "Flag"
                << std::setw(10) << "NumCells"
+               << std::setw(10) << "LastVisit"
                << std::endl;
 
     for (int i = 0; i < nRays; ++i) {
@@ -344,7 +327,7 @@ void Rays::outputResults(std::string& ofileName) {
                    << std::setw(15) << std::fixed << std::setprecision(6) << distanceTravelled[i]
                    << std::setw(6)  << flagRay[i]
                    << std::setw(10) << numTraversedCells[i]
-				   << std::setw(10) << rayFinalCell[i]
+				   << std::setw(10) << lastVisitedCell[i]
                    << std::endl;
     }
 
@@ -361,7 +344,7 @@ void Rays::doRayTracing(){
 	bool debug = false;
 
 	for(int iRay = 0; iRay < nRays; iRay++){
-		std::cout << "ray " << iRay << std::endl;
+		//std::cout << "ray " << iRay << std::endl;
 		int iCell = startCell;
 
 		while(insideDomain[iRay]){

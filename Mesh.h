@@ -10,7 +10,7 @@
 
 class Mesh {
 public:
-	Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourceLocation);
+	Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition);
 	virtual ~Mesh();
 
 	int numCells;

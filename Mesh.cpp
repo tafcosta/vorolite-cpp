@@ -27,11 +27,13 @@ void Mesh::getNumCellsInRegion(){
 
 	std::vector<float> cellPos;
 
+	int startCell = findHostCellID(sourcePosition, -1)[0];
+
 	for(int iCell = 0; iCell < numCells; iCell++){
 		cellPos   = cellCoordinates[iCell];
-        double dx = cellPos[0] - sourcePosition[0];
-        double dy = cellPos[1] - sourcePosition[1];
-        double dz = cellPos[2] - sourcePosition[2];
+        double dx = cellPos[0] - cellCoordinates[startCell][0]; //sourcePosition[0];
+        double dy = cellPos[1] - cellCoordinates[startCell][1]; //sourcePosition[1];
+        double dz = cellPos[2] - cellCoordinates[startCell][2]; //sourcePosition[2];
         double rDistance = std::sqrt(dx*dx + dy*dy + dz*dz);
 
 		if(rDistance <= maxRadius){
@@ -47,6 +49,15 @@ void Mesh::getNumCellsInRegion(){
     cellDensity = std::move(filteredDensity);
     cellIDs = std::move(filteredIDs);
     numCells = cellDensity.size();
+
+
+    startCell = findHostCellID(sourcePosition, -1)[0];
+    cellPos   = cellCoordinates[9261];
+    double dx = cellPos[0] - cellCoordinates[startCell][0]; //sourcePosition[0];
+    double dy = cellPos[1] - cellCoordinates[startCell][1]; //sourcePosition[1];
+    double dz = cellPos[2] - cellCoordinates[startCell][2]; //sourcePosition[2];
+    double rDistance = std::sqrt(dx*dx + dy*dy + dz*dz);
+    std::cout << "DEBUG, INITIALISATION radial dir= " << dx/rDistance << " " << dy/rDistance << " " << dz/rDistance << std::endl;
 
     std::cout << "Reduced to " << numCells << " cells within maxRadius = " << maxRadius << std::endl;
 }

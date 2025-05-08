@@ -22,7 +22,6 @@ public:
 
 	std::vector<std::vector<double>> rayDirection;
 	std::vector<std::vector<double>> rayPosition;
-	std::vector<std::vector<int>> visitedCells;
 
 	std::vector<double> columnDensity;
 
