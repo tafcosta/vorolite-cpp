@@ -1,4 +1,3 @@
-numRays = 5000
 maxRadius = 0.5
 sourceLocation = 0.5, 0.5, 0.5
 flowFilter = 0

@@ -2,7 +2,7 @@
 #include "Mesh.h"
 #include "Rays.h"
 
-void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRadius,
+void parseRayParamFile(const std::string& fileName, double& maxRadius,
                        std::vector<double>& sourceLocation, int& flowFilter, double& maxColumn, std::string& meshFile,
                        std::string& snapFile, std::string& ofileName);
 
@@ -27,31 +27,35 @@ int main(int argc, char* argv[]) {
     int flowFilter = 0;
     std::string meshFile, snapFile, ofileName;
 
-    parseRayParamFile(paramFile, nRays, maxRadius, sourceLocation, flowFilter, maxColumn, meshFile, snapFile, ofileName);
+    parseRayParamFile(paramFile, maxRadius, sourceLocation, flowFilter, maxColumn, meshFile, snapFile, ofileName);
 
-    if (nRays == 0 || maxRadius == 0.0 || maxColumn == 0.0 || meshFile.empty() || snapFile.empty()) {
+    if (maxRadius == 0.0 || maxColumn == 0.0 || meshFile.empty() || snapFile.empty()) {
         std::cerr << "Error: Missing or invalid parameters in rayParam.txt" << std::endl;
         return 1;
     }
 
 	std::cout << "Starting VoroLite++ (Version 0.1)!" << std::endl;
-	std::cout << "We are using " << nRays << " rays." << std::endl;
     std::cout << "The source is at position " << sourceLocation[0] << ", " << sourceLocation[1] << ", " << sourceLocation[2] << " (code units)" << std::endl;
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
     Mesh *mesh = new Mesh(meshFile, snapFile);
+    nRays = mesh->numCells;
+	std::cout << "We are using " << nRays << " rays." << std::endl;
 
     Rays *rays = new Rays(nRays, maxRadius, sourceLocation, flowFilter, maxColumn, *mesh);
 
 	rays->doRayTracing();
 	rays->outputResults(ofileName);
+
+	//photochemistry->evolveIonisation();
+
   
 	delete mesh;
 	delete rays;
 	return 0;
 }
 
-void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRadius,
+void parseRayParamFile(const std::string& fileName, double& maxRadius,
                        std::vector<double>& sourceLocation, int& flowFilter, double& maxColumn, std::string& meshFile,
                        std::string& snapFile, std::string& ofileName) {
     std::ifstream inputFile(fileName);
@@ -77,10 +81,7 @@ void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRad
         value.erase(0, value.find_first_not_of(" \t"));
         value.erase(value.find_last_not_of(" \t") + 1);
 
-        if (key == "numRays") {
-            numRays = std::stoi(value);
-        }
-        else if (key == "maxRadius") {
+        if (key == "maxRadius") {
             maxRadius = std::stod(value);
         }
         else if (key == "sourceLocation") {
