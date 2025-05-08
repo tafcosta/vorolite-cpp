@@ -42,6 +42,12 @@ int main(int argc, char* argv[]) {
 	rays->doRayTracing();
 	rays->outputResults(ofileName);
 
+	/*
+	for(int iCell = 0; iCell < mesh->numCells; iCell++){
+		std::cout << mesh->cellFlux[iCell] << std::endl;
+	}
+	*/
+
 	//photochemistry->evolveIonisation();
 
   

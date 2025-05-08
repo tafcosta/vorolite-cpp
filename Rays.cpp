@@ -133,7 +133,7 @@ void Rays::initializePositions() {
 	 }
 
 
-	 if(distanceTravelled[iRay] + distanceToExit >= maxRadius && iRay != exitCell){
+	 if(flagRay[iRay] == true){
 		 insideDomain[iRay] = false;
 		 lastVisitedCell[iRay] = iCell;
 
@@ -141,7 +141,6 @@ void Rays::initializePositions() {
 		 std::cout << iCell << " " << exitCell << " " << iRay << " " << distanceToExit << "\n";
 		 std::cout << mesh.cellCoordinates[iRay][0]  - sourcePosition[0]  << " " << mesh.cellCoordinates[iRay][1] - sourcePosition[1] << " " << mesh.cellCoordinates[iRay][2]  - sourcePosition[2] << " "<< "\n";
 		 std::cout << mesh.cellCoordinates[iCell][0] - sourcePosition[0] << " " << mesh.cellCoordinates[iCell][1] - sourcePosition[1] << " " << mesh.cellCoordinates[iCell][2] - sourcePosition[2] << "\n";
-		 std::cout << flagRay[iRay] << "\n";
 
 		 std::cout << "-----" << "\n";
 
@@ -248,7 +247,7 @@ void Rays::initializePositions() {
     for (int i = 0; i < 3; i++)
     	rayPosition[iRay][i] += rayDirection[iRay][i] * (distanceToExit + overshoot);
 
-    mesh.cellFlux[exitCell] = exp(-columnDensity[iRay]);
+    mesh.cellFlux[exitCell] = exp(-columnDensity[iRay] * 1000);
 
     if(verbose){
     	double distanceToCell = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
@@ -344,7 +343,7 @@ void Rays::doRayTracing(){
 	bool debug = false;
 
 	for(int iRay = 0; iRay < nRays; iRay++){
-		//std::cout << "ray " << iRay << std::endl;
+		std::cout << "ray " << iRay << std::endl;
 		int iCell = startCell;
 
 		while(insideDomain[iRay]){
