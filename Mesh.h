@@ -10,11 +10,13 @@
 
 class Mesh {
 public:
-	Mesh(std::string fileMeshIndices, std::string snapshot);
+	Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourceLocation);
 	virtual ~Mesh();
 
 	int numCells;
 	double boxSize;
+	double maxRadius;
+
 
 	std::vector<int> cellIDs;
     std::vector<std::vector<float>> cellCoordinates;
@@ -35,6 +37,10 @@ private:
 	std::vector<int> getCellIDs(const std::vector<std::pair<int, int>>& IdPairs);
 	std::vector<std::pair<int, int>> readVoronoiIndices(const std::string& filename);
 
+    std::vector<double> sourcePosition;
+
+
+	void getNumCellsInRegion();
 	void saveVoronoiIndices(const std::string& filename, const std::vector<std::pair<int, int>>& IdPairs);
 	void readSnapshot(const std::string& snapshot);
 	double squaredDistance(const std::vector<float>& point1, const std::vector<double>& point2);

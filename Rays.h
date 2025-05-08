@@ -12,10 +12,9 @@
 
 class Rays {
 public:
-	Rays(int numRays, double maxRadius, std::vector<double> sourcePosition, Mesh& mesh);
+	Rays(double maxRadius, std::vector<double> sourcePosition, Mesh& mesh);
 	virtual ~Rays();
 
-	int numRays;
 	double maxRadius;
 
 	std::vector<double> sourcePosition;
@@ -26,16 +25,15 @@ public:
 	std::vector<std::vector<int>> visitedCells;
 
 	std::vector<double> columnDensity;
-	std::vector<double> columnVelocity;
 
+	std::vector<int> lastVisitedCell;
 	std::vector<int> numTraversedCells;
 	std::vector<double> distanceTravelled;
-
 
 	std::vector<bool> insideDomain;
 	std::vector<bool> flagRay;
 
-
+	int nRays;
 	Mesh& mesh;
 
 	void doRayTracing();
@@ -50,6 +48,8 @@ protected:
 private:
     void initializeDirections();
     void initializePositions();
+
+    void setNumRays();
     bool warningIssued;
 
     double minTolerance = 1.e-7;

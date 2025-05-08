@@ -3,12 +3,10 @@
 #include "Rays.h"
 
 void parseRayParamFile(const std::string& fileName, double& maxRadius,
-                       std::vector<double>& sourceLocation, int& flowFilter, double& maxColumn, std::string& meshFile,
+                       std::vector<double>& sourceLocation, std::string& meshFile,
                        std::string& snapFile, std::string& ofileName);
 
 
-// Parts of the main() function, as well as corresponding class functions like Rays.outputResults(), have been modified by L. Tortora
-// Main changes: made the parameter file an input, to vary the inputs and outputs of VoroLite++
 int main(int argc, char* argv[]) {
 
     if (argc < 2) {
@@ -23,26 +21,25 @@ int main(int argc, char* argv[]) {
     int nRays = 0;
     double maxRadius = 0.0;
     double maxColumn = 0.0;
-    std::vector<double> sourceLocation(3, 0.5);
+    std::vector<double> sourcePosition(3, 0.5);
     int flowFilter = 0;
     std::string meshFile, snapFile, ofileName;
 
-    parseRayParamFile(paramFile, maxRadius, sourceLocation, flowFilter, maxColumn, meshFile, snapFile, ofileName);
+    parseRayParamFile(paramFile, maxRadius, sourcePosition, meshFile, snapFile, ofileName);
 
-    if (maxRadius == 0.0 || maxColumn == 0.0 || meshFile.empty() || snapFile.empty()) {
+    if (maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
         std::cerr << "Error: Missing or invalid parameters in rayParam.txt" << std::endl;
         return 1;
     }
 
-	std::cout << "Starting VoroLite++ (Version 0.1)!" << std::endl;
-    std::cout << "The source is at position " << sourceLocation[0] << ", " << sourceLocation[1] << ", " << sourceLocation[2] << " (code units)" << std::endl;
-    std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
+	std::cout << "Starting VoroLite++ RT (Version 0.1)!" << std::endl;
 
-    Mesh *mesh = new Mesh(meshFile, snapFile);
-    nRays = mesh->numCells;
+    Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, sourcePosition);
+    Rays *rays = new Rays(maxRadius, sourcePosition, *mesh);
+
 	std::cout << "We are using " << nRays << " rays." << std::endl;
-
-    Rays *rays = new Rays(nRays, maxRadius, sourceLocation, *mesh);
+    std::cout << "The source is at position " << sourcePosition[0] << ", " << sourcePosition[1] << ", " << sourcePosition[2] << " (code units)" << std::endl;
+    std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
 	rays->doRayTracing();
 	rays->outputResults(ofileName);
@@ -56,7 +53,7 @@ int main(int argc, char* argv[]) {
 }
 
 void parseRayParamFile(const std::string& fileName, double& maxRadius,
-                       std::vector<double>& sourceLocation, int& flowFilter, double& maxColumn, std::string& meshFile,
+                       std::vector<double>& sourceLocation, std::string& meshFile,
                        std::string& snapFile, std::string& ofileName) {
     std::ifstream inputFile(fileName);
     std::string line;
@@ -90,12 +87,6 @@ void parseRayParamFile(const std::string& fileName, double& maxRadius,
             char comma;
             locStream >> x >> comma >> y >> comma >> z;
             sourceLocation = {x, y, z};
-        }
-        else if (key == "flowFilter") {
-        	flowFilter = std::stoi(value);
-        }
-        else if (key == "maxColumn") {
-        	maxColumn = std::stod(value);
         }
         else if (key == "meshFile") {
             meshFile = value;

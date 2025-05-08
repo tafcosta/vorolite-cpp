@@ -9,11 +9,13 @@
 #include "Rays.h"
 #include "Mesh.h"
 
-Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, Mesh& mesh) : numRays(nRays), maxRadius(maxRadius), sourcePosition(sourcePosition), mesh(mesh) {
+Rays::Rays(double maxRadius, std::vector<double> sourcePosition, Mesh& mesh) : maxRadius(maxRadius), sourcePosition(sourcePosition), mesh(mesh) {
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
 
+	setNumRays();
+
 	rayFinalCell = std::vector<int> (nRays);
-    for (int iRay = 0; iRay < numRays; ++iRay)
+    for (int iRay = 0; iRay < nRays; ++iRay)
     	rayFinalCell[iRay] = iRay;
 
 	rayDirection = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
@@ -26,14 +28,19 @@ Rays::Rays(int nRays, double maxRadius, std::vector<double> sourcePosition, Mesh
 
 	visitedCells      = std::vector<std::vector<int>>(nRays);
 	columnDensity     = std::vector<double>(nRays, 0.0);
-	columnVelocity    = std::vector<double>(nRays, 0.0);
 
 	distanceTravelled = std::vector<double>(nRays, 0.0);
 	insideDomain      = std::vector<bool>(nRays, true);
 	flagRay           = std::vector<bool>(nRays, false);
 	numTraversedCells = std::vector<int>(nRays, 0.0);
+	lastVisitedCell   = std::vector<int>(nRays, 0.0);
 
 	warningIssued = false;
+}
+
+void Rays::setNumRays(){
+
+	nRays = mesh.numCells;
 }
 
 void Rays::initializeDirections() {
@@ -45,7 +52,7 @@ void Rays::initializeDirections() {
     double xDistance, yDistance, zDistance;
     double rDistance;
 
-    for (int iRay = 0; iRay < numRays; ++iRay) {
+    for (int iRay = 0; iRay < nRays; ++iRay) {
 
     	cellPos   = mesh.cellCoordinates[iRay];
     	xDistance = cellPos[0] - sourcePosition[0];
@@ -63,7 +70,7 @@ void Rays::initializeDirections() {
 }
 
 void Rays::initializePositions() {
-    for (int iRay = 0; iRay < numRays; ++iRay)
+    for (int iRay = 0; iRay < nRays; ++iRay)
         for (int i = 0; i < 3; ++i)
         	rayPosition[iRay][i] = 	mesh.cellCoordinates[startCell][i];
 
@@ -146,6 +153,18 @@ void Rays::initializePositions() {
 	 }
 
 
+	 if(distanceTravelled[iRay] + distanceToExit >= maxRadius){
+		 insideDomain[iRay] = false;
+		 lastVisitedCell[iRay] = iCell;
+		 exitCell = -1;
+		 std::cout << "-----" << "\n";
+		 std::cout << iCell << " " << exitCell << " " << rayFinalCell[iRay] << "\n";
+		 std::cout << "-----" << "\n";
+
+		 return exitCell;
+	 }
+
+
 	 // Handle rare rays that want to travel along cell interfaces
 	 for (int i = 0; i < 3; i++)
 		 positionTmp[i] = rayPosition[iRay][i] + rayDirection[iRay][i] * distanceToExit;
@@ -203,14 +222,10 @@ void Rays::initializePositions() {
 	 if (distanceToExit < 1e-10)
 	 	std::cout << "distanceToExit = " << distanceToExit << "You seem to have ended up on an edge; how did you do that?!" << "\n";
 
-
-
-
-
 	double newColumnDensity  = columnDensity[iRay]  + distanceToExit * mesh.cellDensity[iCell];
-	double newColumnVelocity = columnVelocity[iRay] + distanceToExit * mesh.cellDensity[iCell] * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
-	columnDensity[iRay]  = newColumnDensity;
-	columnVelocity[iRay] = newColumnVelocity;
+	columnDensity[iRay]      = newColumnDensity;
+
+
 
 
 
@@ -242,11 +257,7 @@ void Rays::initializePositions() {
 
 
     newColumnDensity  = columnDensity[iRay]  + overshoot * mesh.cellDensity[exitCell];
-    newColumnVelocity = columnVelocity[iRay] + overshoot * mesh.cellDensity[exitCell] * (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2]);
     columnDensity[iRay]  = newColumnDensity;
-    columnVelocity[iRay] = newColumnVelocity;
-
-
 
     distanceTravelled[iRay] += distanceToExit + overshoot;
     numTraversedCells[iRay] += 1;
@@ -281,10 +292,9 @@ void Rays::initializePositions() {
     	}
     }
 
-
-
-    if(rayPosition[iRay][0] > mesh.boxSize || rayPosition[iRay][0] < 0 || rayPosition[iRay][1] > mesh.boxSize || rayPosition[iRay][1] < 0 || rayPosition[iRay][2] > mesh.boxSize || rayPosition[iRay][2] < 0 || distanceTravelled[iRay] >= maxRadius){
+    if(rayPosition[iRay][0] > mesh.boxSize || rayPosition[iRay][0] < 0 || rayPosition[iRay][1] > mesh.boxSize || rayPosition[iRay][1] < 0 || rayPosition[iRay][2] > mesh.boxSize || rayPosition[iRay][2] < 0 || distanceTravelled[iRay] >= maxRadius || exitCell == rayFinalCell[iRay]){
     	insideDomain[iRay] = false;
+    	lastVisitedCell[iRay] = exitCell;
     	exitCell = -1;
     }
     else {
@@ -325,16 +335,16 @@ void Rays::outputResults(std::string& ofileName) {
                << std::setw(10) << "NumCells"
                << std::endl;
 
-    for (int i = 0; i < numRays; ++i) {
+    for (int i = 0; i < nRays; ++i) {
         outputFile << std::left
                    << std::setw(6)  << i
                    << std::setw(10) << std::fixed << std::setprecision(3) << theta[i]
                    << std::setw(10) << std::fixed << std::setprecision(3) << phi[i]
                    << std::setw(15) << std::fixed << std::setprecision(6) << columnDensity[i]
-                   << std::setw(15) << std::fixed << std::setprecision(6) << columnVelocity[i]
                    << std::setw(15) << std::fixed << std::setprecision(6) << distanceTravelled[i]
                    << std::setw(6)  << flagRay[i]
                    << std::setw(10) << numTraversedCells[i]
+				   << std::setw(10) << rayFinalCell[i]
                    << std::endl;
     }
 
@@ -350,7 +360,7 @@ void Rays::doRayTracing(){
 	int iCellOld = -1;
 	bool debug = false;
 
-	for(int iRay = 0; iRay < numRays; iRay++){
+	for(int iRay = 0; iRay < nRays; iRay++){
 		std::cout << "ray " << iRay << std::endl;
 		int iCell = startCell;
 
@@ -374,11 +384,6 @@ void Rays::doRayTracing(){
 				}
 			}
 		}
-
-		if(columnDensity[iRay] > 0.)
-			columnVelocity[iRay] = columnVelocity[iRay] / columnDensity[iRay];
-		else
-			columnVelocity[iRay] = 0.;
 	}
 }
 

@@ -1,7 +1,5 @@
-maxRadius = 0.5
+maxRadius = 0.05
 sourceLocation = 0.5, 0.5, 0.5
-flowFilter = 0
-maxColumn = 0.001
 meshFile = ./output/tess_001_indices.dat
 snapFile = ./output/snap_001.hdf5
 outputFile = ./output/rays_output_001.txt

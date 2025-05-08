@@ -8,14 +8,47 @@
 #include "common_includes.h"
 #include "Mesh.h"
 
-Mesh::Mesh(std::string fileMeshIndices, std::string snapshot) : fileMeshIndices(fileMeshIndices), snapshot(snapshot) {
+Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition) : fileMeshIndices(fileMeshIndices), snapshot(snapshot), maxRadius(maxRadius), sourcePosition(sourcePosition) {
 
     readSnapshot(snapshot);
+	getNumCellsInRegion();
 
 	IdPairs       = readVoronoiIndices(fileMeshIndices);
 	neighbourList = collectNeighbours(IdPairs, cellIDs);
 
+}
 
+void Mesh::getNumCellsInRegion(){
+
+    std::vector<std::vector<float>> filteredCoordinates;
+    std::vector<std::vector<float>> filteredVelocities;
+    std::vector<double> filteredDensity;
+    std::vector<int> filteredIDs;
+
+	std::vector<float> cellPos;
+
+	for(int iCell = 0; iCell < numCells; iCell++){
+		cellPos   = cellCoordinates[iCell];
+        double dx = cellPos[0] - sourcePosition[0];
+        double dy = cellPos[1] - sourcePosition[1];
+        double dz = cellPos[2] - sourcePosition[2];
+        double rDistance = std::sqrt(dx*dx + dy*dy + dz*dz);
+
+		if(rDistance <= maxRadius){
+            filteredCoordinates.push_back(cellCoordinates[iCell]);
+            filteredVelocities.push_back(cellVelocities[iCell]);
+            filteredDensity.push_back(cellDensity[iCell]);
+            filteredIDs.push_back(cellIDs[iCell]);
+		}
+	}
+
+    cellCoordinates = std::move(filteredCoordinates);
+    cellVelocities = std::move(filteredVelocities);
+    cellDensity = std::move(filteredDensity);
+    cellIDs = std::move(filteredIDs);
+    numCells = cellDensity.size();
+
+    std::cout << "Reduced to " << numCells << " cells within maxRadius = " << maxRadius << std::endl;
 }
 
 void Mesh::readSnapshot(const std::string& snapshot) {
@@ -77,7 +110,8 @@ void Mesh::readSnapshot(const std::string& snapshot) {
         cellIDs.resize(numIDs);
         idDataset.read(cellIDs.data(), H5::PredType::NATIVE_INT);
 
-        std::cout << "Done reading snapshot. There are " << cellDensity.size() << " cells." << std::endl;
+        std::cout << "Done reading snapshot." << std::endl;
+        std::cout << "There are " << cellDensity.size() << " cells." << std::endl;
 
     } catch (H5::Exception& e) {
         std::cerr << "HDF5 error: " << e.getDetailMsg() << std::endl;
