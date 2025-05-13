@@ -51,29 +51,6 @@ void Rays::initializePositions() {
     for (int iRay = 0; iRay < numRays; ++iRay)
         for (int i = 0; i < 3; ++i)
         	rayPosition[iRay][i] = 	mesh.cellCoordinates[startCell][i];
-
-    /*
-	std::vector<double> positionTmp (3, 0.);
-	std::vector<int> possibleCells = mesh.findHostCellID(sourcePosition, -1);
-	std::unordered_set<int> possibleCellsSet(possibleCells.begin(), possibleCells.end());
-
-	double offset = sqrt((sourcePosition[0] -  mesh.cellCoordinates[startCell][0]) * (sourcePosition[0] -  mesh.cellCoordinates[startCell][0])
-			+ (sourcePosition[1] -  mesh.cellCoordinates[startCell][1]) * (sourcePosition[1] -  mesh.cellCoordinates[startCell][1])
-			+ (sourcePosition[2] -  mesh.cellCoordinates[startCell][2]) * (sourcePosition[2] -  mesh.cellCoordinates[startCell][2]));
-
-    for (int iRay = 0; iRay < numRays; ++iRay) {
-
-    	do {
-    		for (int i = 0; i < 3; i++)
-    			positionTmp[i] = sourcePosition[i] + rayDirection[iRay][i] * offset;
-
-    		offset /= 2;
-    	} while (!possibleCellsSet.contains(mesh.findHostCellID(positionTmp, -1)[0]));
-
-    	for (int i = 0; i < 3; i++)
-    		rayPosition[iRay][i] = sourcePosition[i] + rayDirection[iRay][i] * offset;
-    	}
-*/
 }
 
 
@@ -82,9 +59,9 @@ void Rays::initializePositions() {
 	 double distanceToExitTmp;
 	 double overshoot;
 	 double filter = 1;
+	 int exitCell = -1;
 
 	 std::ostringstream debugOutput;
-	 int exitCell  = -1;
 
 	 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
 	 std::vector<double> normalVector (3, 0.0);
@@ -96,84 +73,10 @@ void Rays::initializePositions() {
 		 debugOutput << "Host Index = " << iCell << " Host Cell Position = " << cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << " Distance from Ray to Cell (before update) = " << distanceBetRayAndCell << "\n";
 	 }
 
-	 for (int neighbour : mesh.neighbourList[iCell]){
 
-		 std::vector<float> neighbourPos = mesh.cellCoordinates[neighbour];
+	 findExitCellAndSetDistance(iCell, iRay, exitCell, distanceToExit, verbose);
 
-		 if(verbose)
-			 debugOutput << "Neighbour Index = " << neighbour << ", Neighbour Position = " << neighbourPos[0] << ", " << neighbourPos[1] << ", " << neighbourPos[2] << "\n";
-
-		 for (int i = 0; i < 3; i++){
-			 normalVector[i] = neighbourPos[i] - cellPos[i];
-			 pointOnInterface[i] = 0.5 * (cellPos[i] + neighbourPos[i]);
-		 }
-
-		 double denominator = normalVector[0] * rayDirection[iRay][0] + normalVector[1] * rayDirection[iRay][1] + normalVector[2] * rayDirection[iRay][2];
-		 if(denominator <= 0.)
-			 continue;
-
-		 distanceToExitTmp = normalVector[0] * (pointOnInterface[0] - rayPosition[iRay][0])
-				 + normalVector[1] * (pointOnInterface[1] - rayPosition[iRay][1])
-				 + normalVector[2] * (pointOnInterface[2] - rayPosition[iRay][2]);
-
-		 distanceToExitTmp = distanceToExitTmp/denominator;
-
-		 if(verbose)
-			 debugOutput << std::scientific << std::setprecision(12) << "Distance to Neighbour = " << distanceToExitTmp << " denominator = " << denominator << "\n";
-
-		 if((distanceToExitTmp <= distanceToExit) && (distanceToExitTmp > 0)){
-			 distanceToExit = distanceToExitTmp;
-			 exitCell = neighbour;
-
-			 if(verbose)
-				 debugOutput << "New Neighbour candidate = " << neighbour << "\n";
-		 }
-	 }
-
-
-	 // Handle rare rays that want to travel along cell interfaces
-	 for (int i = 0; i < 3; i++)
-		 positionTmp[i] = rayPosition[iRay][i] + rayDirection[iRay][i] * distanceToExit;
-
-	 int targetCell = mesh.findHostCellID(positionTmp, exitCell)[0];
-
-	 if(targetCell != exitCell && targetCell != iCell){
-
-		 if(verbose)
-			 std::cout << "Here there's an issue. iCell = " << iCell << ", exitCell = " << exitCell << ", wants to be in cell = " <<  targetCell << std::endl;
-
-		 flagRay[iRay] = true;
-
-		 for (int neighbour : mesh.neighbourList[iCell]){
-
-			 std::vector<float> neighbourPos = mesh.cellCoordinates[neighbour];
-
-			 for (int i = 0; i < 3; i++){
-				 normalVector[i] = neighbourPos[i] - cellPos[i];
-				 pointOnInterface[i] = 0.5 * (cellPos[i] + neighbourPos[i]);
-			 }
-
-			 double denominator = normalVector[0] * rayDirection[iRay][0] + normalVector[1] * rayDirection[iRay][1] + normalVector[2] * rayDirection[iRay][2];
-
-			 if(denominator <= 0.)
-				 continue;
-
-			 distanceToExitTmp = normalVector[0] * (pointOnInterface[0] - rayPosition[iRay][0])
-					 + normalVector[1] * (pointOnInterface[1] - rayPosition[iRay][1])
-					 + normalVector[2] * (pointOnInterface[2] - rayPosition[iRay][2]);
-
-			 distanceToExitTmp = distanceToExitTmp/denominator;
-
-			 if(verbose)
-				 std::cout << "cell index = " << neighbour << ", distance = " << distanceToExitTmp << std::endl;
-
-			 if((distanceToExitTmp < 0) && (distanceToExitTmp > -minTolerance))
-				 exitCell = neighbour;
-			 else if ((neighbour == targetCell) && (fabs(distanceToExitTmp - distanceToExit) < minTolerance))
-				 exitCell = neighbour;
-
-			 }
-		 }
+	 handleRaysOnInterfaces(iCell, iRay, exitCell, distanceToExit, verbose);
 
 	 if(distanceToExit > mesh.boxSize){
 	 	insideDomain[iRay] = false;
@@ -332,6 +235,105 @@ void Rays::initializePositions() {
 
     return exitCell;
  }
+
+
+
+
+void Rays::handleRaysOnInterfaces(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose){
+
+	double distanceToExitTmp;
+	std::vector<float> cellPos = mesh.cellCoordinates[iCell];
+	std::vector<double> normalVector (3, 0.0);
+	std::vector<double> pointOnInterface (3, 0.0);
+	std::vector<double> positionTmp (3, 0.0);
+
+	for (int i = 0; i < 3; i++)
+		 positionTmp[i] = rayPosition[iRay][i] + rayDirection[iRay][i] * distanceToExit;
+
+
+	 int targetCell = mesh.findHostCellID(positionTmp, exitCell)[0];
+
+	 if(targetCell != exitCell && targetCell != iCell){
+
+		 flagRay[iRay] = true;
+		 if(verbose)
+			 std::cout << "Here there's an issue. iCell = " << iCell << ", exitCell = " << exitCell << ", wants to be in cell = " <<  targetCell << std::endl;
+
+		 for (int neighbour : mesh.neighbourList[iCell]){
+			 std::vector<float> neighbourPos = mesh.cellCoordinates[neighbour];
+
+			 for (int i = 0; i < 3; i++){
+				 normalVector[i] = neighbourPos[i] - cellPos[i];
+				 pointOnInterface[i] = 0.5 * (cellPos[i] + neighbourPos[i]);
+			 }
+
+			 double denominator = normalVector[0] * rayDirection[iRay][0] + normalVector[1] * rayDirection[iRay][1] + normalVector[2] * rayDirection[iRay][2];
+
+			 if(denominator <= 0.)
+				 continue;
+
+			 distanceToExitTmp = normalVector[0] * (pointOnInterface[0] - rayPosition[iRay][0])
+					 + normalVector[1] * (pointOnInterface[1] - rayPosition[iRay][1])
+					 + normalVector[2] * (pointOnInterface[2] - rayPosition[iRay][2]);
+
+			 distanceToExitTmp = distanceToExitTmp/denominator;
+
+			 if(verbose)
+				 std::cout << "cell index = " << neighbour << ", distance = " << distanceToExitTmp << std::endl;
+
+			 if((distanceToExitTmp < 0) && (distanceToExitTmp > -minTolerance))
+				 exitCell = neighbour;
+			 else if ((neighbour == targetCell) && (fabs(distanceToExitTmp - distanceToExit) < minTolerance))
+				 exitCell = neighbour;
+
+			 	 }
+	 }
+}
+
+
+void Rays::findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose){
+	 double distanceToExitTmp;
+	 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
+	 std::vector<double> normalVector (3, 0.0);
+	 std::vector<double> pointOnInterface (3, 0.0);
+
+	 for (int neighbour : mesh.neighbourList[iCell]){
+
+		 std::vector<float> neighbourPos = mesh.cellCoordinates[neighbour];
+
+		 if(verbose)
+			 std::cout << "Neighbour Index = " << neighbour << ", Neighbour Position = " << neighbourPos[0] << ", " << neighbourPos[1] << ", " << neighbourPos[2] << "\n";
+
+		 for (int i = 0; i < 3; i++){
+			 normalVector[i] = neighbourPos[i] - cellPos[i];
+			 pointOnInterface[i] = 0.5 * (cellPos[i] + neighbourPos[i]);
+		 }
+
+		 double denominator = normalVector[0] * rayDirection[iRay][0] + normalVector[1] * rayDirection[iRay][1] + normalVector[2] * rayDirection[iRay][2];
+		 if(denominator <= 0.)
+			 continue;
+
+		 distanceToExitTmp = normalVector[0] * (pointOnInterface[0] - rayPosition[iRay][0])
+				 + normalVector[1] * (pointOnInterface[1] - rayPosition[iRay][1])
+				 + normalVector[2] * (pointOnInterface[2] - rayPosition[iRay][2]);
+		 distanceToExitTmp = distanceToExitTmp/denominator;
+
+
+		 if(verbose)
+			 std::cout << std::scientific << std::setprecision(12) << "Distance to Neighbour = " << distanceToExitTmp << " denominator = " << denominator << "\n";
+
+
+		 if((distanceToExitTmp <= distanceToExit) && (distanceToExitTmp > 0)){
+			 distanceToExit = distanceToExitTmp;
+			 exitCell = neighbour;
+
+			 if(verbose)
+				 std::cout << "New Neighbour candidate = " << neighbour << "\n";
+
+
+		 }
+	 }
+}
 
 
 #include <iomanip> // Make sure this is included for formatting

@@ -47,6 +47,8 @@ public:
 protected:
 	int startCell;
 	int travelToNextCell(int iCell, int iRay, bool verbose);
+	void findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& exitToCell, bool verbose);
+	void handleRaysOnInterfaces(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose);
 
 private:
     void initializeDirections();
