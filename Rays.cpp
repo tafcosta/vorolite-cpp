@@ -189,10 +189,6 @@ void Rays::updateColumn(int iCell, int iRay, double& distanceToExit){
 
 		columnDensity[iRay]     += distanceToExit * mesh.cellDensity[iCell] * filter;
 		columnVelocity[iRay]    += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
-		distanceTravelled[iRay] += distanceToExit;
-
-		for (int i = 0; i < 3; i++)
-			rayPosition[iRay][i] += rayDirection[iRay][i] * distanceToExit;
 
 		insideDomain[iRay] = false;
 
@@ -315,7 +311,6 @@ void Rays::findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double
 }
 
 
-#include <iomanip> // Make sure this is included for formatting
 
 void Rays::outputResults(std::string& ofileName) {
     std::ofstream outputFile(ofileName);
