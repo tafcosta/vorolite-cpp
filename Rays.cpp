@@ -61,8 +61,6 @@ void Rays::initializePositions() {
 	 double filter = 1;
 	 int exitCell = -1;
 
-	 std::ostringstream debugOutput;
-
 	 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
 	 std::vector<double> normalVector (3, 0.0);
 	 std::vector<double> pointOnInterface (3, 0.0);
@@ -70,9 +68,8 @@ void Rays::initializePositions() {
 
 	 if(verbose){
 		 double distanceBetRayAndCell = sqrt((cellPos[0] - rayPosition[iRay][0]) * (cellPos[0] - rayPosition[iRay][0]) + (cellPos[1] - rayPosition[iRay][1]) * (cellPos[1] - rayPosition[iRay][1]) + (cellPos[2] - rayPosition[iRay][2]) * (cellPos[2] - rayPosition[iRay][2]));
-		 debugOutput << "Host Index = " << iCell << " Host Cell Position = " << cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << " Distance from Ray to Cell (before update) = " << distanceBetRayAndCell << "\n";
+		 std::cout << "Host Index = " << iCell << " Host Cell Position = " << cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << " Distance from Ray to Cell (before update) = " << distanceBetRayAndCell << "\n";
 	 }
-
 
 	 visitedCells[iRay].push_back(iCell);
 	 findExitCellAndSetDistance(iCell, iRay, exitCell, distanceToExit, verbose);
@@ -110,22 +107,22 @@ void Rays::initializePositions() {
     	double distanceToCell = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
     	std::vector<int> closestCells;
 
-    	debugOutput << "Ray position (after update) = " << rayPosition[iRay][0] << " "
+    	std::cout << "Ray position (after update) = " << rayPosition[iRay][0] << " "
     			<< rayPosition[iRay][1] << " "
 				<< rayPosition[iRay][2] << "\n";
 
         closestCells = mesh.findHostCellID(positionTmp, -1);
-    	debugOutput  << "Closest cells = ";
+        std::cout  << "Closest cells = ";
 
     	for(int i = 0; i < closestCells.size(); i++)
-    		debugOutput << closestCells[i] << ", ";
+    		std::cout << closestCells[i] << ", ";
 
-    	debugOutput  << "\n";
-    	debugOutput  << "Distance from ray to exit cell = " << distanceToCell << "\n";
+    	std::cout  << "\n";
+    	std::cout  << "Distance from ray to exit cell = " << distanceToCell << "\n";
 
     	if(exitCell != -1){
     		std::vector<float> cellPos = mesh.cellCoordinates[exitCell];
-    		debugOutput << "Next cell (from neighbour) = " << exitCell << "\n"
+    		std::cout << "Next cell (from neighbour) = " << exitCell << "\n"
     				<< "Position of cell (from neighbour search) = "
 					<< cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << "\n";
     	}
@@ -141,10 +138,6 @@ void Rays::initializePositions() {
 
     	if(exitCell == -1){
     		warningIssued = true;
-
-    		if(verbose)
-    			std::cout << debugOutput.str() << std::endl;
-
     		flagRay[iRay] = true;
     	}
     }
