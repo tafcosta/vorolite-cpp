@@ -56,10 +56,12 @@ void Rays::initializePositions() {
 
  int Rays::travelToNextCell(int iCell, int iRay, bool verbose){
 	 double distanceToExit = std::numeric_limits<double>::max();
-	 double overshoot = 0.0;
+	 double overshoot = 0.;
 	 int exitCell = -1;
 
 	 visitedCells[iRay].push_back(iCell);
+	 numTraversedCells[iRay] += 1;
+
 
 	 if(verbose){
 		 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
@@ -71,30 +73,28 @@ void Rays::initializePositions() {
 	 findExitCellAndSetDistance(iCell, iRay, exitCell, distanceToExit, verbose);
 	 handleRaysOnInterfaces(iCell, iRay, exitCell, distanceToExit, verbose);
 
-	 checkDistanceToExit(iRay, distanceToExit);
-	 if(insideDomain[iRay] == false){
-		 	exitCell = -1;
-			numTraversedCells[iRay] += 1;
-		 	return exitCell;
+	 if(shouldRayBeTerminated(iRay, distanceToExit))
+		 insideDomain[iRay] = false;
+
+	 if(insideDomain[iRay]){
+		 if(updateColumnAndIsMaxReached(iCell, iRay, distanceToExit))
+			 insideDomain[iRay] = false;
+
+		 overshoot = getOvershootDistance(exitCell, iRay, distanceToExit, verbose);
+
+		 if(updateColumnAndIsMaxReached(exitCell, iRay, overshoot))
+			 insideDomain[iRay] = false;
 	 }
-
-	 updateColumn(iCell, iRay, distanceToExit);
-	 if(insideDomain[iRay] == false){
-		 	exitCell = -1;
-			numTraversedCells[iRay] += 1;
-		 	return exitCell;
-	 }
-
-	 getOvershootDistance(exitCell, iRay, distanceToExit, overshoot, verbose);
-	 updateColumn(exitCell, iRay, overshoot);
-
 
 
 	 distanceTravelled[iRay] += distanceToExit + overshoot;
-	 numTraversedCells[iRay] += 1;
-
 	 for (int i = 0; i < 3; i++)
 		 rayPosition[iRay][i] += rayDirection[iRay][i] * (distanceToExit + overshoot);
+
+	 if(insideDomain[iRay] == false)
+		 return -1;
+
+
 
 
 
@@ -127,25 +127,23 @@ void Rays::initializePositions() {
 
     if(rayPosition[iRay][0] > mesh.boxSize || rayPosition[iRay][0] < 0 || rayPosition[iRay][1] > mesh.boxSize || rayPosition[iRay][1] < 0 || rayPosition[iRay][2] > mesh.boxSize || rayPosition[iRay][2] < 0 || distanceTravelled[iRay] >= maxRadius || columnDensity[iRay] >= maxColumn){
     	insideDomain[iRay] = false;
-    	exitCell = -1;
+    	return -1;
     }
-    else
-    {
-    	if(exitCell == -1){
-    		warningIssued = true;
-    		flagRay[iRay] = true;
-    	}
+
+    if(exitCell == -1){
+    	warningIssued = true;
+    	flagRay[iRay] = true;
     }
 
     return exitCell;
  }
 
-void Rays::getOvershootDistance(int exitCell, int iRay, double distanceToExit, double& overshoot, bool verbose){
+double Rays::getOvershootDistance(int exitCell, int iRay, double distanceToExit, bool verbose){
 
 	double distanceRayToExitCellCentre = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
 	std::vector<double> positionTmp (3, 0.0);
 
-	overshoot = distanceRayToExitCellCentre / 10;
+	double overshoot = distanceRayToExitCellCentre / 10;
 
 	int nIter = 0;
 	do {
@@ -163,10 +161,11 @@ void Rays::getOvershootDistance(int exitCell, int iRay, double distanceToExit, d
     if(verbose)
     	std::cout << "Ray position (before update) = " << rayPosition[iRay][0] << ", "  << rayPosition[iRay][1] << ", " << rayPosition[iRay][2] << "\n";
 
+    return overshoot;
 }
 
 
-void Rays::updateColumn(int iCell, int iRay, double& distanceToExit){
+bool Rays::updateColumnAndIsMaxReached(int iCell, int iRay, double& distanceToExit){
 
 	int filter = 1;
 	if(flowFilter != 0)
@@ -183,29 +182,29 @@ void Rays::updateColumn(int iCell, int iRay, double& distanceToExit){
 
 		columnDensity[iRay]     += distanceToExit * mesh.cellDensity[iCell] * filter;
 		columnVelocity[iRay]    += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
-
-		insideDomain[iRay] = false;
+		return true;
 
 	} else {
 		columnDensity[iRay] = newColumnDensity;
 		columnVelocity[iRay] = newColumnVelocity;
 	}
 
+	return false;
+
 }
 
 
-
-void Rays::checkDistanceToExit(int iRay, double distanceToExit){
+bool Rays::shouldRayBeTerminated(int iRay, double distanceToExit){
 
 	 if(distanceToExit > mesh.boxSize){
 		std::cout << "Distance to exit larger than box size; stopped!" << "\n";
-
-	 	insideDomain[iRay] = false;
-	 	distanceToExit = 0.0;
+		return true;
 	 }
 
 	 if (distanceToExit < 1e-10)
 	 	std::cout << "distanceToExit = " << distanceToExit << "You seem to have ended up on an edge; how did you do that?!" << "\n";
+
+	 return false;
 }
 
 void Rays::handleRaysOnInterfaces(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose){

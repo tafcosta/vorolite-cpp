@@ -49,9 +49,9 @@ protected:
 	int travelToNextCell(int iCell, int iRay, bool verbose);
 	void findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& exitToCell, bool verbose);
 	void handleRaysOnInterfaces(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose);
-	void checkDistanceToExit(int iRay, double distanceToExit);
-	void updateColumn(int iCell, int iRay, double& distanceToExit);
-	void getOvershootDistance(int exitCell, int iRay, double distanceToExit, double& overshoot, bool verbose);
+	bool shouldRayBeTerminated(int iRay, double distanceToExit);
+	bool updateColumnAndIsMaxReached(int iCell, int iRay, double& distanceToExit);
+	double getOvershootDistance(int exitCell, int iRay, double distanceToExit, bool verbose);
 
 private:
     void initializeDirections();
