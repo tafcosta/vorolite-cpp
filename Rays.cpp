@@ -74,119 +74,35 @@ void Rays::initializePositions() {
 	 }
 
 
+	 visitedCells[iRay].push_back(iCell);
 	 findExitCellAndSetDistance(iCell, iRay, exitCell, distanceToExit, verbose);
-
 	 handleRaysOnInterfaces(iCell, iRay, exitCell, distanceToExit, verbose);
 
-	 if(distanceToExit > mesh.boxSize){
-	 	insideDomain[iRay] = false;
-	 	distanceToExit = 0.0;
-	 	exitCell = -1;
-	    numTraversedCells[iRay] += 1;
-
-	 	std::cout << "Distance to exit larger than box size; stopped!" << "\n";
-	 	return exitCell;
+	 checkDistanceToExit(iRay, distanceToExit);
+	 if(insideDomain[iRay] == false){
+		 	exitCell = -1;
+			numTraversedCells[iRay] += 1;
+		 	return exitCell;
 	 }
 
-	 if (distanceToExit < 1e-10)
-	 	std::cout << "distanceToExit = " << distanceToExit << "You seem to have ended up on an edge; how did you do that?!" << "\n";
+	 updateColumn(iCell, iRay, distanceToExit);
+	 if(insideDomain[iRay] == false){
+		 	exitCell = -1;
+			numTraversedCells[iRay] += 1;
+		 	return exitCell;
+	 }
+
+	 getOvershootDistance(exitCell, iRay, distanceToExit, overshoot, verbose);
+	 updateColumn(exitCell, iRay, overshoot);
 
 
 
 
+	 distanceTravelled[iRay] += distanceToExit + overshoot;
+	 numTraversedCells[iRay] += 1;
 
-
-	 if(flowFilter != 0)
-		 filter = getFilterForVelocity(flowFilter, iCell, iRay);
-
-
-	double newColumnDensity  = columnDensity[iRay]  + distanceToExit * mesh.cellDensity[iCell] * filter;
-	double newColumnVelocity = columnVelocity[iRay] + distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
-
-    if((newColumnDensity >= maxColumn) && (maxColumn > 0.)){
-
-    	double fractionalColumn = (maxColumn - columnDensity[iRay])/(newColumnDensity - columnDensity[iRay]);
-
-    	distanceToExit *= fractionalColumn;
-
-    	columnDensity[iRay]     += distanceToExit * mesh.cellDensity[iCell] * filter;
-    	columnVelocity[iRay]    += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
-        distanceTravelled[iRay] += distanceToExit;
-        numTraversedCells[iRay] += 1;
-
-        for (int i = 0; i < 3; i++)
-        	rayPosition[iRay][i] += rayDirection[iRay][i] * distanceToExit;
-
-    	exitCell = -1;
-    	insideDomain[iRay] = false;
-	 	return exitCell;
-    } else {
-    	columnDensity[iRay] = newColumnDensity;
-    	columnVelocity[iRay] = newColumnVelocity;
-    }
-
-
-
-
-
-
-	// we now know where we would pierce the face of the cell; we want to continue onwards
-	double distanceRayToExitCellCentre = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
-	overshoot = distanceRayToExitCellCentre / 10;
-
-	int nIter = 0;
-	do {
-		for (int i = 0; i < 3; i++)
-			positionTmp[i] = rayPosition[iRay][i] + rayDirection[iRay][i] * (distanceToExit + overshoot);
-
-		nIter +=1;
-		if(nIter == maxnIter)
-			flagRay[iRay] = true;
-
-		overshoot /= 2;
-
-	} while ((mesh.findHostCellID(positionTmp, exitCell)[0] != exitCell) && (nIter < maxnIter));  // todo maybe replace by a check of the entire list, but a priori there should only be one cell as we no longer are on an edge
-
-    if(verbose)
-    	debugOutput << "Ray position (before update) = " << rayPosition[iRay][0] << ", "  << rayPosition[iRay][1] << ", " << rayPosition[iRay][2] << "\n";
-
-    visitedCells[iRay].push_back(iCell);
-
-
-
-
-
-
-    if(flowFilter != 0)
-    	filter = getFilterForVelocity(flowFilter, exitCell, iRay);
-
-    newColumnDensity  = columnDensity[iRay]  + overshoot * mesh.cellDensity[exitCell] * filter;
-    newColumnVelocity = columnVelocity[iRay] + overshoot * mesh.cellDensity[exitCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[exitCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[exitCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[exitCell][2]);
-
-    if((newColumnDensity >= maxColumn) && (maxColumn > 0.)){
-
-    	double fractionalColumn = (maxColumn - columnDensity[iRay])/(newColumnDensity - columnDensity[iRay]);
-
-    	overshoot *= fractionalColumn;
-
-    	columnDensity[iRay]     += overshoot * mesh.cellDensity[iCell] * filter;
-    	columnVelocity[iRay]    += overshoot * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
-
-        for (int i = 0; i < 3; i++)
-        	rayPosition[iRay][i] += rayDirection[iRay][i] * distanceToExit;
-
-
-    } else {
-    	columnDensity[iRay] = newColumnDensity;
-    	columnVelocity[iRay] = newColumnVelocity;
-    }
-
-
-    distanceTravelled[iRay] += distanceToExit + overshoot;
-    numTraversedCells[iRay] += 1;
-
-    for (int i = 0; i < 3; i++)
-    	rayPosition[iRay][i] += rayDirection[iRay][i] * (distanceToExit + overshoot);
+	 for (int i = 0; i < 3; i++)
+		 rayPosition[iRay][i] += rayDirection[iRay][i] * (distanceToExit + overshoot);
 
 
 
@@ -236,8 +152,78 @@ void Rays::initializePositions() {
     return exitCell;
  }
 
+void Rays::getOvershootDistance(int exitCell, int iRay, double distanceToExit, double& overshoot, bool verbose){
+
+	double distanceRayToExitCellCentre = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
+	std::vector<double> positionTmp (3, 0.0);
+
+	overshoot = distanceRayToExitCellCentre / 10;
+
+	int nIter = 0;
+	do {
+		for (int i = 0; i < 3; i++)
+			positionTmp[i] = rayPosition[iRay][i] + rayDirection[iRay][i] * (distanceToExit + overshoot);
+
+		nIter +=1;
+		if(nIter == maxnIter)
+			flagRay[iRay] = true;
+
+		overshoot /= 2;
+
+	} while ((mesh.findHostCellID(positionTmp, exitCell)[0] != exitCell) && (nIter < maxnIter));  // todo maybe replace by a check of the entire list, but a priori there should only be one cell as we no longer are on an edge
+
+    if(verbose)
+    	std::cout << "Ray position (before update) = " << rayPosition[iRay][0] << ", "  << rayPosition[iRay][1] << ", " << rayPosition[iRay][2] << "\n";
+
+}
 
 
+void Rays::updateColumn(int iCell, int iRay, double& distanceToExit){
+
+	int filter = 1;
+
+	if(flowFilter != 0)
+		filter = getFilterForVelocity(flowFilter, iCell, iRay);
+
+	double newColumnDensity  = columnDensity[iRay]  + distanceToExit * mesh.cellDensity[iCell] * filter;
+	double newColumnVelocity = columnVelocity[iRay] + distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
+
+	if((newColumnDensity >= maxColumn) && (maxColumn > 0.)){
+
+		double fractionalColumn = (maxColumn - columnDensity[iRay])/(newColumnDensity - columnDensity[iRay]);
+
+		distanceToExit *= fractionalColumn;
+
+		columnDensity[iRay]     += distanceToExit * mesh.cellDensity[iCell] * filter;
+		columnVelocity[iRay]    += distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
+		distanceTravelled[iRay] += distanceToExit;
+
+		for (int i = 0; i < 3; i++)
+			rayPosition[iRay][i] += rayDirection[iRay][i] * distanceToExit;
+
+		insideDomain[iRay] = false;
+
+	} else {
+		columnDensity[iRay] = newColumnDensity;
+		columnVelocity[iRay] = newColumnVelocity;
+	}
+
+}
+
+
+
+void Rays::checkDistanceToExit(int iRay, double distanceToExit){
+
+	 if(distanceToExit > mesh.boxSize){
+		std::cout << "Distance to exit larger than box size; stopped!" << "\n";
+
+	 	insideDomain[iRay] = false;
+	 	distanceToExit = 0.0;
+	 }
+
+	 if (distanceToExit < 1e-10)
+	 	std::cout << "distanceToExit = " << distanceToExit << "You seem to have ended up on an edge; how did you do that?!" << "\n";
+}
 
 void Rays::handleRaysOnInterfaces(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose){
 
