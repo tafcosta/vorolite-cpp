@@ -56,22 +56,18 @@ void Rays::initializePositions() {
 
  int Rays::travelToNextCell(int iCell, int iRay, bool verbose){
 	 double distanceToExit = std::numeric_limits<double>::max();
-	 double distanceToExitTmp;
-	 double overshoot;
-	 double filter = 1;
+	 double overshoot = 0.0;
 	 int exitCell = -1;
 
-	 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
-	 std::vector<double> normalVector (3, 0.0);
-	 std::vector<double> pointOnInterface (3, 0.0);
-	 std::vector<double> positionTmp (3, 0.0);
+	 visitedCells[iRay].push_back(iCell);
 
 	 if(verbose){
+		 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
 		 double distanceBetRayAndCell = sqrt((cellPos[0] - rayPosition[iRay][0]) * (cellPos[0] - rayPosition[iRay][0]) + (cellPos[1] - rayPosition[iRay][1]) * (cellPos[1] - rayPosition[iRay][1]) + (cellPos[2] - rayPosition[iRay][2]) * (cellPos[2] - rayPosition[iRay][2]));
 		 std::cout << "Host Index = " << iCell << " Host Cell Position = " << cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << " Distance from Ray to Cell (before update) = " << distanceBetRayAndCell << "\n";
 	 }
 
-	 visitedCells[iRay].push_back(iCell);
+
 	 findExitCellAndSetDistance(iCell, iRay, exitCell, distanceToExit, verbose);
 	 handleRaysOnInterfaces(iCell, iRay, exitCell, distanceToExit, verbose);
 
@@ -94,7 +90,6 @@ void Rays::initializePositions() {
 
 
 
-
 	 distanceTravelled[iRay] += distanceToExit + overshoot;
 	 numTraversedCells[iRay] += 1;
 
@@ -111,7 +106,7 @@ void Rays::initializePositions() {
     			<< rayPosition[iRay][1] << " "
 				<< rayPosition[iRay][2] << "\n";
 
-        closestCells = mesh.findHostCellID(positionTmp, -1);
+        closestCells = mesh.findHostCellID(rayPosition[iRay], -1);
         std::cout  << "Closest cells = ";
 
     	for(int i = 0; i < closestCells.size(); i++)
@@ -134,8 +129,8 @@ void Rays::initializePositions() {
     	insideDomain[iRay] = false;
     	exitCell = -1;
     }
-    else {
-
+    else
+    {
     	if(exitCell == -1){
     		warningIssued = true;
     		flagRay[iRay] = true;
@@ -174,7 +169,6 @@ void Rays::getOvershootDistance(int exitCell, int iRay, double distanceToExit, d
 void Rays::updateColumn(int iCell, int iRay, double& distanceToExit){
 
 	int filter = 1;
-
 	if(flowFilter != 0)
 		filter = getFilterForVelocity(flowFilter, iCell, iRay);
 
