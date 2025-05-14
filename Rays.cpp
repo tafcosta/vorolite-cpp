@@ -198,8 +198,8 @@ bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit)
 
 	}
 
-	columnDensity[iRay] = newColumnDensity;
-	columnVelocity[iRay] = newColumnVelocity;
+	columnDensity[iRay]     = newColumnDensity;
+	columnVelocity[iRay]    = newColumnVelocity;
 	distanceTravelled[iRay] = newDistanceTravelled;
 
 	return false;
