@@ -18,6 +18,7 @@ int main(int argc, char* argv[]) {
     
     std::cout << "We are getting our parameters from \'" << paramFile << "\'" <<  std::endl;
 
+    int flowFilter = 0;
     int nRays = 0;
     double maxRadius = 0.0;
     std::vector<double> sourcePosition(3, 0.5);
@@ -38,6 +39,9 @@ int main(int argc, char* argv[]) {
 	std::cout << "We are using " << nRays << " rays." << std::endl;
     std::cout << "The source is at position " << sourcePosition[0] << ", " << sourcePosition[1] << ", " << sourcePosition[2] << " (code units)" << std::endl;
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
+
+    Mesh *mesh = new Mesh(meshFile, snapFile);
+    Rays *rays = new Rays(nRays, maxRadius, sourceLocation, flowFilter, maxColumn, *mesh);
 
 	rays->doRayTracing();
 	rays->outputResults(ofileName);
