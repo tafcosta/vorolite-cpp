@@ -7,8 +7,6 @@ void parseRayParamFile(const std::string& fileName, int& numRays, double& maxRad
                        std::string& snapFile, std::string& ofileName);
 
 
-// Parts of the main() function, as well as corresponding class functions like Rays.outputResults(), have been modified by L. Tortora
-// Main changes: made the parameter file an input, to vary the inputs and outputs of VoroLite++
 int main(int argc, char* argv[]) {
 
     if (argc < 2) {
@@ -40,7 +38,6 @@ int main(int argc, char* argv[]) {
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
     Mesh *mesh = new Mesh(meshFile, snapFile);
-
     Rays *rays = new Rays(nRays, maxRadius, sourceLocation, flowFilter, maxColumn, *mesh);
 
 	rays->doRayTracing();
