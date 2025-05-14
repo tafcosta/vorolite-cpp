@@ -175,7 +175,7 @@ bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit)
 	double newColumnVelocity = columnVelocity[iRay] + distanceToExit * mesh.cellDensity[iCell] * filter * (rayDirection[iRay][0] * mesh.cellVelocities[iCell][0] + rayDirection[iRay][1] * mesh.cellVelocities[iCell][1] + rayDirection[iRay][2] * mesh.cellVelocities[iCell][2]);
 	double newDistanceTravelled = distanceTravelled[iRay] + distanceToExit;
 
-	if((newColumnDensity >= maxColumn) && (maxColumn > 0.) && (distanceToExit > 0.0)){
+	if((newColumnDensity >= maxColumn) && (distanceToExit > 0.0)){
 
 		double fractionalColumn = (maxColumn - columnDensity[iRay])/(newColumnDensity - columnDensity[iRay]);
 		distanceToExit *= fractionalColumn;
@@ -186,7 +186,7 @@ bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit)
 
 		return true;
 	}
-	else if((newDistanceTravelled >= maxRadius) && (maxRadius > 0.) && (distanceToExit > 0.0)){
+	else if((newDistanceTravelled >= maxRadius) && (distanceToExit > 0.0)){
 
 		double fractionalDistance = (maxRadius - distanceTravelled[iRay])/(newDistanceTravelled - distanceTravelled[iRay]);
 		distanceToExit *= fractionalDistance;

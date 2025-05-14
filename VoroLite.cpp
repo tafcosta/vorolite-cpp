@@ -20,11 +20,11 @@ int main(int argc, char* argv[]) {
     
     std::cout << "We are getting our parameters from \'" << paramFile << "\'" <<  std::endl;
 
+    int flowFilter = 0;
     int nRays = 0;
     double maxRadius = 0.0;
     double maxColumn = 0.0;
     std::vector<double> sourceLocation(3, 0.5);
-    int flowFilter = 0;
     std::string meshFile, snapFile, ofileName;
 
     parseRayParamFile(paramFile, nRays, maxRadius, sourceLocation, flowFilter, maxColumn, meshFile, snapFile, ofileName);
