@@ -40,9 +40,6 @@ int main(int argc, char* argv[]) {
     std::cout << "The source is at position " << sourcePosition[0] << ", " << sourcePosition[1] << ", " << sourcePosition[2] << " (code units)" << std::endl;
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
-    Mesh *mesh = new Mesh(meshFile, snapFile);
-    Rays *rays = new Rays(nRays, maxRadius, sourceLocation, flowFilter, maxColumn, *mesh);
-
 	rays->doRayTracing();
 	rays->outputResults(ofileName);
 
