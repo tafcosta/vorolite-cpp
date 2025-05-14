@@ -48,7 +48,7 @@ protected:
 	int startCell;
 	int travelToNextCell(int iCell, int iRay, bool verbose);
 	void findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& exitToCell, bool verbose);
-	void handleRaysOnInterfaces(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose);
+	int modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double distanceToExit, bool verbose);
 	bool shouldRayBeTerminated(int iRay, double distanceToExit);
 	bool updateColumnAndIsMaxReached(int iCell, int iRay, double& distanceToExit);
 	double getOvershootDistance(int exitCell, int iRay, double distanceToExit, bool verbose);

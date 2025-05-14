@@ -59,10 +59,6 @@ void Rays::initializePositions() {
 	 double overshoot = 0.;
 	 int exitCell = -1;
 
-	 visitedCells[iRay].push_back(iCell);
-	 numTraversedCells[iRay] += 1;
-
-
 	 if(verbose){
 		 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
 		 double distanceBetRayAndCell = sqrt((cellPos[0] - rayPosition[iRay][0]) * (cellPos[0] - rayPosition[iRay][0]) + (cellPos[1] - rayPosition[iRay][1]) * (cellPos[1] - rayPosition[iRay][1]) + (cellPos[2] - rayPosition[iRay][2]) * (cellPos[2] - rayPosition[iRay][2]));
@@ -71,12 +67,20 @@ void Rays::initializePositions() {
 
 
 	 findExitCellAndSetDistance(iCell, iRay, exitCell, distanceToExit, verbose);
-	 handleRaysOnInterfaces(iCell, iRay, exitCell, distanceToExit, verbose);
+
+
+	 if(distanceToExit > mesh.boxSize){
+		std::cout << "BOO!" << " " << exitCell << " " << distanceToExit << std::endl;
+	 }
+
+
+	 exitCell = modifyExitCellIfOnInterface(iCell, iRay, exitCell, distanceToExit, verbose);
 
 	 if(shouldRayBeTerminated(iRay, distanceToExit))
 		 insideDomain[iRay] = false;
 
 	 if(insideDomain[iRay]){
+
 		 if(updateColumnAndIsMaxReached(iCell, iRay, distanceToExit))
 			 insideDomain[iRay] = false;
 
@@ -88,6 +92,7 @@ void Rays::initializePositions() {
 
 
 	 distanceTravelled[iRay] += distanceToExit + overshoot;
+
 	 for (int i = 0; i < 3; i++)
 		 rayPosition[iRay][i] += rayDirection[iRay][i] * (distanceToExit + overshoot);
 
@@ -122,6 +127,10 @@ void Rays::initializePositions() {
 					<< cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << "\n";
     	}
     }
+
+
+
+
 
 
 
@@ -207,7 +216,7 @@ bool Rays::shouldRayBeTerminated(int iRay, double distanceToExit){
 	 return false;
 }
 
-void Rays::handleRaysOnInterfaces(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose){
+int Rays::modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double distanceToExit, bool verbose){
 
 	double distanceToExitTmp;
 	std::vector<float> cellPos = mesh.cellCoordinates[iCell];
@@ -256,6 +265,8 @@ void Rays::handleRaysOnInterfaces(int iCell, int iRay, int& exitCell, double& di
 
 			 	 }
 	 }
+
+	 return exitCell;
 }
 
 
@@ -374,6 +385,10 @@ void Rays::doRayTracing(){
 				oldRayPosition[i] = rayPosition[iRay][i];
 
 			warningIssued = false;
+
+			visitedCells[iRay].push_back(iCell);
+			numTraversedCells[iRay] += 1;
+
 			iCell = travelToNextCell(iCellOld, iRay, false);
 
 			if(debug){
