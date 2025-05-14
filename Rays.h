@@ -50,7 +50,7 @@ protected:
 	void findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& exitToCell, bool verbose);
 	int modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double distanceToExit, bool verbose);
 	bool shouldRayBeTerminated(int iRay, double distanceToExit);
-	bool updateColumnAndIsMaxReached(int iCell, int iRay, double& distanceToExit);
+	bool updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit);
 	double getOvershootDistance(int exitCell, int iRay, double distanceToExit, bool verbose);
 
 private:
