@@ -50,7 +50,9 @@ void Mesh::getNumCellsInRegion(){
     cellIDs = std::move(filteredIDs);
     numCells = cellDensity.size();
 
+    cellHIIFraction = std::vector<double>(numCells, 0.0);
 
+    /*
     startCell = findHostCellID(sourcePosition, -1)[0];
     cellPos   = cellCoordinates[9261];
     double dx = cellPos[0] - cellCoordinates[startCell][0]; //sourcePosition[0];
@@ -58,6 +60,7 @@ void Mesh::getNumCellsInRegion(){
     double dz = cellPos[2] - cellCoordinates[startCell][2]; //sourcePosition[2];
     double rDistance = std::sqrt(dx*dx + dy*dy + dz*dz);
     std::cout << "DEBUG, INITIALISATION radial dir= " << dx/rDistance << " " << dy/rDistance << " " << dz/rDistance << std::endl;
+*/
 
     std::cout << "Reduced to " << numCells << " cells within maxRadius = " << maxRadius << std::endl;
 }
