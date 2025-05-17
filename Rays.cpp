@@ -69,7 +69,7 @@ void Rays::initializePositions() {
 	 findExitCellAndSetDistance(iCell, iRay, exitCell, distanceToExit, verbose);
 	 exitCell = modifyExitCellIfOnInterface(iCell, iRay, exitCell, distanceToExit, verbose);
 
-	 if(shouldRayBeTerminated(iRay, distanceToExit))
+	 if(shouldRayBeTerminated(distanceToExit))
 		 insideDomain[iRay] = false;
 
 	 if(insideDomain[iRay]){
@@ -206,7 +206,7 @@ bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit)
 }
 
 
-bool Rays::shouldRayBeTerminated(int iRay, double distanceToExit){
+bool Rays::shouldRayBeTerminated(double distanceToExit){
 
 	 if(distanceToExit > mesh.boxSize){
 		std::cout << "Distance to exit larger than box size; ray stopped!" << "\n";

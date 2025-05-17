@@ -49,7 +49,7 @@ protected:
 	int travelToNextCell(int iCell, int iRay, bool verbose);
 	void findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& exitToCell, bool verbose);
 	int modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double distanceToExit, bool verbose);
-	bool shouldRayBeTerminated(int iRay, double distanceToExit);
+	bool shouldRayBeTerminated(double distanceToExit);
 	bool updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit);
 	double getOvershootDistance(int exitCell, int iRay, double distanceToExit, bool verbose);
 
