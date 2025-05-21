@@ -26,7 +26,7 @@ Rays::Rays(double maxRadius, std::vector<double> sourcePosition, Mesh& mesh) : m
 	rayPosition = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
 	initializePositions();
 
-	columnDensity     = std::vector<double>(nRays, 0.0);
+	columnHI     = std::vector<double>(nRays, 0.0);
 
 	distanceTravelled = std::vector<double>(nRays, 0.0);
 	insideDomain      = std::vector<bool>(nRays, true);
@@ -104,7 +104,7 @@ void Rays::initializePositions() {
 	 for (int i = 0; i < 3; i++)
 		 rayPosition[iRay][i] += rayDirection[iRay][i] * (distanceToExit + overshoot);
 
-	 mesh.cellFlux[iRay] = std::exp(-columnDensity[iRay]);
+	 mesh.cellFlux[iRay] = std::exp(-100*columnHI[iRay]);
 
 	 if(insideDomain[iRay] == false)
 		 return -1;
@@ -179,7 +179,7 @@ double Rays::getOvershootDistance(int exitCell, int iRay, double distanceToExit,
 
 bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit){
 
-	double newColumnDensity  = columnDensity[iRay]  + distanceToExit * mesh.cellDensity[iCell];
+	double newColumnDensity  = columnHI[iRay]  + distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
 	double newDistanceTravelled = distanceTravelled[iRay] + distanceToExit;
 
 	if(iCell == rayFinalCell[iRay]){
@@ -196,13 +196,13 @@ bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit)
 		double fractionalDistance = (distCellFromSource - distanceTravelled[iRay])/(newDistanceTravelled - distanceTravelled[iRay]);
 		distanceToExit *= fractionalDistance;
 
-		columnDensity[iRay]     += distanceToExit * mesh.cellDensity[iCell];
+		columnHI[iRay]     += distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
 		distanceTravelled[iRay] += distanceToExit;
 		return true;
 
 	}
 
-	columnDensity[iRay]     = newColumnDensity;
+	columnHI[iRay]     = newColumnDensity;
 	distanceTravelled[iRay] = newDistanceTravelled;
 
 	return false;
@@ -347,7 +347,7 @@ void Rays::outputResults(std::string& ofileName) {
                    << std::setw(6)  << i
                    << std::setw(10) << std::fixed << std::setprecision(3) << theta[i]
                    << std::setw(10) << std::fixed << std::setprecision(3) << phi[i]
-                   << std::setw(15) << std::fixed << std::setprecision(6) << columnDensity[i]
+                   << std::setw(15) << std::fixed << std::setprecision(6) << columnHI[i]
                    << std::setw(15) << std::fixed << std::setprecision(6) << distanceTravelled[i]
                    << std::setw(6)  << flagRay[i]
                    << std::setw(10) << numTraversedCells[i]
@@ -368,7 +368,6 @@ void Rays::doRayTracing(){
 	bool debug = false;
 
 	for(int iRay = 0; iRay < nRays; iRay++){
-		std::cout << "ray " << iRay << std::endl;
 		int iCell = startCell;
 
 		while(insideDomain[iRay]){

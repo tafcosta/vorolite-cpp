@@ -8,6 +8,8 @@
 #ifndef MESH_H_
 #define MESH_H_
 
+#include "common_includes.h"
+
 class Mesh {
 public:
 	Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition);
@@ -22,6 +24,8 @@ public:
     std::vector<std::vector<float>> cellCoordinates;
     std::vector<std::vector<float>> cellVelocities;
     std::vector<double> cellDensity;
+    std::vector<double> cellMass;
+    std::vector<double> cellVolume;
     std::vector<double> cellFlux;
     std::vector<double> cellHIIFraction;
 

@@ -41,10 +41,22 @@ int main(int argc, char* argv[]) {
     std::cout << "The source is at position " << sourcePosition[0] << ", " << sourcePosition[1] << ", " << sourcePosition[2] << " (code units)" << std::endl;
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
-	rays->doRayTracing();
-	//rays->outputResults(ofileName);
-	photochemistry->evolveIonisation();
 
+    double time = 0;
+    double timeMax = 1;
+
+    double dtime = 0.000001;
+
+    while(time < timeMax){
+    	rays->doRayTracing();
+    	photochemistry->evolveIonisation(dtime);
+
+    	std::cout << "time = " << time << std::endl;
+    	time += dtime;
+    }
+
+    for(int iCell = 0; iCell < mesh->numCells; iCell++)
+    	std::cout << mesh->cellHIIFraction[iCell] << std::endl;
   
 	delete mesh;
 	delete rays;

@@ -13,6 +13,12 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     readSnapshot(snapshot);
 	getNumCellsInRegion();
 
+    cellHIIFraction = std::vector<double>(numCells, 0.0);
+    cellVolume = std::vector<double>(numCells, 0.0);
+
+	for(int iCell = 0; iCell < numCells; iCell++)
+		cellVolume[iCell] = cellMass[iCell]/cellDensity[iCell];
+
 	IdPairs       = readVoronoiIndices(fileMeshIndices);
 	neighbourList = collectNeighbours(IdPairs, cellIDs);
 
@@ -50,7 +56,6 @@ void Mesh::getNumCellsInRegion(){
     cellIDs = std::move(filteredIDs);
     numCells = cellDensity.size();
 
-    cellHIIFraction = std::vector<double>(numCells, 0.0);
 
     /*
     startCell = findHostCellID(sourcePosition, -1)[0];
@@ -70,6 +75,7 @@ void Mesh::readSnapshot(const std::string& snapshot) {
         H5::H5File file(snapshot, H5F_ACC_RDONLY);
 
         H5::DataSet densityDataset = file.openDataSet("/PartType0/Density");
+        H5::DataSet massDataset = file.openDataSet("/PartType0/Masses");
         H5::DataSet coordinatesDataset = file.openDataSet("/PartType0/Coordinates");
         H5::DataSet velocitiesDataset = file.openDataSet("/PartType0/Velocities");
         H5::DataSet idDataset = file.openDataSet("/PartType0/ParticleIDs");
@@ -84,6 +90,12 @@ void Mesh::readSnapshot(const std::string& snapshot) {
         cellDensity.resize(numDensities);
         densityDataset.read(cellDensity.data(), H5::PredType::NATIVE_DOUBLE);
         numCells = cellDensity.size();
+
+        H5::DataSpace massSpace = massDataset.getSpace();
+        hsize_t numMass;
+        massSpace.getSimpleExtentDims(&numMass);
+        cellMass.resize(numMass);
+        densityDataset.read(cellMass.data(), H5::PredType::NATIVE_DOUBLE);
 
         cellFlux.resize(numDensities, 0.0);
 

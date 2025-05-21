@@ -23,7 +23,7 @@ public:
 	std::vector<std::vector<double>> rayDirection;
 	std::vector<std::vector<double>> rayPosition;
 
-	std::vector<double> columnDensity;
+	std::vector<double> columnHI;
 
 	std::vector<int> lastVisitedCell;
 	std::vector<int> numTraversedCells;

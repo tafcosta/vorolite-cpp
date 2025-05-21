@@ -8,10 +8,17 @@
 #ifndef PHOTOCHEMISTRY_H_
 #define PHOTOCHEMISTRY_H_
 
+#include "Mesh.h"
+
+
 class Photochemistry {
 public:
-	Photochemistry();
+	Photochemistry(Mesh& mesh);
 	virtual ~Photochemistry();
+
+	Mesh& mesh;
+
+	void evolveIonisation(double dtime);
 };
 
 #endif /* PHOTOCHEMISTRY_H_ */
