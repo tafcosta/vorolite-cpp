@@ -26,7 +26,6 @@ public:
 	std::vector<double> columnHI;
 
 	std::vector<int> lastVisitedCell;
-	std::vector<int> numTraversedCells;
 	std::vector<double> distanceTravelled;
 
 	std::vector<bool> insideDomain;

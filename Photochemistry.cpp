@@ -25,13 +25,14 @@ void Photochemistry::evolveIonisation(double dtime) {
 
             // RK4 steps
             double k1 = rate * dtime;
-            double k2 = rate * dtime;  // Rate is constant → f(x) = constant
+            double k2 = rate * dtime;
             double k3 = rate * dtime;
             double k4 = rate * dtime;
 
             // RK4 update
             double delta = (1.0 / 6.0) * (k1 + 2*k2 + 2*k3 + k4);
             mesh.cellHIIFraction[iCell] = x0 + delta;
+
         }
     }
 }

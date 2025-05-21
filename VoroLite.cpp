@@ -19,7 +19,6 @@ int main(int argc, char* argv[]) {
     
     std::cout << "We are getting our parameters from \'" << paramFile << "\'" <<  std::endl;
 
-    int nRays = 0;
     double maxRadius = 0.0;
     std::vector<double> sourcePosition(3, 0.5);
     std::string meshFile, snapFile, ofileName;
@@ -37,15 +36,14 @@ int main(int argc, char* argv[]) {
     Rays *rays = new Rays(maxRadius, sourcePosition, *mesh);
     Photochemistry *photochemistry = new Photochemistry(*mesh);
 
-	std::cout << "We are using " << nRays << " rays." << std::endl;
+	std::cout << "We are using " << rays->nRays << " rays." << std::endl;
     std::cout << "The source is at position " << sourcePosition[0] << ", " << sourcePosition[1] << ", " << sourcePosition[2] << " (code units)" << std::endl;
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
 
     double time = 0;
-    double timeMax = 1;
-
-    double dtime = 0.000001;
+    double timeMax = 1.0;
+    double dtime = 0.1;
 
     while(time < timeMax){
     	rays->doRayTracing();
@@ -55,8 +53,19 @@ int main(int argc, char* argv[]) {
     	time += dtime;
     }
 
-    for(int iCell = 0; iCell < mesh->numCells; iCell++)
-    	std::cout << mesh->cellHIIFraction[iCell] << std::endl;
+
+    std::ofstream outFile("HIIfraction.txt");
+    if (outFile.is_open()) {
+        for (int iCell = 0; iCell < mesh->numCells; ++iCell) {
+            for (float coord : mesh->cellCoordinates[iCell]) {
+                outFile << coord << " ";
+            }
+            outFile << mesh->cellHIIFraction[iCell] << " " << mesh->cellFlux[iCell] << std::endl;
+        }
+        outFile.close();
+    } else {
+        std::cerr << "Unable to open file for writing." << std::endl;
+    }
   
 	delete mesh;
 	delete rays;
