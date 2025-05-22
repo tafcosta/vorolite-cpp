@@ -3,7 +3,7 @@
 #include "Photochemistry.h"
 #include "Rays.h"
 
-void parseRayParamFile(const std::string& fileName, double& maxRadius,
+void parseRayParamFile(const std::string& fileName, double &Xsection, double& maxRadius,
                        std::vector<double>& sourceLocation, std::string& meshFile,
                        std::string& snapFile, std::string& ofileName);
 
@@ -19,11 +19,12 @@ int main(int argc, char* argv[]) {
     
     std::cout << "We are getting our parameters from \'" << paramFile << "\'" <<  std::endl;
 
+    double crossSection = 0.0;
     double maxRadius = 0.0;
     std::vector<double> sourcePosition(3, 0.5);
     std::string meshFile, snapFile, ofileName;
 
-    parseRayParamFile(paramFile, maxRadius, sourcePosition, meshFile, snapFile, ofileName);
+    parseRayParamFile(paramFile, crossSection, maxRadius, sourcePosition, meshFile, snapFile, ofileName);
 
     if (maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
         std::cerr << "Error: Missing or invalid parameters in rayParam.txt" << std::endl;
@@ -33,23 +34,29 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting VoroLite++ RT (Version 0.1)!" << std::endl;
 
     Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, sourcePosition);
-    Rays *rays = new Rays(maxRadius, sourcePosition, *mesh);
-    Photochemistry *photochemistry = new Photochemistry(*mesh);
+    Rays *rays = new Rays(crossSection, maxRadius, sourcePosition, *mesh);
+    Photochemistry *photochemistry = new Photochemistry(*mesh, crossSection);
 
-	std::cout << "We are using " << rays->nRays << " rays." << std::endl;
     std::cout << "The source is at position " << sourcePosition[0] << ", " << sourcePosition[1] << ", " << sourcePosition[2] << " (code units)" << std::endl;
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
 
     double time = 0;
-    double timeMax = 1.0;
-    double dtime = 0.1;
+    double timeMax = 0.01;
+    double dtime = 0.0001;
+
+    double printInterval = timeMax/5;
+    double nextPrintTime = printInterval;
 
     while(time < timeMax){
     	rays->doRayTracing();
     	photochemistry->evolveIonisation(dtime);
 
-    	std::cout << "time = " << time << std::endl;
+        if (time >= nextPrintTime) {
+            std::cout << "time = " << time << std::endl;
+            nextPrintTime += printInterval;
+        }
+
     	time += dtime;
     }
 
@@ -74,7 +81,7 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-void parseRayParamFile(const std::string& fileName, double& maxRadius,
+void parseRayParamFile(const std::string& fileName, double& crossSection, double& maxRadius,
                        std::vector<double>& sourceLocation, std::string& meshFile,
                        std::string& snapFile, std::string& ofileName) {
     std::ifstream inputFile(fileName);
@@ -100,7 +107,10 @@ void parseRayParamFile(const std::string& fileName, double& maxRadius,
         value.erase(0, value.find_first_not_of(" \t"));
         value.erase(value.find_last_not_of(" \t") + 1);
 
-        if (key == "maxRadius") {
+        if (key == "crossSection") {
+        	crossSection = std::stod(value);
+        }
+        else if (key == "maxRadius") {
             maxRadius = std::stod(value);
         }
         else if (key == "sourceLocation") {

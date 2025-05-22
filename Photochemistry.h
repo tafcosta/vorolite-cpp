@@ -13,10 +13,12 @@
 
 class Photochemistry {
 public:
-	Photochemistry(Mesh& mesh);
+	Photochemistry(Mesh& mesh, double crossSection);
 	virtual ~Photochemistry();
 
 	Mesh& mesh;
+
+	double crossSection;
 
 	void evolveIonisation(double dtime);
 };

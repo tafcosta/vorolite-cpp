@@ -7,7 +7,7 @@
 
 #include "Photochemistry.h"
 
-Photochemistry::Photochemistry(Mesh& mesh) : mesh(mesh) {
+Photochemistry::Photochemistry(Mesh& mesh, double crossSection) : mesh(mesh), crossSection(crossSection) {
 	// TODO Auto-generated constructor stub
 
 }
@@ -15,12 +15,10 @@ Photochemistry::Photochemistry(Mesh& mesh) : mesh(mesh) {
 void Photochemistry::evolveIonisation(double dtime) {
     for (int iCell = 0; iCell < mesh.numCells; ++iCell) {
         double mass = mesh.cellMass[iCell];
-        double transmittedFlux = mesh.cellFlux[iCell];
+        double absorbedFlux = (1 - std::exp(-crossSection * mesh.cellLocalHIColumn[iCell])) * mesh.cellFlux[iCell];
 
         if (mass > 0.0) {
-            double absorbedFlux = 1.0 - transmittedFlux;
             double rate = absorbedFlux / mass;
-
             double x0 = mesh.cellHIIFraction[iCell];
 
             // RK4 steps

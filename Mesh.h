@@ -27,6 +27,7 @@ public:
     std::vector<double> cellMass;
     std::vector<double> cellVolume;
     std::vector<double> cellFlux;
+    std::vector<double> cellLocalHIColumn;
     std::vector<double> cellHIIFraction;
 
 	std::vector<std::vector<int>> neighbourList;

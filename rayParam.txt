@@ -1,3 +1,4 @@
+crossSection = 100
 maxRadius = 0.3
 sourceLocation = 0.5, 0.5, 0.5
 meshFile = ./output/tess_006_indices.dat

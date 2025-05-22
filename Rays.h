@@ -12,9 +12,10 @@
 
 class Rays {
 public:
-	Rays(double maxRadius, std::vector<double> sourcePosition, Mesh& mesh);
+	Rays(double crossSection, double maxRadius, std::vector<double> sourcePosition, Mesh& mesh);
 	virtual ~Rays();
 
+	double crossSection;
 	double maxRadius;
 
 	std::vector<double> sourcePosition;

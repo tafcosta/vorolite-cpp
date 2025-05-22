@@ -9,7 +9,7 @@
 #include "Rays.h"
 #include "Mesh.h"
 
-Rays::Rays(double maxRadius, std::vector<double> sourcePosition, Mesh& mesh) : maxRadius(maxRadius), sourcePosition(sourcePosition), mesh(mesh) {
+Rays::Rays(double crossSection, double maxRadius, std::vector<double> sourcePosition, Mesh& mesh) : crossSection(crossSection), maxRadius(maxRadius), sourcePosition(sourcePosition), mesh(mesh) {
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
 
 	setNumRays();
@@ -64,6 +64,8 @@ void Rays::initializePositions() {
     for (int iRay = 0; iRay < nRays; ++iRay)
         for (int i = 0; i < 3; ++i)
         	rayPosition[iRay][i] = 	mesh.cellCoordinates[startCell][i];
+
+    std::cout << "Actual Source Position = " << mesh.cellCoordinates[startCell][0] << " " << mesh.cellCoordinates[startCell][1] << " " << mesh.cellCoordinates[startCell][2] << std::endl;
 }
 
 
@@ -191,13 +193,13 @@ bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit)
 		double fractionalDistance = (distCellFromSource - distanceTravelled[iRay])/(newDistanceTravelled - distanceTravelled[iRay]);
 		distanceToExit *= fractionalDistance;
 
+		mesh.cellFlux[iCell] = 1.e4 * std::exp(-crossSection * columnHI[iRay]);
+		mesh.cellLocalHIColumn[iCell] = distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
+
 		columnHI[iRay] += distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
 		distanceTravelled[iRay] += distanceToExit;
 
-		mesh.cellFlux[iCell] = std::exp(-100*columnHI[iRay]);
-
 		return true;
-
 	}
 
 	columnHI[iRay]     = newColumnDensity;
@@ -374,8 +376,11 @@ void Rays::doRayTracing(){
 
         for (int i = 0; i < 3; ++i)
         	rayPosition[iRay][i] = 	mesh.cellCoordinates[startCell][i];
+
         insideDomain[iRay] = true;
         distanceTravelled[iRay] = 0.;
+        columnHI[iRay] = 0.;
+
 	}
 }
 
