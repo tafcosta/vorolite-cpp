@@ -25,6 +25,7 @@ public:
 	std::vector<std::vector<double>> rayPosition;
 
 	std::vector<double> columnHI;
+	std::vector<double> rayWeight;
 
 	std::vector<int> lastVisitedCell;
 	std::vector<double> distanceTravelled;
@@ -43,6 +44,7 @@ protected:
 	int travelToNextCell(int iCell, int iRay, bool verbose);
 	std::vector<int> rayFinalCell;
 
+	void assignToHealpix(double L_total);
 	void findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& exitToCell, bool verbose);
 	int modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double distanceToExit, bool verbose);
 	bool shouldRayBeTerminated(int iRay, double distanceToExit);

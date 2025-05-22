@@ -41,37 +41,44 @@ int main(int argc, char* argv[]) {
 
 
     double time = 0;
-    double timeMax = 0.001;
+    double timeMax = 0.003;
     double dtime = 0.0001;
 
     double printInterval = timeMax/5;
-    double nextPrintTime = printInterval;
+    double TimeNextOutput = printInterval;
 
-    while(time < timeMax){
-    	rays->doRayTracing();
-    	photochemistry->evolveIonisation(dtime);
+    int snapshotIndex = 0;
 
-        if (time >= nextPrintTime) {
+    while (time < timeMax) {
+        rays->doRayTracing();
+        photochemistry->evolveIonisation(dtime);
+
+        if (time >= TimeNextOutput) {
             std::cout << "time = " << time << std::endl;
-            nextPrintTime += printInterval;
-        }
 
-    	time += dtime;
-    }
+            std::ostringstream filename;
+            filename << "HIIfraction_" << snapshotIndex << ".txt";
 
-
-    std::ofstream outFile("HIIfraction.txt");
-    if (outFile.is_open()) {
-        for (int iCell = 0; iCell < mesh->numCells; ++iCell) {
-            for (float coord : mesh->cellCoordinates[iCell]) {
-                outFile << coord << " ";
+            std::ofstream outFile(filename.str());
+            if (outFile.is_open()) {
+                for (int iCell = 0; iCell < mesh->numCells; ++iCell) {
+                    for (float coord : mesh->cellCoordinates[iCell]) {
+                        outFile << coord << " ";
+                    }
+                    outFile << mesh->cellHIIFraction[iCell] << " " << mesh->cellFlux[iCell] << std::endl;
+                }
+                outFile.close();
+            } else {
+                std::cerr << "Unable to open file " << filename.str() << " for writing." << std::endl;
             }
-            outFile << mesh->cellHIIFraction[iCell] << " " << mesh->cellFlux[iCell] << std::endl;
+
+            ++snapshotIndex;
+            TimeNextOutput += printInterval;
         }
-        outFile.close();
-    } else {
-        std::cerr << "Unable to open file for writing." << std::endl;
+
+        time += dtime;
     }
+
   
 	delete mesh;
 	delete rays;

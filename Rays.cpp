@@ -21,7 +21,11 @@ Rays::Rays(double crossSection, double maxRadius, std::vector<double> sourcePosi
 	rayDirection = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
 	theta = std::vector<double>(nRays, 0.0);
 	phi   = std::vector<double>(nRays, 0.0);
+	rayWeight = std::vector<double>(nRays, 0.0);
+
 	initializeDirections();
+
+	assignToHealpix(1.e3);
 
 	rayPosition = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
 	initializePositions();
@@ -59,6 +63,41 @@ void Rays::initializeDirections() {
         theta[iRay] = std::acos(zDistance / rDistance);
     }
 }
+
+void Rays::assignToHealpix(double L_total) {
+	int64_t nside = 32;
+	int64_t npix = nside2npix(nside);
+	std::vector<int> raysPerPixel(npix, 0);
+
+	std::vector<int64_t> rayToPixel(nRays);
+	for (int i = 0; i < nRays; ++i) {
+		long ipix;
+		ang2pix_ring(nside, theta[i], phi[i], &ipix);
+
+		rayToPixel[i] = static_cast<int64_t>(ipix);
+		raysPerPixel[ipix]++;
+	}
+
+	const double omega_pix = 4.0 * M_PI / static_cast<double>(npix);
+	std::vector<double> rayWeight(nRays, 0.0);
+
+	for (int i = 0; i < nRays; ++i) {
+		int64_t ipix = rayToPixel[i];
+		rayWeight[i] = omega_pix / raysPerPixel[ipix];
+	}
+
+	double totalWeight = 0.0;
+	for (int i = 0; i < nRays; ++i) {
+		totalWeight += rayWeight[i];
+	}
+	double scale = L_total / totalWeight;
+
+	for (int i = 0; i < nRays; ++i) {
+		rayWeight[i] *= scale;
+	}
+
+}
+
 
 void Rays::initializePositions() {
     for (int iRay = 0; iRay < nRays; ++iRay)
@@ -183,7 +222,7 @@ bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit)
 
 		std::vector<float> cellPos;
 		double dx, dy, dz, distCellFromSource;
-		cellPos = mesh.cellCoordinates[iRay];
+		cellPos = mesh.cellCoordinates[iCell];
 		dx = cellPos[0] - sourcePosition[0];
 		dy = cellPos[1] - sourcePosition[1];
 		dz = cellPos[2] - sourcePosition[2];
@@ -193,7 +232,7 @@ bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit)
 		double fractionalDistance = (distCellFromSource - distanceTravelled[iRay])/(newDistanceTravelled - distanceTravelled[iRay]);
 		distanceToExit *= fractionalDistance;
 
-		mesh.cellFlux[iCell] = 1.e4 * std::exp(-crossSection * columnHI[iRay]);
+		mesh.cellFlux[iCell] = rayWeight[iRay] * std::exp(-crossSection * columnHI[iRay]);
 		mesh.cellLocalColumn[iCell] = distanceToExit * mesh.cellDensity[iCell];
 
 		columnHI[iRay] += distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);

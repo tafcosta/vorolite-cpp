@@ -23,5 +23,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <iomanip>
+extern "C" {
+  #include "chealpix.h"
+}
 
 #endif /* COMMON_INCLUDES_H_ */
