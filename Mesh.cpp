@@ -98,7 +98,7 @@ void Mesh::readSnapshot(const std::string& snapshot) {
         densityDataset.read(cellMass.data(), H5::PredType::NATIVE_DOUBLE);
 
         cellFlux.resize(numDensities, 0.0);
-        cellLocalHIColumn.resize(numDensities, 0.0);
+        cellLocalColumn.resize(numDensities, 0.0);
 
 
         H5::DataSpace coordinatesSpace = coordinatesDataset.getSpace();

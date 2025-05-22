@@ -194,7 +194,7 @@ bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit)
 		distanceToExit *= fractionalDistance;
 
 		mesh.cellFlux[iCell] = 1.e4 * std::exp(-crossSection * columnHI[iRay]);
-		mesh.cellLocalHIColumn[iCell] = distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
+		mesh.cellLocalColumn[iCell] = distanceToExit * mesh.cellDensity[iCell];
 
 		columnHI[iRay] += distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
 		distanceTravelled[iRay] += distanceToExit;

@@ -37,12 +37,11 @@ int main(int argc, char* argv[]) {
     Rays *rays = new Rays(crossSection, maxRadius, sourcePosition, *mesh);
     Photochemistry *photochemistry = new Photochemistry(*mesh, crossSection);
 
-    std::cout << "The source is at position " << sourcePosition[0] << ", " << sourcePosition[1] << ", " << sourcePosition[2] << " (code units)" << std::endl;
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
 
     double time = 0;
-    double timeMax = 0.01;
+    double timeMax = 0.001;
     double dtime = 0.0001;
 
     double printInterval = timeMax/5;

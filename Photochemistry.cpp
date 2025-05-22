@@ -15,25 +15,31 @@ Photochemistry::Photochemistry(Mesh& mesh, double crossSection) : mesh(mesh), cr
 void Photochemistry::evolveIonisation(double dtime) {
     for (int iCell = 0; iCell < mesh.numCells; ++iCell) {
         double mass = mesh.cellMass[iCell];
-        double absorbedFlux = (1 - std::exp(-crossSection * mesh.cellLocalHIColumn[iCell])) * mesh.cellFlux[iCell];
+        double flux = mesh.cellFlux[iCell];
+        double x0   = mesh.cellHIIFraction[iCell];
 
         if (mass > 0.0) {
-            double rate = absorbedFlux / mass;
-            double x0 = mesh.cellHIIFraction[iCell];
 
-            // RK4 steps
-            double k1 = rate * dtime;
-            double k2 = rate * dtime;
-            double k3 = rate * dtime;
-            double k4 = rate * dtime;
+            auto computeAbsorbedFlux = [&](double x) {
+                double columnHI = mesh.cellLocalColumn[iCell] * (1.0 - x);
+                return (1.0 - std::exp(-crossSection * columnHI)) * flux;
+            };
 
-            // RK4 update
-            double delta = (1.0 / 6.0) * (k1 + 2*k2 + 2*k3 + k4);
+            auto computeRate = [&](double x) {
+                return computeAbsorbedFlux(x) / mass;
+            };
+
+            double k1 = computeRate(x0);
+            double k2 = computeRate(x0 + 0.5 * k1 * dtime);
+            double k3 = computeRate(x0 + 0.5 * k2 * dtime);
+            double k4 = computeRate(x0 + k3 * dtime);
+
+            double delta = (dtime / 6.0) * (k1 + 2*k2 + 2*k3 + k4);
             mesh.cellHIIFraction[iCell] = x0 + delta;
-
         }
     }
 }
+
 
 
 
