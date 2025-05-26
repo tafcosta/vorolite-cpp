@@ -35,6 +35,7 @@ void Photochemistry::evolveIonisation(double dtime) {
             double k4 = computeRate(x0 + k3 * dtime);
 
             double delta = (dtime / 6.0) * (k1 + 2*k2 + 2*k3 + k4);
+
             mesh.cellHIIFraction[iCell] = x0 + delta;
         }
     }

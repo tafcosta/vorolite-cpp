@@ -4,7 +4,7 @@
 #include "Rays.h"
 
 void parseRayParamFile(const std::string& fileName, double &Xsection, double& maxRadius,
-                       std::vector<double>& sourceLocation, std::string& meshFile,
+                       std::vector<double>& sourceLocation, double& lumTotal, std::string& meshFile,
                        std::string& snapFile, std::string& ofileName);
 
 
@@ -21,10 +21,11 @@ int main(int argc, char* argv[]) {
 
     double crossSection = 0.0;
     double maxRadius = 0.0;
+    double lumTotal = 0.0;
     std::vector<double> sourcePosition(3, 0.5);
     std::string meshFile, snapFile, ofileName;
 
-    parseRayParamFile(paramFile, crossSection, maxRadius, sourcePosition, meshFile, snapFile, ofileName);
+    parseRayParamFile(paramFile, crossSection, maxRadius, sourcePosition, lumTotal, meshFile, snapFile, ofileName);
 
     if (maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
         std::cerr << "Error: Missing or invalid parameters in rayParam.txt" << std::endl;
@@ -34,17 +35,16 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting VoroLite++ RT (Version 0.1)!" << std::endl;
 
     Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, sourcePosition);
-    Rays *rays = new Rays(crossSection, maxRadius, sourcePosition, *mesh);
+    Rays *rays = new Rays(crossSection, maxRadius, sourcePosition, lumTotal, *mesh);
     Photochemistry *photochemistry = new Photochemistry(*mesh, crossSection);
 
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
-
     double time = 0;
-    double timeMax = 0.003;
-    double dtime = 0.0001;
+    double timeMax = 0.03;
+    double dtime = 0.00001;
 
-    double printInterval = timeMax/5;
+    double printInterval = timeMax/10;
     double TimeNextOutput = printInterval;
 
     int snapshotIndex = 0;
@@ -87,8 +87,11 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
+
+
+
 void parseRayParamFile(const std::string& fileName, double& crossSection, double& maxRadius,
-                       std::vector<double>& sourceLocation, std::string& meshFile,
+                       std::vector<double>& sourceLocation, double& lumTotal, std::string& meshFile,
                        std::string& snapFile, std::string& ofileName) {
     std::ifstream inputFile(fileName);
     std::string line;
@@ -125,6 +128,9 @@ void parseRayParamFile(const std::string& fileName, double& crossSection, double
             char comma;
             locStream >> x >> comma >> y >> comma >> z;
             sourceLocation = {x, y, z};
+        }
+        else if (key == "lumTotal") {
+            lumTotal = std::stod(value);
         }
         else if (key == "meshFile") {
             meshFile = value;

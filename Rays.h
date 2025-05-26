@@ -12,11 +12,12 @@
 
 class Rays {
 public:
-	Rays(double crossSection, double maxRadius, std::vector<double> sourcePosition, Mesh& mesh);
+	Rays(double crossSection, double maxRadius, std::vector<double> sourcePosition, double lumTotal, Mesh& mesh);
 	virtual ~Rays();
 
 	double crossSection;
 	double maxRadius;
+	double lumTotal;
 
 	std::vector<double> sourcePosition;
 	std::vector<double> phi, theta;
@@ -27,8 +28,10 @@ public:
 	std::vector<double> columnHI;
 	std::vector<double> rayWeight;
 
-	std::vector<int> lastVisitedCell;
 	std::vector<double> distanceTravelled;
+
+	std::vector<std::vector<double>> visitedCellColumn;
+	std::vector<std::vector<int>> visitedCells;
 
 	std::vector<bool> insideDomain;
 	std::vector<bool> flagRay;
@@ -45,7 +48,7 @@ protected:
 	std::vector<int> rayFinalCell;
 
 	void assignToHealpix(double L_total);
-	void findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& exitToCell, bool verbose);
+	void findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose);
 	int modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double distanceToExit, bool verbose);
 	bool shouldRayBeTerminated(int iRay, double distanceToExit);
 	bool updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit);

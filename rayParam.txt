@@ -1,6 +1,7 @@
 crossSection = 100
-maxRadius = 0.1
+maxRadius = 0.5
 sourceLocation = 0.5, 0.5, 0.5
+lumTotal = 1.e7
 meshFile = ./output/tess_006_indices.dat
 snapFile = ./output/snap_006.hdf5
 outputFile = ./output/rays_output_001.txt

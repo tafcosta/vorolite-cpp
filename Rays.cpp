@@ -9,9 +9,8 @@
 #include "Rays.h"
 #include "Mesh.h"
 
-Rays::Rays(double crossSection, double maxRadius, std::vector<double> sourcePosition, Mesh& mesh) : crossSection(crossSection), maxRadius(maxRadius), sourcePosition(sourcePosition), mesh(mesh) {
+Rays::Rays(double crossSection, double maxRadius, std::vector<double> sourcePosition, double lumTotal, Mesh& mesh) : crossSection(crossSection), maxRadius(maxRadius), sourcePosition(sourcePosition), lumTotal(lumTotal), mesh(mesh) {
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
-
 	setNumRays();
 
 	rayFinalCell = std::vector<int> (nRays);
@@ -19,23 +18,23 @@ Rays::Rays(double crossSection, double maxRadius, std::vector<double> sourcePosi
     	rayFinalCell[iRay] = iRay;
 
 	rayDirection = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
-	theta = std::vector<double>(nRays, 0.0);
-	phi   = std::vector<double>(nRays, 0.0);
-	rayWeight = std::vector<double>(nRays, 0.0);
-
+	theta        = std::vector<double>(nRays, 0.0);
+	phi          = std::vector<double>(nRays, 0.0);
+	rayWeight    = std::vector<double>(nRays, 0.0);
 	initializeDirections();
-
-	assignToHealpix(1.e3);
+	assignToHealpix(lumTotal);
 
 	rayPosition = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
 	initializePositions();
 
-	columnHI     = std::vector<double>(nRays, 0.0);
-
+	columnHI          = std::vector<double>(nRays, 0.0);
 	distanceTravelled = std::vector<double>(nRays, 0.0);
 	insideDomain      = std::vector<bool>(nRays, true);
 	flagRay           = std::vector<bool>(nRays, false);
-	lastVisitedCell   = std::vector<int>(nRays, 0.0);
+
+	visitedCellColumn = std::vector<std::vector<double>>(nRays);
+	visitedCells = std::vector<std::vector<int>>(nRays);
+
 }
 
 void Rays::setNumRays(){
@@ -50,52 +49,56 @@ void Rays::initializeDirections() {
     for (int iRay = 0; iRay < nRays; ++iRay) {
 
     	cellPos   = mesh.cellCoordinates[iRay];
-    	xDistance = cellPos[0] - mesh.cellCoordinates[startCell][0];//sourcePosition[0];
-    	yDistance = cellPos[1] - mesh.cellCoordinates[startCell][1];//sourcePosition[1];
-    	zDistance = cellPos[2] - mesh.cellCoordinates[startCell][2];//sourcePosition[2];
+
+
+    	if(rayFinalCell[iRay] != startCell){
+    		xDistance = cellPos[0] - mesh.cellCoordinates[startCell][0];
+    		yDistance = cellPos[1] - mesh.cellCoordinates[startCell][1];
+    		zDistance = cellPos[2] - mesh.cellCoordinates[startCell][2];
+    	}
+    	else
+    	{
+    		xDistance = cellPos[0] - sourcePosition[0];
+    		yDistance = cellPos[1] - sourcePosition[1];
+    		zDistance = cellPos[2] - sourcePosition[2];
+    	}
+
+
     	rDistance = std::sqrt(xDistance*xDistance + yDistance*yDistance + zDistance*zDistance);
 
-        rayDirection[iRay][0] = xDistance / rDistance;
-        rayDirection[iRay][1] = yDistance / rDistance;
-        rayDirection[iRay][2] = zDistance / rDistance;
+    	if(rDistance > 0.){
+    		rayDirection[iRay][0] = xDistance / rDistance;
+    		rayDirection[iRay][1] = yDistance / rDistance;
+    		rayDirection[iRay][2] = zDistance / rDistance;
 
-        phi[iRay]   = std::atan2(yDistance, xDistance);
-        theta[iRay] = std::acos(zDistance / rDistance);
+    		phi[iRay]   = std::atan2(yDistance, xDistance);
+    		theta[iRay] = std::acos(zDistance / rDistance);
+    	}
     }
+
+    mesh.cellHIIFraction[startCell] = 1.;
 }
 
 void Rays::assignToHealpix(double L_total) {
-	int64_t nside = 32;
-	int64_t npix = nside2npix(nside);
-	std::vector<int> raysPerPixel(npix, 0);
+	int64_t healpixNside = 32;
+	int64_t nPix = nside2npix(healpixNside);
+	std::vector<int> raysPerPixel(nPix, 0);
 
 	std::vector<int64_t> rayToPixel(nRays);
 	for (int i = 0; i < nRays; ++i) {
-		long ipix;
-		ang2pix_ring(nside, theta[i], phi[i], &ipix);
+		long iPix;
+		ang2pix_ring(healpixNside, theta[i], phi[i], &iPix);
 
-		rayToPixel[i] = static_cast<int64_t>(ipix);
-		raysPerPixel[ipix]++;
+		rayToPixel[i] = static_cast<int64_t>(iPix);
+		raysPerPixel[iPix]++;
 	}
 
-	const double omega_pix = 4.0 * M_PI / static_cast<double>(npix);
-	std::vector<double> rayWeight(nRays, 0.0);
+	const double omegaPix = 4.0 * M_PI / static_cast<double>(nPix);
 
 	for (int i = 0; i < nRays; ++i) {
-		int64_t ipix = rayToPixel[i];
-		rayWeight[i] = omega_pix / raysPerPixel[ipix];
+		int64_t iPix = rayToPixel[i];
+		rayWeight[i] = L_total / raysPerPixel[iPix] * omegaPix / (4.0 * M_PI) ;
 	}
-
-	double totalWeight = 0.0;
-	for (int i = 0; i < nRays; ++i) {
-		totalWeight += rayWeight[i];
-	}
-	double scale = L_total / totalWeight;
-
-	for (int i = 0; i < nRays; ++i) {
-		rayWeight[i] *= scale;
-	}
-
 }
 
 
@@ -104,7 +107,7 @@ void Rays::initializePositions() {
         for (int i = 0; i < 3; ++i)
         	rayPosition[iRay][i] = 	mesh.cellCoordinates[startCell][i];
 
-    std::cout << "Actual Source Position = " << mesh.cellCoordinates[startCell][0] << " " << mesh.cellCoordinates[startCell][1] << " " << mesh.cellCoordinates[startCell][2] << std::endl;
+    std::cout << "Source Position changed to = " << mesh.cellCoordinates[startCell][0] << " " << mesh.cellCoordinates[startCell][1] << " " << mesh.cellCoordinates[startCell][2] << std::endl;
 }
 
 
@@ -124,8 +127,13 @@ void Rays::initializePositions() {
 	 findExitCellAndSetDistance(iCell, iRay, exitCell, distanceToExit, verbose);
 	 exitCell = modifyExitCellIfOnInterface(iCell, iRay, exitCell, distanceToExit, verbose);
 
+	 visitedCellColumn[iRay].push_back(distanceToExit * mesh.cellDensity[iCell]);
+	 visitedCells[iRay].push_back(iCell);
+
+
 	 if(shouldRayBeTerminated(iRay, distanceToExit))
 		 insideDomain[iRay] = false;
+
 
 	 if(insideDomain[iRay]){
 
@@ -136,11 +144,14 @@ void Rays::initializePositions() {
 
 		 if(updateRayAndIsMaxReached(exitCell, iRay, overshoot))
 			 insideDomain[iRay] = false;
+
+		 if (!visitedCellColumn[iRay].empty())
+			 visitedCellColumn[iRay].back() += overshoot * mesh.cellDensity[exitCell];
 	 }
+
 
 	 for (int i = 0; i < 3; i++)
 		 rayPosition[iRay][i] += rayDirection[iRay][i] * (distanceToExit + overshoot);
-
 
 	 if(insideDomain[iRay] == false)
 		 return -1;
@@ -212,10 +223,9 @@ double Rays::getOvershootDistance(int exitCell, int iRay, double distanceToExit,
     return overshoot;
 }
 
-
 bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit){
 
-	double newColumnDensity  = columnHI[iRay]  + distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
+	//double newColumnDensity  = columnHI[iRay] + distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
 	double newDistanceTravelled = distanceTravelled[iRay] + distanceToExit;
 
 	if(iCell == rayFinalCell[iRay]){
@@ -232,16 +242,13 @@ bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit)
 		double fractionalDistance = (distCellFromSource - distanceTravelled[iRay])/(newDistanceTravelled - distanceTravelled[iRay]);
 		distanceToExit *= fractionalDistance;
 
-		mesh.cellFlux[iCell] = rayWeight[iRay] * std::exp(-crossSection * columnHI[iRay]);
-		mesh.cellLocalColumn[iCell] = distanceToExit * mesh.cellDensity[iCell];
-
-		columnHI[iRay] += distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
+		//columnHI[iRay] += distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
 		distanceTravelled[iRay] += distanceToExit;
 
 		return true;
 	}
 
-	columnHI[iRay]     = newColumnDensity;
+	//columnHI[iRay]     = newColumnDensity;
 	distanceTravelled[iRay] = newDistanceTravelled;
 
 	return false;
@@ -306,12 +313,12 @@ int Rays::modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double 
 			 else if ((neighbour == targetCell) && (fabs(distanceToExitTmp - distanceToExit) < minTolerance))
 				 exitCell = neighbour;
 
-			 	 }
+
+		 }
 	 }
 
 	 return exitCell;
 }
-
 
 
 void Rays::findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose){
@@ -386,7 +393,7 @@ void Rays::outputResults(std::string& ofileName) {
                    << std::setw(15) << std::fixed << std::setprecision(6) << columnHI[i]
                    << std::setw(15) << std::fixed << std::setprecision(6) << distanceTravelled[i]
                    << std::setw(6)  << flagRay[i]
-				   << std::setw(10) << lastVisitedCell[i]
+				   << std::setw(10) << rayFinalCell[i]
                    << std::endl;
     }
 
@@ -398,28 +405,19 @@ void Rays::outputResults(std::string& ofileName) {
 
 void Rays::doRayTracing(){
 
-	std::vector<double> oldRayPosition (3, 0.0);
-	int iCellOld = -1;
-
 	for(int iRay = 0; iRay < nRays; iRay++){
+
 		int iCell = startCell;
+		while(insideDomain[iRay])
+			iCell = travelToNextCell(iCell, iRay, false);
 
-		while(insideDomain[iRay]){
-
-			iCellOld = iCell;
-			for(int i = 0; i < 3; i++)
-				oldRayPosition[i] = rayPosition[iRay][i];
-
-			iCell = travelToNextCell(iCellOld, iRay, false);
+		columnHI[iRay] = 0.;
+		for (int i = 0; i < visitedCells[iRay].size(); i++){
+		    columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.cellHIIFraction[visitedCells[iRay][i]]);
 		}
 
-        for (int i = 0; i < 3; ++i)
-        	rayPosition[iRay][i] = 	mesh.cellCoordinates[startCell][i];
-
-        insideDomain[iRay] = true;
-        distanceTravelled[iRay] = 0.;
-        columnHI[iRay] = 0.;
-
+		mesh.cellLocalColumn[rayFinalCell[iRay]] = visitedCellColumn[iRay].back();
+		mesh.cellFlux[rayFinalCell[iRay]] = std::exp(-crossSection * columnHI[iRay]) * rayWeight[iRay];
 	}
 }
 
