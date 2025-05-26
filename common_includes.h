@@ -23,6 +23,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <iomanip>
+#include <numeric>
 extern "C" {
   #include "chealpix.h"
 }

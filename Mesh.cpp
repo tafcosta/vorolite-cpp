@@ -11,6 +11,7 @@
 Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition) : fileMeshIndices(fileMeshIndices), snapshot(snapshot), maxRadius(maxRadius), sourcePosition(sourcePosition) {
 
     readSnapshot(snapshot);
+
 	getNumCellsInRegion();
 
     cellHIIFraction = std::vector<double>(numCells, 0.0);
@@ -30,6 +31,7 @@ void Mesh::getNumCellsInRegion(){
     std::vector<std::vector<float>> filteredVelocities;
     std::vector<double> filteredDensity;
     std::vector<int> filteredIDs;
+    std::vector<int> filteredCellIndices;
 
 	std::vector<float> cellPos;
 
@@ -47,6 +49,7 @@ void Mesh::getNumCellsInRegion(){
             filteredVelocities.push_back(cellVelocities[iCell]);
             filteredDensity.push_back(cellDensity[iCell]);
             filteredIDs.push_back(cellIDs[iCell]);
+            filteredCellIndices.push_back(cellIndices[iCell]);
 		}
 	}
 
@@ -54,6 +57,8 @@ void Mesh::getNumCellsInRegion(){
     cellVelocities = std::move(filteredVelocities);
     cellDensity = std::move(filteredDensity);
     cellIDs = std::move(filteredIDs);
+    cellIndices = std::move(filteredCellIndices);
+
     numCells = cellDensity.size();
 
 
@@ -99,7 +104,8 @@ void Mesh::readSnapshot(const std::string& snapshot) {
 
         cellFlux.resize(numDensities, 0.0);
         cellLocalColumn.resize(numDensities, 0.0);
-
+    	cellIndices.resize(numDensities, 0);
+    	std::iota(cellIndices.begin(), cellIndices.end(), 0);
 
         H5::DataSpace coordinatesSpace = coordinatesDataset.getSpace();
         hsize_t dims[2];

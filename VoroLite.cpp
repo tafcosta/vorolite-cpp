@@ -41,8 +41,8 @@ int main(int argc, char* argv[]) {
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
     double time = 0;
-    double timeMax = 0.03;
-    double dtime = 0.00001;
+    double timeMax = 0.1;
+    double dtime = 0.0001;
 
     double printInterval = timeMax/10;
     double TimeNextOutput = printInterval;
@@ -62,6 +62,7 @@ int main(int argc, char* argv[]) {
             std::ofstream outFile(filename.str());
             if (outFile.is_open()) {
                 for (int iCell = 0; iCell < mesh->numCells; ++iCell) {
+                	outFile << mesh->cellIndices[iCell] << " ";
                     for (float coord : mesh->cellCoordinates[iCell]) {
                         outFile << coord << " ";
                     }
