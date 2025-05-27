@@ -225,7 +225,7 @@ double Rays::getOvershootDistance(int exitCell, int iRay, double distanceToExit,
 
 bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit){
 
-	double newColumnDensity  = columnHI[iRay] + distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
+	//double newColumnDensity  = columnHI[iRay] + distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
 	double newDistanceTravelled = distanceTravelled[iRay] + distanceToExit;
 
 	if(iCell == rayFinalCell[iRay]){
@@ -242,16 +242,14 @@ bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit)
 		double fractionalDistance = (distCellFromSource - distanceTravelled[iRay])/(newDistanceTravelled - distanceTravelled[iRay]);
 		distanceToExit *= fractionalDistance;
 
-		columnHI[iRay] += distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
+		//columnHI[iRay] += distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
 		distanceTravelled[iRay] += distanceToExit;
 
 		return true;
 	}
 
-	columnHI[iRay]     = newColumnDensity;
+	//columnHI[iRay]     = newColumnDensity;
 	distanceTravelled[iRay] = newDistanceTravelled;
-
-	mesh.cellFlux[iCell] += std::exp(-crossSection * columnHI[iRay]) * rayWeight[iRay];
 
 	return false;
 }
@@ -416,11 +414,12 @@ void Rays::doRayTracing(){
 
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
 		    columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.cellHIIFraction[visitedCells[iRay][i]]);
-		    //mesh.cellFlux[visitedCells[iRay][i]] += rayWeight[iRay] * std::exp(-crossSection * columnHI[iRay]);
+		    //std::cout << iRay << " " << columnHI[iRay] << std::endl;
+		    mesh.cellFlux[visitedCells[iRay][i]] += rayWeight[iRay] * std::exp(-crossSection * columnHI[iRay]);
 		}
 
 		mesh.cellLocalColumn[rayFinalCell[iRay]] = visitedCellColumn[iRay].back();
-		mesh.cellFlux[rayFinalCell[iRay]] = rayWeight[iRay] * std::exp(-crossSection * columnHI[iRay]);
+		//mesh.cellFlux[rayFinalCell[iRay]] = rayWeight[iRay] * std::exp(-crossSection * columnHI[iRay]);
 	}
 
 }

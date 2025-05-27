@@ -42,9 +42,9 @@ int main(int argc, char* argv[]) {
 
     double time = 0;
     double timeMax = 0.1;
-    double dtime = 0.0001;
+    double dtime = 0.00001;
 
-    double printInterval = timeMax/10;
+    double printInterval = timeMax/20;
     double TimeNextOutput = printInterval;
 
     int snapshotIndex = 0;
