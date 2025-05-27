@@ -50,6 +50,7 @@ int main(int argc, char* argv[]) {
     int snapshotIndex = 0;
 
     while (time < timeMax) {
+    	mesh->resetFluxes();
         rays->doRayTracing();
         photochemistry->evolveIonisation(dtime);
 

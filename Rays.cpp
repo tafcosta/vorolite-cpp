@@ -403,9 +403,6 @@ void Rays::outputResults(std::string& ofileName) {
     std::cout << "Results have been written to '" << ofileName << "'" << std::endl;
 }
 
-void Rays::resetFluxes(){
-	std::fill(mesh.cellFlux.begin(), mesh.cellFlux.end(), 0.0);
-}
 
 void Rays::doRayTracing(){
 
@@ -415,15 +412,17 @@ void Rays::doRayTracing(){
 		while(insideDomain[iRay])
 			iCell = travelToNextCell(iCell, iRay, false);
 
-		resetFluxes();
 		columnHI[iRay] = 0.;
+
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
 		    columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.cellHIIFraction[visitedCells[iRay][i]]);
 		    //mesh.cellFlux[visitedCells[iRay][i]] += rayWeight[iRay] * std::exp(-crossSection * columnHI[iRay]);
 		}
 
 		mesh.cellLocalColumn[rayFinalCell[iRay]] = visitedCellColumn[iRay].back();
+		mesh.cellFlux[rayFinalCell[iRay]] = rayWeight[iRay] * std::exp(-crossSection * columnHI[iRay]);
 	}
+
 }
 
 

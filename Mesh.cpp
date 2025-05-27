@@ -75,6 +75,11 @@ void Mesh::getNumCellsInRegion(){
     std::cout << "Reduced to " << numCells << " cells within maxRadius = " << maxRadius << std::endl;
 }
 
+void Mesh::resetFluxes(){
+	for(int iCell = 0; iCell < numCells; iCell++)
+		cellFlux[iCell] = 0.;
+}
+
 void Mesh::readSnapshot(const std::string& snapshot) {
     try {
         H5::H5File file(snapshot, H5F_ACC_RDONLY);

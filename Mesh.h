@@ -39,6 +39,7 @@ public:
 	double getDistanceToCell(const std::vector<double>& target, int cellIndex);
 	double getDistanceBetweenCells(int iCell, int jCell);
 
+    void resetFluxes();
 
 private:
 	std::vector<std::vector<int> > collectNeighbours(const std::vector<std::pair<int, int>>& IdPairs, std::vector<int>& cellIDs);

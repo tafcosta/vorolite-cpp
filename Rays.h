@@ -57,7 +57,6 @@ protected:
 private:
     void initializeDirections();
     void initializePositions();
-    void resetFluxes();
 
     void setNumRays();
     bool warningIssued;
