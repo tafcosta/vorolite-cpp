@@ -13,9 +13,9 @@ Rays::Rays(double crossSection, double maxRadius, std::vector<double> sourcePosi
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
 	setNumRays();
 
-	rayFinalCell = std::vector<int> (nRays);
+	rayTargetCell = std::vector<int> (nRays);
     for (int iRay = 0; iRay < nRays; ++iRay)
-    	rayFinalCell[iRay] = iRay;
+    	rayTargetCell[iRay] = iRay;
 
 	rayDirection = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
 	theta        = std::vector<double>(nRays, 0.0);
@@ -50,8 +50,7 @@ void Rays::initializeDirections() {
 
     	cellPos   = mesh.cellCoordinates[iRay];
 
-
-    	if(rayFinalCell[iRay] != startCell){
+    	if(rayTargetCell[iRay] != startCell){
     		xDistance = cellPos[0] - mesh.cellCoordinates[startCell][0];
     		yDistance = cellPos[1] - mesh.cellCoordinates[startCell][1];
     		zDistance = cellPos[2] - mesh.cellCoordinates[startCell][2];
@@ -62,7 +61,6 @@ void Rays::initializeDirections() {
     		yDistance = cellPos[1] - sourcePosition[1];
     		zDistance = cellPos[2] - sourcePosition[2];
     	}
-
 
     	rDistance = std::sqrt(xDistance*xDistance + yDistance*yDistance + zDistance*zDistance);
 
@@ -114,7 +112,7 @@ void Rays::initializePositions() {
  int Rays::travelToNextCell(int iCell, int iRay, bool verbose){
 	 double distanceToExit = std::numeric_limits<double>::max();
 	 double overshoot = 0.;
-	 int exitCell = -1;
+	 int exitCell     = -1;
 
 	 if(verbose){
 		 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
@@ -123,22 +121,25 @@ void Rays::initializePositions() {
 		 std::cout << "Host Index = " << iCell << " Host Cell Position = " << cellPos[0] << ", " << cellPos[1] << ", " << cellPos[2] << " Distance from Ray to Cell (before update) = " << distanceBetRayAndCell << "\n";
 	 }
 
-
-	 findExitCellAndSetDistance(iCell, iRay, exitCell, distanceToExit, verbose);
+	 exitCell =  findExitCellAndSetDistance(iCell, iRay, exitCell, distanceToExit, verbose);
 	 exitCell = modifyExitCellIfOnInterface(iCell, iRay, exitCell, distanceToExit, verbose);
 
-	 visitedCellColumn[iRay].push_back(distanceToExit * mesh.cellDensity[iCell]);
-	 visitedCells[iRay].push_back(iCell);
+	 if (distanceToExit < 1e-10)
+	     std::cerr << "Warning: distanceToExit = " << distanceToExit
+	               << ". You seem to have ended up on an edge; how did you do that?!" << std::endl;
 
-
-	 if(shouldRayBeTerminated(iRay, distanceToExit))
+	 if(exitCell == -1){
+	     std::cerr << "No exit cell found. You need a larger domain buffer size." << std::endl;
 		 insideDomain[iRay] = false;
-
+	 }
 
 	 if(insideDomain[iRay]){
 
 		 if(updateRayAndIsMaxReached(iCell, iRay, distanceToExit))
 			 insideDomain[iRay] = false;
+
+		 visitedCellColumn[iRay].push_back(distanceToExit * mesh.cellDensity[iCell]);
+		 visitedCells[iRay].push_back(iCell);
 
 		 overshoot = getOvershootDistance(exitCell, iRay, distanceToExit, verbose);
 
@@ -150,14 +151,7 @@ void Rays::initializePositions() {
 	 }
 
 
-	 for (int i = 0; i < 3; i++)
-		 rayPosition[iRay][i] += rayDirection[iRay][i] * (distanceToExit + overshoot);
-
-	 if(insideDomain[iRay] == false)
-		 return -1;
-
-
-
+	 updateRayPosition(iRay, distanceToExit + overshoot);
 
 
     if(verbose){
@@ -191,7 +185,16 @@ void Rays::initializePositions() {
     	flagRay[iRay] = true;
     }
 
+	 if(insideDomain[iRay] == false)
+		 return -1;
+
+
     return exitCell;
+ }
+
+ void Rays::updateRayPosition(int iRay, double distance){
+	 for (int i = 0; i < 3; i++)
+		 rayPosition[iRay][i] += rayDirection[iRay][i] * distance;
  }
 
 double Rays::getOvershootDistance(int exitCell, int iRay, double distanceToExit, bool verbose){
@@ -225,46 +228,21 @@ double Rays::getOvershootDistance(int exitCell, int iRay, double distanceToExit,
 
 bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit){
 
-	//double newColumnDensity  = columnHI[iRay] + distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
 	double newDistanceTravelled = distanceTravelled[iRay] + distanceToExit;
 
-	if(iCell == rayFinalCell[iRay]){
+	if(distanceTravelled[iRay] + distanceToExit > maxRadius){
 
-		std::vector<float> cellPos;
-		double dx, dy, dz, distCellFromSource;
-		cellPos = mesh.cellCoordinates[iCell];
-		dx = cellPos[0] - sourcePosition[0];
-		dy = cellPos[1] - sourcePosition[1];
-		dz = cellPos[2] - sourcePosition[2];
-
-		distCellFromSource = std::sqrt(dx*dx + dy*dy + dz*dz);
-
-		double fractionalDistance = (distCellFromSource - distanceTravelled[iRay])/(newDistanceTravelled - distanceTravelled[iRay]);
+		double fractionalDistance = (newDistanceTravelled - distanceTravelled[iRay])/(newDistanceTravelled - maxRadius);
 		distanceToExit *= fractionalDistance;
 
-		//columnHI[iRay] += distanceToExit * mesh.cellDensity[iCell] * (1 - mesh.cellHIIFraction[iCell]);
 		distanceTravelled[iRay] += distanceToExit;
-
 		return true;
 	}
 
-	//columnHI[iRay]     = newColumnDensity;
 	distanceTravelled[iRay] = newDistanceTravelled;
-
 	return false;
 }
 
-
-bool Rays::shouldRayBeTerminated(int iRay, double distanceToExit){
-
-	 if(distanceToExit > mesh.boxSize)
-		return true;
-
-	 if (distanceToExit < 1e-10)
-	 	std::cout << "distanceToExit = " << distanceToExit << "You seem to have ended up on an edge; how did you do that?!" << "\n";
-
-	 return false;
-}
 
 int Rays::modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double distanceToExit, bool verbose){
 
@@ -321,7 +299,7 @@ int Rays::modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double 
 }
 
 
-void Rays::findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose){
+int Rays::findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose){
 	 double distanceToExitTmp;
 	 std::vector<float> cellPos = mesh.cellCoordinates[iCell];
 	 std::vector<double> normalVector (3, 0.0);
@@ -362,7 +340,10 @@ void Rays::findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double
 
 
 		 }
+
 	 }
+
+	 return exitCell;
 }
 
 
@@ -393,12 +374,25 @@ void Rays::outputResults(std::string& ofileName) {
                    << std::setw(15) << std::fixed << std::setprecision(6) << columnHI[i]
                    << std::setw(15) << std::fixed << std::setprecision(6) << distanceTravelled[i]
                    << std::setw(6)  << flagRay[i]
-				   << std::setw(10) << rayFinalCell[i]
+				   << std::setw(10) << rayTargetCell[i]
                    << std::endl;
     }
 
     outputFile.close();
     std::cout << "Results have been written to '" << ofileName << "'" << std::endl;
+}
+
+void Rays::updateColumnAndFlux(int iCell, int iRay){
+	columnHI[iRay] = 0.;
+
+	for (int i = 0; i < visitedCells[iRay].size(); i++){
+	    columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.cellHIIFraction[visitedCells[iRay][i]]);
+	    mesh.cellFlux[visitedCells[iRay][i]] += rayWeight[iRay] * std::exp(-crossSection * columnHI[iRay]);
+
+	    if(visitedCells[iRay][i] == rayTargetCell[iRay])
+			mesh.cellLocalColumn[rayTargetCell[iRay]] = visitedCellColumn[iRay][i];
+	}
+
 }
 
 
@@ -407,21 +401,12 @@ void Rays::doRayTracing(){
 	for(int iRay = 0; iRay < nRays; iRay++){
 
 		int iCell = startCell;
+
 		while(insideDomain[iRay])
 			iCell = travelToNextCell(iCell, iRay, false);
 
-		columnHI[iRay] = 0.;
-
-		for (int i = 0; i < visitedCells[iRay].size(); i++){
-		    columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.cellHIIFraction[visitedCells[iRay][i]]);
-		    //std::cout << iRay << " " << columnHI[iRay] << std::endl;
-		    mesh.cellFlux[visitedCells[iRay][i]] += rayWeight[iRay] * std::exp(-crossSection * columnHI[iRay]);
-		}
-
-		mesh.cellLocalColumn[rayFinalCell[iRay]] = visitedCellColumn[iRay].back();
-		//mesh.cellFlux[rayFinalCell[iRay]] = rayWeight[iRay] * std::exp(-crossSection * columnHI[iRay]);
+		updateColumnAndFlux(iCell, iRay);
 	}
-
 }
 
 

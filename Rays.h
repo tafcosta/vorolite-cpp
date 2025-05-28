@@ -45,12 +45,13 @@ public:
 protected:
 	int startCell;
 	int travelToNextCell(int iCell, int iRay, bool verbose);
-	std::vector<int> rayFinalCell;
+	std::vector<int> rayTargetCell;
 
 	void assignToHealpix(double L_total);
-	void findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose);
+	void updateRayPosition(int iRay, double distance);
+	void updateColumnAndFlux(int iCell, int iRay);
+	int findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose);
 	int modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double distanceToExit, bool verbose);
-	bool shouldRayBeTerminated(int iRay, double distanceToExit);
 	bool updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit);
 	double getOvershootDistance(int exitCell, int iRay, double distanceToExit, bool verbose);
 

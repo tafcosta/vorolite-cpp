@@ -44,7 +44,7 @@ void Mesh::getNumCellsInRegion(){
         double dz = cellPos[2] - cellCoordinates[startCell][2]; //sourcePosition[2];
         double rDistance = std::sqrt(dx*dx + dy*dy + dz*dz);
 
-		if(rDistance <= maxRadius){
+		if(rDistance <= 1.2 * maxRadius){
             filteredCoordinates.push_back(cellCoordinates[iCell]);
             filteredVelocities.push_back(cellVelocities[iCell]);
             filteredDensity.push_back(cellDensity[iCell]);

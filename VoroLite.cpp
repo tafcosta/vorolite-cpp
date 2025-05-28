@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     double timeMax = 0.1;
     double dtime = 0.00001;
 
-    double printInterval = timeMax/20;
+    double printInterval = timeMax/50;
     double TimeNextOutput = printInterval;
 
     int snapshotIndex = 0;

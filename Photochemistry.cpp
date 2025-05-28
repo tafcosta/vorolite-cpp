@@ -38,6 +38,10 @@ void Photochemistry::evolveIonisation(double dtime) {
 
             mesh.cellHIIFraction[iCell] = x0 + delta;
         }
+
+        //if(mesh.cellHIIFraction[iCell] == 0.)
+        //	std::cout << iCell << " " <<  mesh.cellHIIFraction[iCell] << std::endl;
+
     }
 }
 
