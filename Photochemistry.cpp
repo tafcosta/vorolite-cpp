@@ -14,9 +14,9 @@ Photochemistry::Photochemistry(Mesh& mesh, double crossSection) : mesh(mesh), cr
 
 void Photochemistry::evolveIonisation(double dtime) {
     for (int iCell = 0; iCell < mesh.numCells; ++iCell) {
-        double mass = mesh.cellMass[iCell];
+        double mass = mesh.getMass(iCell);
         double flux = mesh.cellFlux[iCell];
-        double x0   = mesh.cellHIIFraction[iCell];
+        double x0   = mesh.getHIIFraction(iCell);
 
         if (mass > 0.0) {
 
@@ -36,12 +36,8 @@ void Photochemistry::evolveIonisation(double dtime) {
 
             double delta = (dtime / 6.0) * (k1 + 2*k2 + 2*k3 + k4);
 
-            mesh.cellHIIFraction[iCell] = x0 + delta;
+            mesh.setHIIFraction(iCell, x0 + delta);
         }
-
-        //if(mesh.cellHIIFraction[iCell] == 0.)
-        //	std::cout << iCell << " " <<  mesh.cellHIIFraction[iCell] << std::endl;
-
     }
 }
 

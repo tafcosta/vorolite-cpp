@@ -49,9 +49,10 @@ int main(int argc, char* argv[]) {
 
     int snapshotIndex = 0;
 
+    rays->calculateRays();
     while (time < timeMax) {
     	mesh->resetFluxes();
-        rays->doRayTracing();
+        rays->doRadiativeTransfer(time);
         photochemistry->evolveIonisation(dtime);
 
         if (time >= TimeNextOutput) {
@@ -63,11 +64,11 @@ int main(int argc, char* argv[]) {
             std::ofstream outFile(filename.str());
             if (outFile.is_open()) {
                 for (int iCell = 0; iCell < mesh->numCells; ++iCell) {
-                	outFile << mesh->cellIndices[iCell] << " ";
+                	outFile << mesh->getIndex(iCell) << " ";
                     for (float coord : mesh->cellCoordinates[iCell]) {
                         outFile << coord << " ";
                     }
-                    outFile << mesh->cellHIIFraction[iCell] << " " << mesh->cellFlux[iCell] << std::endl;
+                    outFile << mesh->getHIIFraction(iCell) << " " << mesh->cellFlux[iCell] << std::endl;
                 }
                 outFile.close();
             } else {

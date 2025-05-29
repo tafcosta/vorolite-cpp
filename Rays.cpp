@@ -74,7 +74,7 @@ void Rays::initializeDirections() {
     	}
     }
 
-    mesh.cellHIIFraction[startCell] = 1.;
+    mesh.setHIIFraction(startCell, 1.);
 }
 
 void Rays::assignToHealpix(double L_total) {
@@ -138,7 +138,7 @@ void Rays::initializePositions() {
 		 if(updateRayAndIsMaxReached(iCell, iRay, distanceToExit))
 			 insideDomain[iRay] = false;
 
-		 visitedCellColumn[iRay].push_back(distanceToExit * mesh.cellDensity[iCell]);
+		 visitedCellColumn[iRay].push_back(distanceToExit * mesh.getDensity(iCell));
 		 visitedCells[iRay].push_back(iCell);
 
 		 overshoot = getOvershootDistance(exitCell, iRay, distanceToExit, verbose);
@@ -147,7 +147,7 @@ void Rays::initializePositions() {
 			 insideDomain[iRay] = false;
 
 		 if (!visitedCellColumn[iRay].empty())
-			 visitedCellColumn[iRay].back() += overshoot * mesh.cellDensity[exitCell];
+			 visitedCellColumn[iRay].back() += overshoot * mesh.getDensity(exitCell);
 	 }
 
 
@@ -382,11 +382,12 @@ void Rays::outputResults(std::string& ofileName) {
     std::cout << "Results have been written to '" << ofileName << "'" << std::endl;
 }
 
-void Rays::updateColumnAndFlux(int iCell, int iRay){
+void Rays::updateColumnAndFlux(int iRay){
 	columnHI[iRay] = 0.;
 
 	for (int i = 0; i < visitedCells[iRay].size(); i++){
-	    columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.cellHIIFraction[visitedCells[iRay][i]]);
+
+	    columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.getHIIFraction(visitedCells[iRay][i]));
 	    mesh.cellFlux[visitedCells[iRay][i]] += rayWeight[iRay] * std::exp(-crossSection * columnHI[iRay]);
 
 	    if(visitedCells[iRay][i] == rayTargetCell[iRay])
@@ -395,18 +396,21 @@ void Rays::updateColumnAndFlux(int iCell, int iRay){
 
 }
 
-
-void Rays::doRayTracing(){
+void Rays::calculateRays(){
 
 	for(int iRay = 0; iRay < nRays; iRay++){
-
 		int iCell = startCell;
-
 		while(insideDomain[iRay])
 			iCell = travelToNextCell(iCell, iRay, false);
-
-		updateColumnAndFlux(iCell, iRay);
 	}
+}
+
+
+void Rays::doRadiativeTransfer(double time){
+
+	for(int iRay = 0; iRay < nRays; iRay++)
+		updateColumnAndFlux(iRay);
+
 }
 
 

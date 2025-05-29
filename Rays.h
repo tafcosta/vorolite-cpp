@@ -39,7 +39,8 @@ public:
 	int nRays;
 	Mesh& mesh;
 
-	void doRayTracing();
+	void calculateRays();
+	void doRadiativeTransfer(double time);
 	void outputResults(std::string& ofileName);
 
 protected:
@@ -49,7 +50,7 @@ protected:
 
 	void assignToHealpix(double L_total);
 	void updateRayPosition(int iRay, double distance);
-	void updateColumnAndFlux(int iCell, int iRay);
+	void updateColumnAndFlux(int iRay);
 	int findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose);
 	int modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double distanceToExit, bool verbose);
 	bool updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit);

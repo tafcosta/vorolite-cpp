@@ -12,17 +12,66 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 
     readSnapshot(snapshot);
 
+    std::cout << "units " << unitLength * unitLength / unitMass << std::endl;
+
 	getNumCellsInRegion();
 
-    cellHIIFraction = std::vector<double>(numCells, 0.0);
-    cellVolume = std::vector<double>(numCells, 0.0);
+	cellHIIFraction.resize(numCells, 0.0);
 
-	for(int iCell = 0; iCell < numCells; iCell++)
-		cellVolume[iCell] = cellMass[iCell]/cellDensity[iCell];
+	//The first dimension should be number of rays
+
+	if(storingHistory){
+
+		cellHIIColumn.resize(numCells);
+		cellTimeStamp.resize(numCells);
+
+		for (int i = 0; i < numCells; ++i) {
+			cellHIIColumn[i].resize(numCells);
+			cellTimeStamp[i].resize(numCells);
+		}
+
+		for(int iRay = 0; iRay < numCells; iRay++)
+			for(int iCell = 0; iCell < numCells; iCell++){
+				cellHIIColumn[iRay][iCell].resize(1);
+				setHIIColumn(iRay, iCell, 0.0);
+
+				cellTimeStamp[iRay][iCell].resize(1);
+			}
+	}
 
 	IdPairs       = readVoronoiIndices(fileMeshIndices);
 	neighbourList = collectNeighbours(IdPairs, cellIDs);
+}
 
+double Mesh::getMass(int iCell){
+	return cellMass[iCell];
+}
+
+double Mesh::getDensity(int iCell){
+	return cellDensity[iCell];
+}
+
+double Mesh::getHIIColumn(int iRay, int iCell, double time){
+	if (cellHIIColumn[iRay][iCell].size() == 0)
+	     std::cerr << "Warning: HII fraction in ray " << iRay << " and cell " << iCell << " has not been initialised." << std::endl;
+
+	return cellHIIColumn[iRay][iCell][0];
+}
+
+void Mesh::setHIIColumn(int iRay, int iCell, double newValue){
+	cellHIIColumn[iRay][iCell][0] = newValue;
+}
+
+void Mesh::setHIIFraction(int iCell, double newValue){
+	cellHIIFraction[iCell] = newValue;
+}
+
+double Mesh::getHIIFraction(int iCell){
+	return cellHIIFraction[iCell];
+}
+
+int Mesh::getIndex(int iCell){
+	return cellIndices[iCell];
 }
 
 void Mesh::getNumCellsInRegion(){
@@ -93,6 +142,11 @@ void Mesh::readSnapshot(const std::string& snapshot) {
         H5::Group headerGroup = file.openGroup("/Header");
         H5::Attribute boxSizeAttribute = headerGroup.openAttribute("BoxSize");
         boxSizeAttribute.read(H5::PredType::NATIVE_DOUBLE, &boxSize);
+
+        H5::Attribute attrLength = headerGroup.openAttribute("UnitLength_in_cm");
+        attrLength.read(H5::PredType::NATIVE_DOUBLE, &unitLength);
+        H5::Attribute attrMass = headerGroup.openAttribute("UnitMass_in_g");
+        attrMass.read(H5::PredType::NATIVE_DOUBLE, &unitMass);
 
         H5::DataSpace densitySpace = densityDataset.getSpace();
         hsize_t numDensities;
@@ -274,34 +328,6 @@ std::vector<int> Mesh::findHostCellID(const std::vector<double>& target, int cel
     return closestCells;
 }
 
-
-/*
-std::vector<int> Mesh::findHostCellID(const std::vector<double>& target, int cellSkip) {
-    std::vector<int> closestCells;
-    closestCells.reserve(numCells - 1);
-
-    double minDistance = std::numeric_limits<double>::infinity();
-    std::vector<double> distances(numCells, std::numeric_limits<double>::infinity());
-
-    for (int iCell = 0; iCell < numCells; iCell++) {
-
-    	if(iCell == cellSkip)
-    		continue;
-
-    	distances[iCell] = squaredDistance(cellCoordinates[iCell], target);
-
-        if (distances[iCell] < minDistance) {
-            closestCells = {iCell};
-            minDistance = distances[iCell];
-        }
-        else if (std::fabs(distances[iCell] - minDistance) < 1.e-10) {
-            closestCells.push_back(iCell);
-        }
-    }
-
-    return closestCells;
-}
-*/
 
 bool Mesh::checkIfExitCellNeighboursCurrentCell(int iCell, int exitCell){
     bool test = false;
