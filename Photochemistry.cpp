@@ -17,6 +17,7 @@ void Photochemistry::evolveIonisation(double dtime) {
         double mass = mesh.getMass(iCell);
         double flux = mesh.cellFlux[iCell];
         double x0   = mesh.getHIIFraction(iCell);
+        double electronDensity = mesh.getElectronNumberDensity(iCell);
 
         if (mass > 0.0) {
 
@@ -26,7 +27,7 @@ void Photochemistry::evolveIonisation(double dtime) {
             };
 
             auto computeRate = [&](double x) {
-                return computeAbsorbedFlux(x) / mass;
+                return flux * (1.0 - x) -  electronDensity * x * 0.0; //computeAbsorbedFlux(x) / mass;
             };
 
             double k1 = computeRate(x0);

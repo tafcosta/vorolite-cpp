@@ -15,6 +15,8 @@ public:
 	Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition);
 	virtual ~Mesh();
 
+	const double protonMass = 1.673e-24;
+
 	int numCells;
 	double boxSize;
 	double maxRadius;
@@ -22,6 +24,7 @@ public:
 
     double unitLength;
     double unitMass;
+    double unitVelocity;
 
     std::vector<double> cellFlux;
     std::vector<double> cellLocalColumn;
@@ -36,28 +39,30 @@ public:
 	double getDistanceToCell(const std::vector<double>& target, int cellIndex);
 	double getDistanceBetweenCells(int iCell, int jCell);
 
-	double getHIIColumn(int iRay, int iCell, double time);
-	void setHIIColumn(int iRay, int iCell, double newValue);
+	double getFluxOfRayInCell(int iRay, int iCell);
+	void setFluxOfRayInCell(int iRay, int iCell, double newValue);
 
 	double getHIIFraction(int iCell);
 	double getMass(int iCell);
 	double getDensity(int iCell);
+	double getNumberDensity(int iCell);
+	double getElectronNumberDensity(int iCell);
+	double getMeanMolecularWeight(int iCell);
+
 	int getIndex(int iCell);
 
 	void setHIIFraction(int iCell, double newValue);
     void resetFluxes();
+    void resizeFluxOfRayInCell(int iRay, int numVisitedCells);
 
 private:
-    bool storingHistory = false;
-
 	std::vector<int> cellIndices;
 	std::vector<int> cellIDs;
+	
     std::vector<double> cellMass;
     std::vector<double> cellDensity;
 
-
-    std::vector<std::vector<std::vector<double>>> cellHIIColumn;
-    std::vector<std::vector<std::vector<double>>> cellTimeStamp;
+    std::vector<std::vector<double>> fluxOfRayInCell;
 
 	std::vector<std::vector<int> > collectNeighbours(const std::vector<std::pair<int, int>>& IdPairs, std::vector<int>& cellIDs);
 	std::vector<int> getCellIDs(const std::vector<std::pair<int, int>>& IdPairs);

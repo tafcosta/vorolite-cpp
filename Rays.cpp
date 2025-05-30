@@ -10,6 +10,7 @@
 #include "Mesh.h"
 
 Rays::Rays(double crossSection, double maxRadius, std::vector<double> sourcePosition, double lumTotal, Mesh& mesh) : crossSection(crossSection), maxRadius(maxRadius), sourcePosition(sourcePosition), lumTotal(lumTotal), mesh(mesh) {
+
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
 	setNumRays();
 
@@ -33,7 +34,7 @@ Rays::Rays(double crossSection, double maxRadius, std::vector<double> sourcePosi
 	flagRay           = std::vector<bool>(nRays, false);
 
 	visitedCellColumn = std::vector<std::vector<double>>(nRays);
-	visitedCells = std::vector<std::vector<int>>(nRays);
+	visitedCells      = std::vector<std::vector<int>>(nRays);
 
 }
 
@@ -382,16 +383,27 @@ void Rays::outputResults(std::string& ofileName) {
     std::cout << "Results have been written to '" << ofileName << "'" << std::endl;
 }
 
-void Rays::updateColumnAndFlux(int iRay){
+double Rays::distance(std::vector<float> a, std::vector<float> b){
+	return 0.;//std::sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]));
+}
+
+void Rays::updateColumnAndFlux(int iRay, double dtime){
+	int j = 0;
 	columnHI[iRay] = 0.;
 
 	for (int i = 0; i < visitedCells[iRay].size(); i++){
+
+		//todo: should use linear interpolation instead
+		//while(distance(mesh.cellCoordinates[visitedCells[iRay][j]], mesh.cellCoordinates[visitedCells[iRay][i]]) > speedOfLightInternal * dtime)
+		//	j++;
 
 	    columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.getHIIFraction(visitedCells[iRay][i]));
 	    mesh.cellFlux[visitedCells[iRay][i]] += rayWeight[iRay] * std::exp(-crossSection * columnHI[iRay]);
 
 	    if(visitedCells[iRay][i] == rayTargetCell[iRay])
 			mesh.cellLocalColumn[rayTargetCell[iRay]] = visitedCellColumn[iRay][i];
+
+	    mesh.setFluxOfRayInCell(iRay, i, mesh.cellFlux[visitedCells[iRay][i]]);
 	}
 
 }
@@ -402,14 +414,16 @@ void Rays::calculateRays(){
 		int iCell = startCell;
 		while(insideDomain[iRay])
 			iCell = travelToNextCell(iCell, iRay, false);
-	}
+
+		mesh.resizeFluxOfRayInCell(iRay, visitedCells[iRay].size());
+		}
 }
 
 
-void Rays::doRadiativeTransfer(double time){
+void Rays::doRadiativeTransfer(double time, double dtime){
 
 	for(int iRay = 0; iRay < nRays; iRay++)
-		updateColumnAndFlux(iRay);
+		updateColumnAndFlux(iRay, dtime);
 
 }
 

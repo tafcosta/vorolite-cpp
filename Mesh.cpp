@@ -11,36 +11,17 @@
 Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition) : fileMeshIndices(fileMeshIndices), snapshot(snapshot), maxRadius(maxRadius), sourcePosition(sourcePosition) {
 
     readSnapshot(snapshot);
-
-    std::cout << "units " << unitLength * unitLength / unitMass << std::endl;
-
 	getNumCellsInRegion();
 
 	cellHIIFraction.resize(numCells, 0.0);
-
-	//The first dimension should be number of rays
-
-	if(storingHistory){
-
-		cellHIIColumn.resize(numCells);
-		cellTimeStamp.resize(numCells);
-
-		for (int i = 0; i < numCells; ++i) {
-			cellHIIColumn[i].resize(numCells);
-			cellTimeStamp[i].resize(numCells);
-		}
-
-		for(int iRay = 0; iRay < numCells; iRay++)
-			for(int iCell = 0; iCell < numCells; iCell++){
-				cellHIIColumn[iRay][iCell].resize(1);
-				setHIIColumn(iRay, iCell, 0.0);
-
-				cellTimeStamp[iRay][iCell].resize(1);
-			}
-	}
+	fluxOfRayInCell.resize(numCells); //The first dimension should be number of rays
 
 	IdPairs       = readVoronoiIndices(fileMeshIndices);
 	neighbourList = collectNeighbours(IdPairs, cellIDs);
+}
+
+void Mesh::resizeFluxOfRayInCell(int iRay, int numVisitedCells){
+	fluxOfRayInCell[iRay].resize(numVisitedCells);
 }
 
 double Mesh::getMass(int iCell){
@@ -51,15 +32,24 @@ double Mesh::getDensity(int iCell){
 	return cellDensity[iCell];
 }
 
-double Mesh::getHIIColumn(int iRay, int iCell, double time){
-	if (cellHIIColumn[iRay][iCell].size() == 0)
-	     std::cerr << "Warning: HII fraction in ray " << iRay << " and cell " << iCell << " has not been initialised." << std::endl;
-
-	return cellHIIColumn[iRay][iCell][0];
+double Mesh::getNumberDensity(int iCell){
+	return cellDensity[iCell] / (protonMass / unitMass);
 }
 
-void Mesh::setHIIColumn(int iRay, int iCell, double newValue){
-	cellHIIColumn[iRay][iCell][0] = newValue;
+double Mesh::getElectronNumberDensity(int iCell){
+	return cellHIIFraction[iCell] * getNumberDensity(iCell);
+}
+
+double Mesh::getMeanMolecularWeight(int iCell){
+	return 1./(1 + cellHIIFraction[iCell]);
+}
+
+double Mesh::getFluxOfRayInCell(int iRay, int iCell){
+	return fluxOfRayInCell[iRay][iCell];
+}
+
+void Mesh::setFluxOfRayInCell(int iRay, int iCell, double newValue){
+	fluxOfRayInCell[iRay][iCell] = newValue;
 }
 
 void Mesh::setHIIFraction(int iCell, double newValue){
@@ -147,6 +137,8 @@ void Mesh::readSnapshot(const std::string& snapshot) {
         attrLength.read(H5::PredType::NATIVE_DOUBLE, &unitLength);
         H5::Attribute attrMass = headerGroup.openAttribute("UnitMass_in_g");
         attrMass.read(H5::PredType::NATIVE_DOUBLE, &unitMass);
+        H5::Attribute attrVelocity = headerGroup.openAttribute("UnitVelocity_in_cm_per_s");
+        attrVelocity.read(H5::PredType::NATIVE_DOUBLE, &unitVelocity);
 
         H5::DataSpace densitySpace = densityDataset.getSpace();
         hsize_t numDensities;

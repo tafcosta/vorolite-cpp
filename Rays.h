@@ -39,8 +39,12 @@ public:
 	int nRays;
 	Mesh& mesh;
 
+	const double speedOfLight = 2.99792458e10;
+	double speedOfLightInternal = speedOfLight/mesh.unitVelocity;
+
+
 	void calculateRays();
-	void doRadiativeTransfer(double time);
+	void doRadiativeTransfer(double time, double dtime);
 	void outputResults(std::string& ofileName);
 
 protected:
@@ -50,11 +54,12 @@ protected:
 
 	void assignToHealpix(double L_total);
 	void updateRayPosition(int iRay, double distance);
-	void updateColumnAndFlux(int iRay);
+	void updateColumnAndFlux(int iRay, double dtime);
 	int findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose);
 	int modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double distanceToExit, bool verbose);
 	bool updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit);
 	double getOvershootDistance(int exitCell, int iRay, double distanceToExit, bool verbose);
+	double distance(std::vector<float> a, std::vector<float> b);
 
 private:
     void initializeDirections();
