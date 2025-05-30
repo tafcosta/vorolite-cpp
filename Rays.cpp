@@ -96,7 +96,7 @@ void Rays::assignToHealpix(double L_total) {
 
 	for (int i = 0; i < nRays; ++i) {
 		int64_t iPix = rayToPixel[i];
-		rayWeight[i] = L_total / raysPerPixel[iPix] * omegaPix / (4.0 * M_PI) ;
+		rayWeight[i] = 1. / raysPerPixel[iPix] * omegaPix / (4.0 * M_PI) ;
 	}
 }
 
@@ -384,7 +384,7 @@ void Rays::outputResults(std::string& ofileName) {
 }
 
 double Rays::distance(std::vector<float> a, std::vector<float> b){
-	return 0.;//std::sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]));
+	return std::sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]));
 }
 
 void Rays::updateColumnAndFlux(int iRay, double dtime){
