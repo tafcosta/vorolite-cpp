@@ -15,6 +15,7 @@ Photochemistry::Photochemistry(Mesh& mesh, double recombinationCrossSection) : m
 
 void Photochemistry::evolveIonisation(double dtime) {
     for (int iCell = 0; iCell < mesh.numCells; ++iCell) {
+
         double flux = mesh.cellIncomingFlux[iCell];
         double x0   = mesh.getHIIFraction(iCell);
         double electronDensity = mesh.getElectronNumberDensity_in_cgs(iCell);
@@ -30,7 +31,7 @@ void Photochemistry::evolveIonisation(double dtime) {
 
         double delta = (dtime / 6.0) * (k1 + 2*k2 + 2*k3 + k4);
 
-        mesh.setHIIFraction(iCell, x0 + delta);
+    	mesh.setHIIFraction(iCell, x0 + delta);
 
     }
 }
