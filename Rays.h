@@ -15,7 +15,7 @@ public:
 	Rays(double crossSection, double maxRadius, std::vector<double> sourcePosition, double lumTotal, Mesh& mesh);
 	virtual ~Rays();
 
-	bool timeDependent = false;
+	bool timeDependent = true;
 
 	double crossSection;
 	double maxRadius;
@@ -42,21 +42,22 @@ public:
 	Mesh& mesh;
 
 	const double speedOfLight = 2.99792458e10;
-	double speedOfLightInternal = speedOfLight/mesh.unitVelocity;
-
+	double speedOfLightInternal = 1000;//speedOfLight/mesh.unitVelocity;
 
 	void calculateRays();
 	void doRadiativeTransfer(double time, double dtime);
 	void outputResults(std::string& ofileName);
+
+	double getLuminosity(double time);
 
 protected:
 	int startCell;
 	int travelToNextCell(int iCell, int iRay, bool verbose);
 	std::vector<int> rayTargetCell;
 
-	void assignToHealpix(double L_total);
+	void assignToHealpix();
 	void updateRayPosition(int iRay, double distance);
-	void updateColumnAndFlux(int iRay, double dtime);
+	void updateColumnAndFlux(int iRay, double time, double dtime);
 	int findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose);
 	int modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double distanceToExit, bool verbose);
 	bool updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit);

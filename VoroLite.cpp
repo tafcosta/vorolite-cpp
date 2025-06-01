@@ -54,7 +54,6 @@ int main(int argc, char* argv[]) {
 
     while (time < timeMax) {
     	mesh->resetFluxes();
-
         rays->doRadiativeTransfer(time, dtime);
         photochemistry->evolveIonisation(dtime);
 
