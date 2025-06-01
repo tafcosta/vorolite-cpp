@@ -383,27 +383,49 @@ void Rays::outputResults(std::string& ofileName) {
     std::cout << "Results have been written to '" << ofileName << "'" << std::endl;
 }
 
-double Rays::distance(std::vector<float> a, std::vector<float> b){
-	return std::sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]));
+double Rays::distanceSquared(std::vector<float>& a, std::vector<float>& b){
+	return (a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]);
 }
 
 void Rays::updateColumnAndFlux(int iRay, double dtime){
 	int j = 0;
 	columnHI[iRay] = 0.;
 
-	for (int i = 0; i < visitedCells[iRay].size(); i++){
+	if(timeDependent){
 
-		//todo: should use linear interpolation instead
-		//while(distance(mesh.cellCoordinates[visitedCells[iRay][j]], mesh.cellCoordinates[visitedCells[iRay][i]]) > speedOfLightInternal * dtime)
-		//	j++;
+		double columnHIIindTime = 0.;
+		for (int i = 0; i < visitedCells[iRay].size(); i++){
 
-	    columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.getHIIFraction(visitedCells[iRay][i]));
-	    mesh.cellFlux[visitedCells[iRay][i]] += rayWeight[iRay] * std::exp(-crossSection * columnHI[iRay]);
+			if(i > 0)
+				columnHIIindTime += visitedCellColumn[iRay][i] * (1 - mesh.getHIIFraction(visitedCells[iRay][i])) / 2.0
+					+ visitedCellColumn[iRay][i-1] * (1 - mesh.getHIIFraction(visitedCells[iRay][i-1])) / 2.0;
 
-	    if(visitedCells[iRay][i] == rayTargetCell[iRay])
-			mesh.cellLocalColumn[rayTargetCell[iRay]] = visitedCellColumn[iRay][i];
+			//todo: should use linear interpolation instead
+			while(distanceSquared(mesh.cellCoordinates[visitedCells[iRay][j]], mesh.cellCoordinates[visitedCells[iRay][i]]) > speedOfLightInternal * speedOfLightInternal * dtime * dtime){
 
-	    mesh.setFluxOfRayInCell(iRay, i, mesh.cellFlux[visitedCells[iRay][i]]);
+				columnHIIindTime -= visitedCellColumn[iRay][j] * (1 - mesh.getHIIFraction(visitedCells[iRay][j])) / 2.0
+						+ visitedCellColumn[iRay][j+1] * (1 - mesh.getHIIFraction(visitedCells[iRay][j+1])) / 2.0;
+				j++;
+			}
+
+			mesh.cellFlux[visitedCells[iRay][i]] += (j == 0? rayWeight[iRay]: mesh.getFluxOfRayInCell(iRay, visitedCells[iRay][j])) * std::exp(-crossSection * columnHIIindTime);
+
+			if(visitedCells[iRay][i] == rayTargetCell[iRay])
+				mesh.cellLocalColumn[rayTargetCell[iRay]] = visitedCellColumn[iRay][i];
+
+			mesh.setFluxOfRayInCell(iRay, i, mesh.cellFlux[visitedCells[iRay][i]]);
+		}
+	}
+	else
+	{
+		for (int i = 0; i < visitedCells[iRay].size(); i++){
+
+			columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.getHIIFraction(visitedCells[iRay][i]));
+		    mesh.cellFlux[visitedCells[iRay][i]] += rayWeight[iRay] * std::exp(-crossSection * columnHI[iRay]);
+
+		    if(visitedCells[iRay][i] == rayTargetCell[iRay])
+				mesh.cellLocalColumn[rayTargetCell[iRay]] = visitedCellColumn[iRay][i];
+		}
 	}
 
 }

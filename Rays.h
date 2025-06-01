@@ -15,6 +15,8 @@ public:
 	Rays(double crossSection, double maxRadius, std::vector<double> sourcePosition, double lumTotal, Mesh& mesh);
 	virtual ~Rays();
 
+	bool timeDependent = false;
+
 	double crossSection;
 	double maxRadius;
 	double lumTotal;
@@ -59,7 +61,7 @@ protected:
 	int modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double distanceToExit, bool verbose);
 	bool updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit);
 	double getOvershootDistance(int exitCell, int iRay, double distanceToExit, bool verbose);
-	double distance(std::vector<float> a, std::vector<float> b);
+	double distanceSquared(std::vector<float>& a, std::vector<float>& b);
 
 private:
     void initializeDirections();
