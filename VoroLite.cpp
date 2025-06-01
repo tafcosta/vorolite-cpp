@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
 
     Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, sourcePosition);
     Rays *rays = new Rays(ionisationCrossSection, maxRadius, sourcePosition, lumTotal, *mesh);
-    Photochemistry *photochemistry = new Photochemistry(*mesh, recombinationCrossSection);
+    Photochemistry *photochemistry = new Photochemistry(*mesh, ionisationCrossSection, recombinationCrossSection);
 
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
@@ -56,6 +56,8 @@ int main(int argc, char* argv[]) {
     	mesh->resetFluxes();
         rays->doRadiativeTransfer(time, dtime);
         photochemistry->evolveIonisation(dtime);
+
+        abort();
 
         if (time >= TimeNextOutput) {
             std::cout << "time = " << time << std::endl;

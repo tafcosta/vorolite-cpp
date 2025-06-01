@@ -13,15 +13,16 @@
 
 class Photochemistry {
 public:
-	Photochemistry(Mesh& mesh, double recombinationCrossSection);
+	Photochemistry(Mesh& mesh, double ionisationCrossSection, double recombinationCrossSection);
 	virtual ~Photochemistry();
 
 	Mesh& mesh;
 
 	double recombinationCrossSection;
+	double ionisationCrossSection;
 
 	void evolveIonisation(double dtime);
-	double getIonisationRate(double xHII, double flux);
+	double getIonisationRate(double xHII, double volume, double flux, double nH);
 	double getRecombinationRate(double xHII, double electronDensity);
 };
 

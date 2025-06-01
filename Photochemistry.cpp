@@ -8,7 +8,7 @@
 #include "Photochemistry.h"
 
 
-Photochemistry::Photochemistry(Mesh& mesh, double recombinationCrossSection) : mesh(mesh), recombinationCrossSection(recombinationCrossSection) {
+Photochemistry::Photochemistry(Mesh& mesh, double ionisationCrossSection, double recombinationCrossSection) : mesh(mesh), ionisationCrossSection(ionisationCrossSection), recombinationCrossSection(recombinationCrossSection) {
 	// TODO Auto-generated constructor stub
 
 }
@@ -16,12 +16,18 @@ Photochemistry::Photochemistry(Mesh& mesh, double recombinationCrossSection) : m
 void Photochemistry::evolveIonisation(double dtime) {
     for (int iCell = 0; iCell < mesh.numCells; ++iCell) {
 
-        double flux = mesh.cellIncomingFlux[iCell];
-        double x0   = mesh.getHIIFraction(iCell);
+        double x0 = mesh.getHIIFraction(iCell);
+    	double localColumn = mesh.cellLocalColumn[iCell] * mesh.unitMass/mesh.unitLength/mesh.unitLength / mesh.protonMass;
+        double absorbedFlux = mesh.cellIncomingFlux[iCell]  * (1 - std::exp(-localColumn * ionisationCrossSection));
+        double nH = mesh.getNumberDensity_in_cgs(iCell);
+        double volume = mesh.getMass(iCell)/mesh.getDensity(iCell);
         double electronDensity = mesh.getElectronNumberDensity_in_cgs(iCell);
 
+        std::cout << iCell << " " << mesh.cellLocalColumn[iCell] << std::endl;
+
+
         auto computeRate = [&](double x) {
-        	return getIonisationRate(x, flux) - getRecombinationRate(x, electronDensity);
+        	return getIonisationRate(x, volume, absorbedFlux, nH) - getRecombinationRate(x, electronDensity);
         };
 
         double k1 = computeRate(x0);
@@ -36,9 +42,14 @@ void Photochemistry::evolveIonisation(double dtime) {
     }
 }
 
-double Photochemistry::getIonisationRate(double xHII, double flux){
-	return flux * (1.0 - xHII);
+double Photochemistry::getIonisationRate(double xHII, double volume, double absorbedPhotonsPerSecond, double nH){
+    double nHI = (1.0 - xHII) * nH;
+    double N_HI = nHI * volume;
+
+
+    return absorbedPhotonsPerSecond / N_HI; // per-atom ionization rate
 }
+
 
 double Photochemistry::getRecombinationRate(double xHII, double electronDensity){
 	return  electronDensity * xHII * recombinationCrossSection;
