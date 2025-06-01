@@ -96,7 +96,7 @@ void Rays::assignToHealpix(double L_total) {
 
 	for (int i = 0; i < nRays; ++i) {
 		int64_t iPix = rayToPixel[i];
-		rayWeight[i] = 1. / raysPerPixel[iPix] * omegaPix / (4.0 * M_PI) ;
+		rayWeight[i] = L_total / raysPerPixel[iPix] * omegaPix / (4.0 * M_PI) ;
 	}
 }
 
@@ -388,11 +388,11 @@ double Rays::distanceSquared(std::vector<float>& a, std::vector<float>& b){
 }
 
 void Rays::updateColumnAndFlux(int iRay, double dtime){
-	int j = 0;
 	columnHI[iRay] = 0.;
 
 	if(timeDependent){
 
+		int j = 0;
 		double columnHIIindTime = 0.;
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
 
