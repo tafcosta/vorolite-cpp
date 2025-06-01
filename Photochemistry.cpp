@@ -7,43 +7,41 @@
 
 #include "Photochemistry.h"
 
-Photochemistry::Photochemistry(Mesh& mesh, double crossSection) : mesh(mesh), crossSection(crossSection) {
+
+Photochemistry::Photochemistry(Mesh& mesh, double recombinationCrossSection) : mesh(mesh), recombinationCrossSection(recombinationCrossSection) {
 	// TODO Auto-generated constructor stub
 
 }
 
 void Photochemistry::evolveIonisation(double dtime) {
     for (int iCell = 0; iCell < mesh.numCells; ++iCell) {
-        double mass = mesh.getMass(iCell);
-        double flux = mesh.cellFlux[iCell];
+        double flux = mesh.cellIncomingFlux[iCell];
         double x0   = mesh.getHIIFraction(iCell);
-        double electronDensity = mesh.getElectronNumberDensity(iCell);
+        double electronDensity = mesh.getElectronNumberDensity_in_cgs(iCell);
 
-        if (mass > 0.0) {
+        auto computeRate = [&](double x) {
+        	return getIonisationRate(x, flux) - getRecombinationRate(x, electronDensity);
+        };
 
-            auto computeAbsorbedFlux = [&](double x) {
-                double columnHI = mesh.cellLocalColumn[iCell] * (1.0 - x);
-                return (1.0 - std::exp(-crossSection * columnHI)) * flux;
-            };
+        double k1 = computeRate(x0);
+        double k2 = computeRate(x0 + 0.5 * k1 * dtime);
+        double k3 = computeRate(x0 + 0.5 * k2 * dtime);
+        double k4 = computeRate(x0 + k3 * dtime);
 
-            auto computeRate = [&](double x) {
-                return flux * (1.0 - x) -  electronDensity * x * 0.0; //computeAbsorbedFlux(x) / mass;
-            };
+        double delta = (dtime / 6.0) * (k1 + 2*k2 + 2*k3 + k4);
 
-            double k1 = computeRate(x0);
-            double k2 = computeRate(x0 + 0.5 * k1 * dtime);
-            double k3 = computeRate(x0 + 0.5 * k2 * dtime);
-            double k4 = computeRate(x0 + k3 * dtime);
+        mesh.setHIIFraction(iCell, x0 + delta);
 
-            double delta = (dtime / 6.0) * (k1 + 2*k2 + 2*k3 + k4);
-
-            mesh.setHIIFraction(iCell, x0 + delta);
-        }
     }
 }
 
+double Photochemistry::getIonisationRate(double xHII, double flux){
+	return flux * (1.0 - xHII);
+}
 
-
+double Photochemistry::getRecombinationRate(double xHII, double electronDensity){
+	return  electronDensity * xHII * recombinationCrossSection;
+}
 
 Photochemistry::~Photochemistry() {
 	// TODO Auto-generated destructor stub

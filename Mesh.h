@@ -27,6 +27,8 @@ public:
     double unitVelocity;
 
     std::vector<double> cellFlux;
+    std::vector<double> cellIncomingFlux;
+
     std::vector<double> cellLocalColumn;
     std::vector<double> cellHIIFraction;
     std::vector<std::vector<float>> cellCoordinates;
@@ -45,8 +47,8 @@ public:
 	double getHIIFraction(int iCell);
 	double getMass(int iCell);
 	double getDensity(int iCell);
-	double getNumberDensity(int iCell);
-	double getElectronNumberDensity(int iCell);
+	double getNumberDensity_in_cgs(int iCell);
+	double getElectronNumberDensity_in_cgs(int iCell);
 	double getMeanMolecularWeight(int iCell);
 
 	int getIndex(int iCell);

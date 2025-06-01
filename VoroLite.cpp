@@ -3,7 +3,7 @@
 #include "Photochemistry.h"
 #include "Rays.h"
 
-void parseRayParamFile(const std::string& fileName, double &Xsection, double& maxRadius,
+void parseRayParamFile(const std::string& fileName, double& ionisationXsection, double& recombinationXsection, double& maxRadius,
                        std::vector<double>& sourceLocation, double& lumTotal, std::string& meshFile,
                        std::string& snapFile, std::string& ofileName);
 
@@ -19,13 +19,14 @@ int main(int argc, char* argv[]) {
     
     std::cout << "We are getting our parameters from \'" << paramFile << "\'" <<  std::endl;
 
-    double crossSection = 0.0;
+    double ionisationCrossSection = 0.0;
+    double recombinationCrossSection = 0.0;
     double maxRadius = 0.0;
     double lumTotal = 0.0;
     std::vector<double> sourcePosition(3, 0.5);
     std::string meshFile, snapFile, ofileName;
 
-    parseRayParamFile(paramFile, crossSection, maxRadius, sourcePosition, lumTotal, meshFile, snapFile, ofileName);
+    parseRayParamFile(paramFile, ionisationCrossSection, recombinationCrossSection, maxRadius, sourcePosition, lumTotal, meshFile, snapFile, ofileName);
 
     if (maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
         std::cerr << "Error: Missing or invalid parameters in rayParam.txt" << std::endl;
@@ -35,17 +36,16 @@ int main(int argc, char* argv[]) {
 	std::cout << "Starting VoroLite++ RT (Version 0.1)!" << std::endl;
 
     Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, sourcePosition);
-    Rays *rays = new Rays(crossSection, maxRadius, sourcePosition, lumTotal, *mesh);
-
-    Photochemistry *photochemistry = new Photochemistry(*mesh, crossSection);
+    Rays *rays = new Rays(ionisationCrossSection, maxRadius, sourcePosition, lumTotal, *mesh);
+    Photochemistry *photochemistry = new Photochemistry(*mesh, recombinationCrossSection);
 
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
     double time = 0;
-    double timeMax = 0.1;
-    double dtime = 0.00001;
+    double timeMax = 0.0001;
+    double dtime = 0.00000001;
 
-    double printInterval = timeMax/50;
+    double printInterval = timeMax/30;
     double TimeNextOutput = printInterval;
 
     int snapshotIndex = 0;
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
 
 
 
-void parseRayParamFile(const std::string& fileName, double& crossSection, double& maxRadius,
+void parseRayParamFile(const std::string& fileName, double& ionisationCrossSection, double& recombinationCrossSection, double& maxRadius,
                        std::vector<double>& sourceLocation, double& lumTotal, std::string& meshFile,
                        std::string& snapFile, std::string& ofileName) {
     std::ifstream inputFile(fileName);
@@ -121,8 +121,11 @@ void parseRayParamFile(const std::string& fileName, double& crossSection, double
         value.erase(0, value.find_first_not_of(" \t"));
         value.erase(value.find_last_not_of(" \t") + 1);
 
-        if (key == "crossSection") {
-        	crossSection = std::stod(value);
+        if (key == "ionisationCrossSection") {
+        	ionisationCrossSection = std::stod(value);
+        }
+        else if (key == "recombinationCrossSection") {
+        	recombinationCrossSection = std::stod(value);
         }
         else if (key == "maxRadius") {
             maxRadius = std::stod(value);

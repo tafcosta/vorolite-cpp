@@ -32,12 +32,12 @@ double Mesh::getDensity(int iCell){
 	return cellDensity[iCell];
 }
 
-double Mesh::getNumberDensity(int iCell){
-	return cellDensity[iCell] / (protonMass / unitMass);
+double Mesh::getNumberDensity_in_cgs(int iCell){
+	return cellDensity[iCell] * unitMass / unitLength / unitLength / unitLength / protonMass;
 }
 
-double Mesh::getElectronNumberDensity(int iCell){
-	return cellHIIFraction[iCell] * getNumberDensity(iCell);
+double Mesh::getElectronNumberDensity_in_cgs(int iCell){
+	return cellHIIFraction[iCell] * getNumberDensity_in_cgs(iCell);
 }
 
 double Mesh::getMeanMolecularWeight(int iCell){
@@ -115,8 +115,10 @@ void Mesh::getNumCellsInRegion(){
 }
 
 void Mesh::resetFluxes(){
-	for(int iCell = 0; iCell < numCells; iCell++)
+	for(int iCell = 0; iCell < numCells; iCell++){
 		cellFlux[iCell] = 0.;
+		cellIncomingFlux[iCell] = 0.;
+	}
 }
 
 void Mesh::readSnapshot(const std::string& snapshot) {
@@ -154,6 +156,8 @@ void Mesh::readSnapshot(const std::string& snapshot) {
         densityDataset.read(cellMass.data(), H5::PredType::NATIVE_DOUBLE);
 
         cellFlux.resize(numDensities, 0.0);
+        cellIncomingFlux.resize(numDensities, 0.0);
+
         cellLocalColumn.resize(numDensities, 0.0);
     	cellIndices.resize(numDensities, 0);
     	std::iota(cellIndices.begin(), cellIndices.end(), 0);

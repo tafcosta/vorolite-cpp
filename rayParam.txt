@@ -1,7 +1,8 @@
-crossSection = 100
-maxRadius = 0.18
+ionisationCrossSection = 6.3e-18
+recombinationCrossSection = 0.
+maxRadius = 0.45
 sourceLocation = 0.5, 0.5, 0.5
-lumTotal = 1.e6
+lumTotal = 1.e9
 meshFile = ./output/tess_006_indices.dat
 snapFile = ./output/snap_006.hdf5
 outputFile = ./output/rays_output_001.txt

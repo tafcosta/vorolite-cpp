@@ -12,12 +12,13 @@
 
 class Rays {
 public:
-	Rays(double crossSection, double maxRadius, std::vector<double> sourcePosition, double lumTotal, Mesh& mesh);
+	Rays(double ionisationCrossSection, double maxRadius, std::vector<double> sourcePosition, double lumTotal, Mesh& mesh);
 	virtual ~Rays();
 
-	bool timeDependent = true;
+	bool timeDependent = false;
 
-	double crossSection;
+	double ionisationCrossSection;
+	double ionisationCrossSection_inInternalUnits;
 	double maxRadius;
 	double lumTotal;
 
@@ -42,7 +43,7 @@ public:
 	Mesh& mesh;
 
 	const double speedOfLight = 2.99792458e10;
-	double speedOfLightInternal = 1000;//speedOfLight/mesh.unitVelocity;
+	double speedOfLightInternal = speedOfLight/mesh.unitVelocity;
 
 	void calculateRays();
 	void doRadiativeTransfer(double time, double dtime);
