@@ -26,6 +26,8 @@ public:
     double unitMass;
     double unitVelocity;
 
+    std::vector<int> cellVisitsByRay;
+
     std::vector<double> cellFlux;
     std::vector<double> cellIncomingFlux;
 

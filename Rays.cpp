@@ -148,6 +148,8 @@ void Rays::initializePositions() {
 		 visitedCellColumn[iRay].push_back(distanceToExit * mesh.getDensity(iCell));
 		 visitedCells[iRay].push_back(iCell);
 
+		 mesh.cellVisitsByRay[iCell] += 1;
+
 		 overshoot = getOvershootDistance(exitCell, iRay, distanceToExit, verbose);
 
 		 if(updateRayAndIsMaxReached(exitCell, iRay, overshoot))
@@ -434,6 +436,7 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 	{
 
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
+
 			mesh.cellIncomingFlux[visitedCells[iRay][i]] += getLuminosity(0.0) * rayWeight[iRay] * std::exp(-ionisationCrossSection_inInternalUnits * columnHI[iRay]) ;
 
 			columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.getHIIFraction(visitedCells[iRay][i]));
@@ -448,7 +451,6 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 
 
 void Rays::calculateRays(){
-
 	for(int iRay = 0; iRay < nRays; iRay++){
 		int iCell = startCell;
 		while(insideDomain[iRay])

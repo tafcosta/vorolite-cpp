@@ -13,6 +13,10 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     readSnapshot(snapshot);
 	getNumCellsInRegion();
 
+	cellVisitsByRay.resize(numCells, 0);
+    cellFlux.resize(numCells, 0.0);
+    cellIncomingFlux.resize(numCells, 0.0);
+    cellLocalColumn.resize(numCells, 0.0);
 	cellHIIFraction.resize(numCells, 0.0);
 	fluxOfRayInCell.resize(numCells); //The first dimension should be number of rays
 
@@ -72,6 +76,7 @@ void Mesh::getNumCellsInRegion(){
     std::vector<std::vector<float>> filteredCoordinates;
     std::vector<std::vector<float>> filteredVelocities;
     std::vector<double> filteredDensity;
+    std::vector<double> filteredMasses;
     std::vector<int> filteredIDs;
     std::vector<int> filteredCellIndices;
 
@@ -89,7 +94,8 @@ void Mesh::getNumCellsInRegion(){
 		if(rDistance <= 1.2 * maxRadius){
             filteredCoordinates.push_back(cellCoordinates[iCell]);
             filteredVelocities.push_back(cellVelocities[iCell]);
-            filteredDensity.push_back(cellDensity[iCell]/10000);
+            filteredDensity.push_back(cellDensity[iCell]);
+            filteredMasses.push_back(cellMass[iCell]);
             filteredIDs.push_back(cellIDs[iCell]);
             filteredCellIndices.push_back(cellIndices[iCell]);
 		}
@@ -100,6 +106,7 @@ void Mesh::getNumCellsInRegion(){
     cellDensity = std::move(filteredDensity);
     cellIDs = std::move(filteredIDs);
     cellIndices = std::move(filteredCellIndices);
+    cellMass = std::move(filteredMasses);
 
     numCells = cellDensity.size();
 
@@ -147,10 +154,6 @@ void Mesh::readSnapshot(const std::string& snapshot) {
         cellMass.resize(numMass);
         densityDataset.read(cellMass.data(), H5::PredType::NATIVE_DOUBLE);
 
-        cellFlux.resize(numDensities, 0.0);
-        cellIncomingFlux.resize(numDensities, 0.0);
-
-        cellLocalColumn.resize(numDensities, 0.0);
     	cellIndices.resize(numDensities, 0);
     	std::iota(cellIndices.begin(), cellIndices.end(), 0);
 
