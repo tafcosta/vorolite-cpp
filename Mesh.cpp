@@ -13,7 +13,7 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     readSnapshot(snapshot);
 	getNumCellsInRegion();
 
-	cellHIIFraction.resize(numCells, 0.0);
+	cellHIIFraction.resize(numCells, 0.5);
 	fluxOfRayInCell.resize(numCells); //The first dimension should be number of rays
 
 	IdPairs       = readVoronoiIndices(fileMeshIndices);
@@ -54,6 +54,9 @@ void Mesh::setFluxOfRayInCell(int iRay, int iCell, double newValue){
 
 void Mesh::setHIIFraction(int iCell, double newValue){
 	cellHIIFraction[iCell] = newValue;
+
+	if(newValue > 1)
+		cellHIIFraction[iCell] = 1;
 }
 
 double Mesh::getHIIFraction(int iCell){
@@ -99,17 +102,6 @@ void Mesh::getNumCellsInRegion(){
     cellIndices = std::move(filteredCellIndices);
 
     numCells = cellDensity.size();
-
-
-    /*
-    startCell = findHostCellID(sourcePosition, -1)[0];
-    cellPos   = cellCoordinates[9261];
-    double dx = cellPos[0] - cellCoordinates[startCell][0]; //sourcePosition[0];
-    double dy = cellPos[1] - cellCoordinates[startCell][1]; //sourcePosition[1];
-    double dz = cellPos[2] - cellCoordinates[startCell][2]; //sourcePosition[2];
-    double rDistance = std::sqrt(dx*dx + dy*dy + dz*dz);
-    std::cout << "DEBUG, INITIALISATION radial dir= " << dx/rDistance << " " << dy/rDistance << " " << dz/rDistance << std::endl;
-*/
 
     std::cout << "Reduced to " << numCells << " cells within maxRadius = " << maxRadius << std::endl;
 }

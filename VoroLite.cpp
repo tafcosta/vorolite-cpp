@@ -42,8 +42,8 @@ int main(int argc, char* argv[]) {
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
     double time = 0;
-    double timeMax = 0.0001;
-    double dtime = 0.00000001;
+    double timeMax = 0.1;
+    double dtime = 0.0001;
 
     double printInterval = timeMax/30;
     double TimeNextOutput = printInterval;
@@ -51,13 +51,15 @@ int main(int argc, char* argv[]) {
     int snapshotIndex = 0;
 
     rays->calculateRays();
+    //rays->printVisitedCellColumn();
 
+    std::cout << "Starting radiative transfer!" << std::endl;
     while (time < timeMax) {
     	mesh->resetFluxes();
         rays->doRadiativeTransfer(time, dtime);
         photochemistry->evolveIonisation(dtime);
 
-        abort();
+        //abort();
 
         if (time >= TimeNextOutput) {
             std::cout << "time = " << time << std::endl;

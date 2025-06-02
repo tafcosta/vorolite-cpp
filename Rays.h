@@ -45,6 +45,7 @@ public:
 	const double speedOfLight = 2.99792458e10;
 	double speedOfLightInternal = speedOfLight/mesh.unitVelocity;
 
+	void printVisitedCellColumn();
 	void calculateRays();
 	void doRadiativeTransfer(double time, double dtime);
 	void outputResults(std::string& ofileName);

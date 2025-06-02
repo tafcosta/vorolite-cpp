@@ -81,8 +81,6 @@ void Rays::initializeDirections() {
     		theta[iRay] = std::acos(zDistance / rDistance);
     	}
     }
-
-    mesh.setHIIFraction(startCell, 1.);
 }
 
 void Rays::assignToHealpix() {
@@ -433,9 +431,14 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 	}
 	else
 	{
-		for (int i = 0; i < visitedCells[iRay].size(); i++){
 
-			mesh.cellIncomingFlux[visitedCells[iRay][i]] += getLuminosity(0.0) * rayWeight[iRay] * std::exp(-ionisationCrossSection_inInternalUnits * columnHI[iRay]);
+		for (int i = 0; i < visitedCells[iRay].size(); i++){
+			mesh.cellIncomingFlux[visitedCells[iRay][i]] += getLuminosity(0.0) * rayWeight[iRay] * std::exp(-ionisationCrossSection_inInternalUnits * columnHI[iRay]) ;
+
+			/*
+			if(iRay == 1106)
+				std::cout << visitedCells[iRay][i] << " " << visitedCellColumn[iRay][i] << " " << mesh.getHIIFraction(visitedCells[iRay][i]) << " " << columnHI[iRay] << std::endl;
+*/
 
 			columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.getHIIFraction(visitedCells[iRay][i]));
 		    mesh.cellFlux[visitedCells[iRay][i]] += getLuminosity(0.0) * rayWeight[iRay] * std::exp(-ionisationCrossSection_inInternalUnits * columnHI[iRay]);
@@ -445,6 +448,14 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 		}
 	}
 
+}
+
+void Rays::printVisitedCellColumn(){
+
+	for(int iRay = 0; iRay < nRays; iRay++)
+		for (int i = 0; i < visitedCells[iRay].size(); i++)
+			if(iRay == 1106)
+				std::cout << visitedCells[iRay][i] << " " << visitedCellColumn[iRay][i]  << std::endl;
 }
 
 void Rays::calculateRays(){
@@ -460,6 +471,7 @@ void Rays::calculateRays(){
 
 
 void Rays::doRadiativeTransfer(double time, double dtime){
+
 	for(int iRay = 0; iRay < nRays; iRay++)
 		updateColumnAndFlux(iRay, time, dtime);
 }
