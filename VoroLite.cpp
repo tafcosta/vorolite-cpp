@@ -39,11 +39,9 @@ int main(int argc, char* argv[]) {
     Rays *rays = new Rays(ionisationCrossSection, maxRadius, sourcePosition, lumTotal, *mesh);
     Photochemistry *photochemistry = new Photochemistry(*mesh, ionisationCrossSection, recombinationCrossSection);
 
-    std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
-
     double time = 0;
     double timeMax = 0.01;
-    double dtime = 0.0000001;
+    double dtime = 0.00001;
 
     double printInterval = timeMax/50;
     double TimeNextOutput = printInterval;
@@ -51,7 +49,8 @@ int main(int argc, char* argv[]) {
     int snapshotIndex = 0;
 
     rays->calculateRays();
-    std::cout << "Starting radiative transfer!" << std::endl;
+    std::cout << "-_ Starting radiative transfer _-" << std::endl;
+
     while (time < timeMax) {
     	mesh->resetFluxes();
         rays->doRadiativeTransfer(time, dtime);
