@@ -446,13 +446,6 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 
 }
 
-void Rays::printVisitedCellColumn(){
-
-	for(int iRay = 0; iRay < nRays; iRay++)
-		for (int i = 0; i < visitedCells[iRay].size(); i++)
-			if(iRay == 1106)
-				std::cout << visitedCells[iRay][i] << " " << visitedCellColumn[iRay][i]  << std::endl;
-}
 
 void Rays::calculateRays(){
 

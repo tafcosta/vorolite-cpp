@@ -42,8 +42,8 @@ int main(int argc, char* argv[]) {
     std::cout << "The maximum radius is " << maxRadius << " (code units)" << std::endl;
 
     double time = 0;
-    double timeMax = 1;
-    double dtime = 0.0001;
+    double timeMax = 0.01;
+    double dtime = 0.0000001;
 
     double printInterval = timeMax/50;
     double TimeNextOutput = printInterval;
