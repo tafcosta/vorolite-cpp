@@ -13,7 +13,7 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     readSnapshot(snapshot);
 	getNumCellsInRegion();
 
-	cellHIIFraction.resize(numCells, 0.5);
+	cellHIIFraction.resize(numCells, 0.0);
 	fluxOfRayInCell.resize(numCells); //The first dimension should be number of rays
 
 	IdPairs       = readVoronoiIndices(fileMeshIndices);

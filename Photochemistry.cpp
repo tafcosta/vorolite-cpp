@@ -36,19 +36,11 @@ void Photochemistry::evolveIonisation(double dtime) {
         double delta = (dtime_in_cgs / 6.0) * (k1 + 2*k2 + 2*k3 + k4);
 
     	mesh.setHIIFraction(iCell, x0 + delta);
-
-    	/*
-    	if(iCell == 915)
-    		std::cout << "AFTER, " << delta << " " <<  mesh.getHIIFraction(iCell) << std::endl;
-    		*/
     }
 }
 
 double Photochemistry::getIonisationRate(double xHII, double volume, double absorbedPhotonsPerSecond, double nH){
-    double nHI = (1.0 - xHII) * nH;
-    double N_HI = nH * volume;
-
-    return absorbedPhotonsPerSecond / N_HI; // per-atom ionization rate
+    return absorbedPhotonsPerSecond / (nH * volume);
 }
 
 

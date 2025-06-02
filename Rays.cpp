@@ -14,6 +14,7 @@ Rays::Rays(double ionisationCrossSection, double maxRadius, std::vector<double> 
 	ionisationCrossSection_inInternalUnits = ionisationCrossSection / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
+
 	setNumRays();
 
 	rayTargetCell = std::vector<int> (nRays);
@@ -435,11 +436,6 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
 			mesh.cellIncomingFlux[visitedCells[iRay][i]] += getLuminosity(0.0) * rayWeight[iRay] * std::exp(-ionisationCrossSection_inInternalUnits * columnHI[iRay]) ;
 
-			/*
-			if(iRay == 1106)
-				std::cout << visitedCells[iRay][i] << " " << visitedCellColumn[iRay][i] << " " << mesh.getHIIFraction(visitedCells[iRay][i]) << " " << columnHI[iRay] << std::endl;
-*/
-
 			columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.getHIIFraction(visitedCells[iRay][i]));
 		    mesh.cellFlux[visitedCells[iRay][i]] += getLuminosity(0.0) * rayWeight[iRay] * std::exp(-ionisationCrossSection_inInternalUnits * columnHI[iRay]);
 
@@ -471,7 +467,6 @@ void Rays::calculateRays(){
 
 
 void Rays::doRadiativeTransfer(double time, double dtime){
-
 	for(int iRay = 0; iRay < nRays; iRay++)
 		updateColumnAndFlux(iRay, time, dtime);
 }
