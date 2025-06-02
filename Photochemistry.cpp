@@ -37,8 +37,6 @@ void Photochemistry::evolveIonisation(double dtime) {
 
     	mesh.setHIIFraction(iCell, x0 + delta);
 
-    	//if(iCell == 915)
-    	//	std::cout << "xHII = " << mesh.getHIIFraction(iCell) << std::endl;
 
     }
 }
