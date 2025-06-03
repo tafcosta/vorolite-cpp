@@ -44,17 +44,6 @@ void Photochemistry::evolveIonisation(double dtime) {
 
         double delta = (dtime_in_cgs / 6.0) * (k1 + 2*k2 + 2*k3 + k4);
 
-    	if(iCell == 915){
-
-        	double localHIcolumn = localColumn * (1 - mesh.getHIIFraction(iCell));
-        	double flux = incomingFlux * (1 - std::exp(-localHIcolumn * ionisationCrossSection));
-
-
-    		//std::cout << "flux = " << flux/1.e53 << ", absorbed = " << flux/1.e53 * (1 - std::exp(-localColumn * (1 - mesh.getHIIFraction(iCell)) * ionisationCrossSection)) << std::endl;
-    		//std::cout << "nH = " << nH << ", localNH = " << mesh.cellLocalColumn[iCell] << ", xHII = " << mesh.getHIIFraction(iCell) << std::endl;
-    		//std::cout << "delta = " << delta << " " << "gamma = " << getIonisationRate(volume, flux, nH) << ", Rec = " << getRecombinationRate(mesh.getHIIFraction(iCell), mesh.getHIIFraction(iCell) * nH) << std::endl;
-    	}
-
     	mesh.setHIIFraction(iCell, x0 + delta);
 
     }
