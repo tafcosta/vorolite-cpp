@@ -40,8 +40,8 @@ int main(int argc, char* argv[]) {
     Photochemistry *photochemistry = new Photochemistry(*mesh, ionisationCrossSection, recombinationCoefficient);
 
     double time = 0;
-    double timeMax = 0.1;
-    double dtime = 0.00001;
+    double timeMax = 0.001;
+    double dtime = 0.00000001;
 
     double printInterval = timeMax/50;
     double TimeNextOutput = printInterval;
@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     rays->calculateRays();
 
 
-    std::cout << "-_ Starting radiative transfer _-" << std::endl;
+    std::cout << "Starting radiative transfer" << std::endl;
 
     while (time < timeMax) {
     	mesh->resetFluxes();

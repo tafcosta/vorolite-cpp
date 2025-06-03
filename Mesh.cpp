@@ -94,8 +94,8 @@ void Mesh::getNumCellsInRegion(){
 		if(rDistance <= 1.2 * maxRadius){
             filteredCoordinates.push_back(cellCoordinates[iCell]);
             filteredVelocities.push_back(cellVelocities[iCell]);
-            filteredDensity.push_back(cellDensity[iCell]);
-            filteredMasses.push_back(cellMass[iCell]);
+            filteredDensity.push_back(cellDensity[iCell]/1000);
+            filteredMasses.push_back(cellMass[iCell] / 1000);
             filteredIDs.push_back(cellIDs[iCell]);
             filteredCellIndices.push_back(cellIndices[iCell]);
 		}

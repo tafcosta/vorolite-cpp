@@ -22,7 +22,7 @@ public:
 	double ionisationCrossSection;
 
 	void evolveIonisation(double dtime);
-	double getIonisationRate(double xHII, double volume, double flux, double nH, double localColumn);
+	double getIonisationRate(double volume, double flux, double nH);
 	double getRecombinationRate(double xHII, double electronDensity);
 };
 

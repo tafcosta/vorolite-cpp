@@ -102,7 +102,7 @@ void Rays::assignToHealpix() {
 
 	for (int i = 0; i < nRays; ++i) {
 		int64_t iPix = rayToPixel[i];
-		rayWeight[i] = 1.0 / raysPerPixel[iPix] * omegaPix / (4.0 * M_PI) ;
+		rayWeight[i] = 1.0 / nRays; //raysPerPixel[iPix] ;* omegaPix / (4.0 * M_PI) ;
 	}
 }
 
@@ -437,7 +437,7 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
 
-			mesh.cellIncomingFlux[visitedCells[iRay][i]] += getLuminosity(0.0) * rayWeight[iRay] * std::exp(-ionisationCrossSection_inInternalUnits * columnHI[iRay]) ;
+			mesh.cellIncomingFlux[visitedCells[iRay][i]] += getLuminosity(0.0) * rayWeight[iRay] * std::exp(-ionisationCrossSection_inInternalUnits * columnHI[iRay]);
 
 			columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.getHIIFraction(visitedCells[iRay][i]));
 		    mesh.cellFlux[visitedCells[iRay][i]] += getLuminosity(0.0) * rayWeight[iRay] * std::exp(-ionisationCrossSection_inInternalUnits * columnHI[iRay]);
