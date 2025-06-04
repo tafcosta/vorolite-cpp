@@ -40,8 +40,8 @@ int main(int argc, char* argv[]) {
     Photochemistry *photochemistry = new Photochemistry(*mesh, ionisationCrossSection, recombinationCoefficient);
 
     double time = 0;
-    double timeMax = 0.001;
-    double dtime = 0.00000001;
+    double timeMax = 0.00001;
+    double dtime   = 0.0000001;
 
     double printInterval = timeMax/50;
     double TimeNextOutput = printInterval;
@@ -49,10 +49,9 @@ int main(int argc, char* argv[]) {
     int snapshotIndex = 0;
 
     rays->calculateRays();
-
+    rays->outputResults(ofileName);
 
     std::cout << "Starting radiative transfer" << std::endl;
-
     while (time < timeMax) {
     	mesh->resetFluxes();
         rays->doRadiativeTransfer(time, dtime);
@@ -71,7 +70,7 @@ int main(int argc, char* argv[]) {
                     for (float coord : mesh->cellCoordinates[iCell]) {
                         outFile << coord << " ";
                     }
-                    outFile << mesh->getHIIFraction(iCell) << " " << mesh->cellVisitsByRay[iCell] << std::endl;
+                    outFile << mesh->getHIIFraction(iCell) << " " << mesh->cellIncomingFlux[iCell] << std::endl;
                 }
                 outFile.close();
             } else {

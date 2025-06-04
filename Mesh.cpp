@@ -61,6 +61,9 @@ void Mesh::setHIIFraction(int iCell, double newValue){
 
 	if(newValue > 1)
 		cellHIIFraction[iCell] = 1;
+
+	if(newValue < 1e-5)
+		cellHIIFraction[iCell] = 1.e-5;
 }
 
 double Mesh::getHIIFraction(int iCell){
@@ -91,11 +94,14 @@ void Mesh::getNumCellsInRegion(){
         double dz = cellPos[2] - cellCoordinates[startCell][2]; //sourcePosition[2];
         double rDistance = std::sqrt(dx*dx + dy*dy + dz*dz);
 
+        //cellDensity[iCell] = cellDensity[iCell];
+        //cellMass[iCell] = cellMass[iCell];
+
 		if(rDistance <= 1.2 * maxRadius){
             filteredCoordinates.push_back(cellCoordinates[iCell]);
             filteredVelocities.push_back(cellVelocities[iCell]);
-            filteredDensity.push_back(cellDensity[iCell]/1000);
-            filteredMasses.push_back(cellMass[iCell] / 1000);
+            filteredDensity.push_back(cellDensity[iCell]);
+            filteredMasses.push_back(cellMass[iCell]);
             filteredIDs.push_back(cellIDs[iCell]);
             filteredCellIndices.push_back(cellIndices[iCell]);
 		}
@@ -152,7 +158,7 @@ void Mesh::readSnapshot(const std::string& snapshot) {
         hsize_t numMass;
         massSpace.getSimpleExtentDims(&numMass);
         cellMass.resize(numMass);
-        densityDataset.read(cellMass.data(), H5::PredType::NATIVE_DOUBLE);
+        massDataset.read(cellMass.data(), H5::PredType::NATIVE_DOUBLE);
 
     	cellIndices.resize(numDensities, 0);
     	std::iota(cellIndices.begin(), cellIndices.end(), 0);

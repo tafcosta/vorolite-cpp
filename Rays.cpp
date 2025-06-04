@@ -50,6 +50,26 @@ void Rays::setNumRays(){
 	nRays = mesh.numCells;
 }
 
+void Rays::initializeHealpixDirections(int healpixNside) {
+	int64_t nPix = nside2npix(healpixNside);
+	const double omegaPix = 4.0 * M_PI / static_cast<double>(nPix);
+
+	for (int64_t iRay = 0; iRay < nPix; ++iRay) {
+		double th, ph;
+		pix2ang_ring(healpixNside, iRay, &th, &ph);
+
+		theta[iRay] = th;
+		phi[iRay]   = ph;
+
+		rayDirection[iRay][0] = std::sin(th) * std::cos(ph);
+		rayDirection[iRay][1] = std::sin(th) * std::sin(ph);
+		rayDirection[iRay][2] = std::cos(th);
+
+		rayWeight[iRay] = omegaPix / (4.0 * M_PI);
+	}
+}
+
+
 void Rays::initializeDirections() {
 	std::vector<float> cellPos;
     double xDistance, yDistance, zDistance;
@@ -85,7 +105,7 @@ void Rays::initializeDirections() {
 }
 
 void Rays::assignToHealpix() {
-	int64_t healpixNside = 32;
+	int64_t healpixNside = 8;
 	int64_t nPix = nside2npix(healpixNside);
 	std::vector<int> raysPerPixel(nPix, 0);
 
@@ -102,7 +122,7 @@ void Rays::assignToHealpix() {
 
 	for (int i = 0; i < nRays; ++i) {
 		int64_t iPix = rayToPixel[i];
-		rayWeight[i] = 1.0 / nRays; //raysPerPixel[iPix] ;* omegaPix / (4.0 * M_PI) ;
+		rayWeight[i] = 1./raysPerPixel[iPix] * omegaPix / (4.0 * M_PI) ;
 	}
 }
 
@@ -339,7 +359,6 @@ int Rays::findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double&
 		 if(verbose)
 			 std::cout << std::scientific << std::setprecision(12) << "Distance to Neighbour = " << distanceToExitTmp << " denominator = " << denominator << "\n";
 
-
 		 if((distanceToExitTmp <= distanceToExit) && (distanceToExitTmp > 0)){
 			 distanceToExit = distanceToExitTmp;
 			 exitCell = neighbour;
@@ -445,10 +464,12 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 		    if(visitedCells[iRay][i] == rayTargetCell[iRay])
 				mesh.cellLocalColumn[rayTargetCell[iRay]] = visitedCellColumn[iRay][i];
 		}
+
+		for (int iCell = 0; iCell < mesh.numCells; iCell++)
+			mesh.cellIncomingFlux[iCell] = std::max(mesh.cellIncomingFlux[iCell], 1.e-10);
 	}
 
 }
-
 
 void Rays::calculateRays(){
 	for(int iRay = 0; iRay < nRays; iRay++){

@@ -48,6 +48,7 @@ public:
 	void calculateRays();
 	void doRadiativeTransfer(double time, double dtime);
 	void outputResults(std::string& ofileName);
+	void initializeHealpixDirections(int healpixNside);
 
 	double getLuminosity(double time);
 
