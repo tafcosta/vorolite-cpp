@@ -40,8 +40,8 @@ int main(int argc, char* argv[]) {
     Photochemistry *photochemistry = new Photochemistry(*mesh, ionisationCrossSection, recombinationCoefficient);
 
     double time = 0;
-    double timeMax = 0.00001;
-    double dtime   = 0.0000001;
+    double timeMax = 0.00003;
+    double dtime   = 0.000000001;
 
     double printInterval = timeMax/50;
     double TimeNextOutput = printInterval;

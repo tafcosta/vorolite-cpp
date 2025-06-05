@@ -13,6 +13,12 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     readSnapshot(snapshot);
 	getNumCellsInRegion();
 
+	for(int iCell = 0; iCell < numCells; iCell++){
+		cellDensity[iCell] = cellDensity[iCell]/10;
+		cellMass[iCell] = cellMass[iCell]/10;
+	}
+
+
 	cellVisitsByRay.resize(numCells, 0);
     cellFlux.resize(numCells, 0.0);
     cellIncomingFlux.resize(numCells, 0.0);
@@ -93,9 +99,6 @@ void Mesh::getNumCellsInRegion(){
         double dy = cellPos[1] - cellCoordinates[startCell][1]; //sourcePosition[1];
         double dz = cellPos[2] - cellCoordinates[startCell][2]; //sourcePosition[2];
         double rDistance = std::sqrt(dx*dx + dy*dy + dz*dz);
-
-        //cellDensity[iCell] = cellDensity[iCell];
-        //cellMass[iCell] = cellMass[iCell];
 
 		if(rDistance <= 1.2 * maxRadius){
             filteredCoordinates.push_back(cellCoordinates[iCell]);

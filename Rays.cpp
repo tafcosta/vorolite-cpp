@@ -14,9 +14,9 @@ Rays::Rays(double ionisationCrossSection, double maxRadius, std::vector<double> 
 	ionisationCrossSection_inInternalUnits = ionisationCrossSection / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
+	std::cout << "startCell = " << startCell << std::endl;
 
 	setNumRays();
-
 	rayTargetCell = std::vector<int> (nRays);
     for (int iRay = 0; iRay < nRays; ++iRay)
     	rayTargetCell[iRay] = iRay;
@@ -407,7 +407,7 @@ void Rays::outputResults(std::string& ofileName) {
     }
 
     outputFile.close();
-    std::cout << "Results have been written to '" << ofileName << "'" << std::endl;
+    std::cout << "Ray properties have been written to '" << ofileName << "'" << std::endl;
 }
 
 double Rays::distanceSquared(std::vector<float>& a, std::vector<float>& b){
@@ -464,9 +464,6 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 		    if(visitedCells[iRay][i] == rayTargetCell[iRay])
 				mesh.cellLocalColumn[rayTargetCell[iRay]] = visitedCellColumn[iRay][i];
 		}
-
-		for (int iCell = 0; iCell < mesh.numCells; iCell++)
-			mesh.cellIncomingFlux[iCell] = std::max(mesh.cellIncomingFlux[iCell], 1.e-10);
 	}
 
 }
