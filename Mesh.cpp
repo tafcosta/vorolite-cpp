@@ -7,17 +7,12 @@
 
 #include "common_includes.h"
 #include "Mesh.h"
+#include <filesystem>
 
 Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition) : fileMeshIndices(fileMeshIndices), snapshot(snapshot), maxRadius(maxRadius), sourcePosition(sourcePosition) {
 
     readSnapshot(snapshot);
 	getNumCellsInRegion();
-
-	for(int iCell = 0; iCell < numCells; iCell++){
-		cellDensity[iCell] = cellDensity[iCell]/10;
-		cellMass[iCell] = cellMass[iCell]/10;
-	}
-
 
 	cellVisitsByRay.resize(numCells, 0);
     cellFlux.resize(numCells, 0.0);
@@ -74,6 +69,10 @@ void Mesh::setHIIFraction(int iCell, double newValue){
 
 double Mesh::getFlux(int iCell){
 	return cellFlux[iCell];
+}
+
+double Mesh::getIncomingFlux(int iCell){
+	return cellIncomingFlux[iCell];
 }
 
 double Mesh::getHIIFraction(int iCell){
@@ -133,88 +132,56 @@ void Mesh::resetFluxes(){
 	}
 }
 
-void Mesh::readSnapshot(const std::string& snapshot) {
+
+void Mesh::readSnapshot(const std::string& snapshotBase) {
     try {
-        H5::H5File file(snapshot, H5F_ACC_RDONLY);
+    	std::vector<std::string> files = getSnapshotFiles(snapshotBase);
 
-        H5::DataSet densityDataset = file.openDataSet("/PartType0/Density");
-        H5::DataSet massDataset = file.openDataSet("/PartType0/Masses");
-        H5::DataSet coordinatesDataset = file.openDataSet("/PartType0/Coordinates");
-        H5::DataSet velocitiesDataset = file.openDataSet("/PartType0/Velocities");
-        H5::DataSet idDataset = file.openDataSet("/PartType0/ParticleIDs");
+    	std::cout << "[DEBUG] getSnapshotFiles() returned " << files.size() << " files:" << std::endl;
+    	for (const auto& f : files) {
+    	    std::cout << " - " << f << std::endl;
+    	}
 
-        H5::Group headerGroup = file.openGroup("/Header");
-        H5::Attribute boxSizeAttribute = headerGroup.openAttribute("BoxSize");
-        boxSizeAttribute.read(H5::PredType::NATIVE_DOUBLE, &boxSize);
+        bool headerRead = false;
 
-        H5::Attribute attrLength = headerGroup.openAttribute("UnitLength_in_cm");
-        attrLength.read(H5::PredType::NATIVE_DOUBLE, &unitLength);
-        H5::Attribute attrMass = headerGroup.openAttribute("UnitMass_in_g");
-        attrMass.read(H5::PredType::NATIVE_DOUBLE, &unitMass);
-        H5::Attribute attrVelocity = headerGroup.openAttribute("UnitVelocity_in_cm_per_s");
-        attrVelocity.read(H5::PredType::NATIVE_DOUBLE, &unitVelocity);
+        for (const std::string& fileName : files) {
+            H5::H5File file(fileName, H5F_ACC_RDONLY);
 
-        H5::DataSpace densitySpace = densityDataset.getSpace();
-        hsize_t numDensities;
-        densitySpace.getSimpleExtentDims(&numDensities);
-        cellDensity.resize(numDensities);
-        densityDataset.read(cellDensity.data(), H5::PredType::NATIVE_DOUBLE);
+            if (!headerRead) {
+                readHeader(file);
+                headerRead = true;
+            }
+
+            appendDensity(file);
+            appendMass(file);
+            appendIDs(file);
+            appendCoordinates(file);
+            appendVelocities(file);
+        }
+
         numCells = cellDensity.size();
+        cellIndices.resize(numCells);
+        std::iota(cellIndices.begin(), cellIndices.end(), 0);
 
-        H5::DataSpace massSpace = massDataset.getSpace();
-        hsize_t numMass;
-        massSpace.getSimpleExtentDims(&numMass);
-        cellMass.resize(numMass);
-        massDataset.read(cellMass.data(), H5::PredType::NATIVE_DOUBLE);
-
-    	cellIndices.resize(numDensities, 0);
-    	std::iota(cellIndices.begin(), cellIndices.end(), 0);
-
-        H5::DataSpace coordinatesSpace = coordinatesDataset.getSpace();
-        hsize_t dims[2];
-        coordinatesSpace.getSimpleExtentDims(dims);
-        std::vector<float> cellCoordinates1D(dims[0] * dims[1]);
-        coordinatesDataset.read(cellCoordinates1D.data(), H5::PredType::NATIVE_FLOAT);
-
-        cellCoordinates.resize(dims[0], std::vector<float>(dims[1]));
-
-        for (size_t row = 0; row < dims[0]; ++row) {
-             for (size_t col = 0; col < dims[1]; ++col) {
-                 size_t index = row * dims[1] + col;
-                 cellCoordinates[row][col] = cellCoordinates1D[index];
-             }
-         }
-
-
-        H5::DataSpace velocitiesSpace = velocitiesDataset.getSpace();
-        velocitiesSpace.getSimpleExtentDims(dims);
-        std::vector<float> cellVelocities1D(dims[0] * dims[1]);
-        velocitiesDataset.read(cellVelocities1D.data(), H5::PredType::NATIVE_FLOAT);
-
-        cellVelocities.resize(dims[0], std::vector<float>(dims[1]));
-
-        for (size_t row = 0; row < dims[0]; ++row) {
-             for (size_t col = 0; col < dims[1]; ++col) {
-                 size_t index = row * dims[1] + col;
-                 cellVelocities[row][col] = cellVelocities1D[index];
-             }
-         }
-
-        H5::DataSpace idSpace = idDataset.getSpace();
-        hsize_t numIDs;
-        idSpace.getSimpleExtentDims(&numIDs);
-        cellIDs.resize(numIDs);
-        idDataset.read(cellIDs.data(), H5::PredType::NATIVE_INT);
-
-        std::cout << "Done reading snapshot." << std::endl;
-        std::cout << "There are " << cellDensity.size() << " cells." << std::endl;
+        std::cout << "Done reading snapshot: " << snapshotBase << std::endl;
+        std::cout << "Total number of cells: " << numCells << std::endl;
 
     } catch (H5::Exception& e) {
         std::cerr << "HDF5 error: " << e.getDetailMsg() << std::endl;
     }
 
-    //todo: save relevant IC data to prevent reading from snapshot every time.
+    // TODO: cache IC data if needed
 }
+
+void Mesh::readHeader(H5::H5File& file) {
+    H5::Group headerGroup = file.openGroup("/Header");
+
+    headerGroup.openAttribute("BoxSize").read(H5::PredType::NATIVE_DOUBLE, &boxSize);
+    headerGroup.openAttribute("UnitLength_in_cm").read(H5::PredType::NATIVE_DOUBLE, &unitLength);
+    headerGroup.openAttribute("UnitMass_in_g").read(H5::PredType::NATIVE_DOUBLE, &unitMass);
+    headerGroup.openAttribute("UnitVelocity_in_cm_per_s").read(H5::PredType::NATIVE_DOUBLE, &unitVelocity);
+}
+
 
 std::vector<std::pair<int, int>> Mesh::readVoronoiIndices(const std::string& filename) {
     std::ifstream file(filename, std::ios::binary);
@@ -384,6 +351,116 @@ void Mesh::saveVoronoiIndices(const std::string& filename, const std::vector<std
     file.close();
     std::cout << "Saved " << IdPairs.size() << " cell pairs to " << filename << std::endl;
 }
+
+void Mesh::appendDensity(H5::H5File& file) {
+    H5::DataSet dataset = file.openDataSet("/PartType0/Density");
+    H5::DataSpace space = dataset.getSpace();
+
+    hsize_t numElements;
+    space.getSimpleExtentDims(&numElements);
+
+    std::vector<double> buffer(numElements);
+    dataset.read(buffer.data(), H5::PredType::NATIVE_DOUBLE);
+    cellDensity.insert(cellDensity.end(), buffer.begin(), buffer.end());
+}
+
+void Mesh::appendMass(H5::H5File& file) {
+    H5::DataSet dataset = file.openDataSet("/PartType0/Masses");
+    H5::DataSpace space = dataset.getSpace();
+
+    hsize_t numElements;
+    space.getSimpleExtentDims(&numElements);
+
+    std::vector<double> buffer(numElements);
+    dataset.read(buffer.data(), H5::PredType::NATIVE_DOUBLE);
+    cellMass.insert(cellMass.end(), buffer.begin(), buffer.end());
+}
+
+void Mesh::appendIDs(H5::H5File& file) {
+    H5::DataSet dataset = file.openDataSet("/PartType0/ParticleIDs");
+    H5::DataSpace space = dataset.getSpace();
+
+    hsize_t numElements;
+    space.getSimpleExtentDims(&numElements);
+
+    std::vector<int> buffer(numElements);
+    dataset.read(buffer.data(), H5::PredType::NATIVE_INT);
+    cellIDs.insert(cellIDs.end(), buffer.begin(), buffer.end());
+}
+
+
+void Mesh::appendCoordinates(H5::H5File& file) {
+    H5::DataSet dataset = file.openDataSet("/PartType0/Coordinates");
+    H5::DataSpace space = dataset.getSpace();
+
+    hsize_t dims[2];
+    space.getSimpleExtentDims(dims);
+
+    std::vector<float> buffer(dims[0] * dims[1]);
+    dataset.read(buffer.data(), H5::PredType::NATIVE_FLOAT);
+
+    for (hsize_t i = 0; i < dims[0]; ++i) {
+        std::vector<float> row(dims[1]);
+        for (hsize_t j = 0; j < dims[1]; ++j) {
+            row[j] = buffer[i * dims[1] + j];
+        }
+        cellCoordinates.push_back(std::move(row));
+    }
+}
+
+void Mesh::appendVelocities(H5::H5File& file) {
+    H5::DataSet dataset = file.openDataSet("/PartType0/Velocities");
+    H5::DataSpace space = dataset.getSpace();
+
+    hsize_t dims[2];
+    space.getSimpleExtentDims(dims);
+
+    std::vector<float> buffer(dims[0] * dims[1]);
+    dataset.read(buffer.data(), H5::PredType::NATIVE_FLOAT);
+
+    for (hsize_t i = 0; i < dims[0]; ++i) {
+        std::vector<float> row(dims[1]);
+        for (hsize_t j = 0; j < dims[1]; ++j) {
+            row[j] = buffer[i * dims[1] + j];
+        }
+        cellVelocities.push_back(std::move(row));
+    }
+}
+
+
+std::vector<std::string> Mesh::getSnapshotFiles(const std::string& snapshotPath) {
+    std::vector<std::string> files;
+
+    std::filesystem::path inputPath(snapshotPath);
+    std::filesystem::path dir = inputPath.parent_path();
+    if (dir.empty()) dir = ".";
+
+    std::string baseName = inputPath.stem().string();     // "snap_006"
+    std::string extension = inputPath.extension().string(); // ".hdf5"
+
+    // Step 1: Look for split files like snap_006.0.hdf5, snap_006.1.hdf5, ...
+    for (const auto& entry : std::filesystem::directory_iterator(dir)) {
+        if (!entry.is_regular_file()) continue;
+
+        std::string fname = entry.path().filename().string();
+
+        // Match baseName.N.hdf5, e.g., snap_006.0.hdf5
+        if (fname.rfind(baseName + ".", 0) == 0 &&
+            fname.size() > baseName.size() + 6 &&
+            fname.compare(fname.size() - 6, 6, ".hdf5") == 0) {
+            files.push_back(entry.path().string());
+        }
+    }
+
+    // Step 2: Fallback to monolithic file if no split files found
+    if (files.empty() && std::filesystem::exists(snapshotPath)) {
+        files.push_back(snapshotPath);
+    }
+
+    std::sort(files.begin(), files.end());
+    return files;
+}
+
 
 
 Mesh::~Mesh() {

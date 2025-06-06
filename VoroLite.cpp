@@ -16,7 +16,6 @@ int main(int argc, char* argv[]) {
     }
 
     std::string paramFile = argv[1];
-    
     std::cout << "We are getting our parameters from \'" << paramFile << "\'" <<  std::endl;
 
     double ionisationCrossSection   = 0.0;
@@ -41,7 +40,7 @@ int main(int argc, char* argv[]) {
 
     double time = 0;
     double timeMax = 0.00003;
-    double dtime   = 0.000000001;
+    double dtime   = 0.0000001;
 
     double printInterval = timeMax/50;
     double TimeNextOutput = printInterval;
@@ -91,9 +90,6 @@ int main(int argc, char* argv[]) {
 
 	return 0;
 }
-
-
-
 
 void parseRayParamFile(const std::string& fileName, double& ionisationCrossSection, double& recombinationCrossSection, double& maxRadius,
                        std::vector<double>& sourceLocation, double& lumTotal, std::string& meshFile,

@@ -21,11 +21,9 @@ void Photochemistry::evolveIonisation(double dtime) {
     	double dtime_in_cgs    = dtime * mesh.unitLength / mesh.unitVelocity;
         double x0              = mesh.getHIIFraction(iCell);
     	double localColumn     = mesh.cellLocalColumn[iCell] * mesh.unitMass / mesh.protonMass / mesh.unitLength / mesh.unitLength;
-        double incomingFlux    = mesh.cellIncomingFlux[iCell];//mesh.getFlux(iCell);
+        double incomingFlux    = mesh.getIncomingFlux(iCell);
         double nH              = mesh.getNumberDensity_in_cgs(iCell);
         double volume          = mesh.getMass(iCell)/mesh.getDensity(iCell) * mesh.unitLength * mesh.unitLength * mesh.unitLength;
-
-        std::cout << incomingFlux << std::endl;
 
         auto computeRate = [&](double x) {
 
@@ -44,17 +42,6 @@ void Photochemistry::evolveIonisation(double dtime) {
         double k4 = computeRate(x0 + k3 * dtime_in_cgs);
 
         double delta = (dtime_in_cgs / 6.0) * (k1 + 2*k2 + 2*k3 + k4);
-
-        /*
-        if(iCell == 432){
-        	double xnew = x0 + delta;
-        	if(xnew > 1)
-        		xnew = 1;
-
-        	double localHIcolumn = localColumn * (1 - xnew);
-        	std::cout << xnew << " " << getIonisationRate(volume, incomingFlux * (1 - std::exp(-localHIcolumn * ionisationCrossSection)), nH) << " " << getRecombinationRate(xnew, xnew * nH) << std::endl;
-        }
-        */
 
     	mesh.setHIIFraction(iCell, x0 + delta);
 

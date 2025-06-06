@@ -53,6 +53,7 @@ public:
 	double getElectronNumberDensity_in_cgs(int iCell);
 	double getMeanMolecularWeight(int iCell);
     double getFlux(int iCell);
+    double getIncomingFlux(int iCell);
 
 	int getIndex(int iCell);
 
@@ -63,11 +64,18 @@ public:
 private:
 	std::vector<int> cellIndices;
 	std::vector<int> cellIDs;
-	
     std::vector<double> cellMass;
     std::vector<double> cellDensity;
 
     std::vector<std::vector<double>> fluxOfRayInCell;
+
+    void appendDensity(H5::H5File& file);
+    void appendMass(H5::H5File& file);
+    void appendIDs(H5::H5File& file);
+    void appendCoordinates(H5::H5File& file);
+    void appendVelocities(H5::H5File& file);
+    void readHeader(H5::H5File& file);
+    std::vector<std::string> getSnapshotFiles(const std::string& snapshotBase);
 
 	std::vector<std::vector<int> > collectNeighbours(const std::vector<std::pair<int, int>>& IdPairs, std::vector<int>& cellIDs);
 	std::vector<int> getCellIDs(const std::vector<std::pair<int, int>>& IdPairs);

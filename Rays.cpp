@@ -453,7 +453,6 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 	}
 	else
 	{
-
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
 
 			mesh.cellIncomingFlux[visitedCells[iRay][i]] += getLuminosity(0.0) * rayWeight[iRay] * std::exp(-ionisationCrossSection_inInternalUnits * columnHI[iRay]);
