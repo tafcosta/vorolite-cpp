@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
     
     std::cout << "We are getting our parameters from \'" << paramFile << "\'" <<  std::endl;
 
-    double ionisationCrossSection = 0.0;
+    double ionisationCrossSection   = 0.0;
     double recombinationCoefficient = 0.0;
     double maxRadius = 0.0;
     double lumTotal = 0.0;

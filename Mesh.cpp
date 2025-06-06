@@ -72,6 +72,10 @@ void Mesh::setHIIFraction(int iCell, double newValue){
 		cellHIIFraction[iCell] = 1.e-5;
 }
 
+double Mesh::getFlux(int iCell){
+	return cellFlux[iCell];
+}
+
 double Mesh::getHIIFraction(int iCell){
 	return cellHIIFraction[iCell];
 }

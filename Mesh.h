@@ -52,6 +52,7 @@ public:
 	double getNumberDensity_in_cgs(int iCell);
 	double getElectronNumberDensity_in_cgs(int iCell);
 	double getMeanMolecularWeight(int iCell);
+    double getFlux(int iCell);
 
 	int getIndex(int iCell);
 

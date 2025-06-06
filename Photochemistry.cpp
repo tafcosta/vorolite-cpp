@@ -21,9 +21,11 @@ void Photochemistry::evolveIonisation(double dtime) {
     	double dtime_in_cgs    = dtime * mesh.unitLength / mesh.unitVelocity;
         double x0              = mesh.getHIIFraction(iCell);
     	double localColumn     = mesh.cellLocalColumn[iCell] * mesh.unitMass / mesh.protonMass / mesh.unitLength / mesh.unitLength;
-        double incomingFlux    = mesh.cellIncomingFlux[iCell];
+        double incomingFlux    = mesh.cellIncomingFlux[iCell];//mesh.getFlux(iCell);
         double nH              = mesh.getNumberDensity_in_cgs(iCell);
         double volume          = mesh.getMass(iCell)/mesh.getDensity(iCell) * mesh.unitLength * mesh.unitLength * mesh.unitLength;
+
+        std::cout << incomingFlux << std::endl;
 
         auto computeRate = [&](double x) {
 
