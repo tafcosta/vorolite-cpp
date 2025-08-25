@@ -1,8 +1,8 @@
 ionisationCrossSection = 6.3e-18
 recombinationCoefficient = 2.59e-13
-maxRadius = 0.3
-sourceLocation = 0.5, 0.5, 0.5
+maxRadius = 0.02555002555002555
+sourceLocation = 249.90869140625, 249.9569854736328, 249.9822540283203
 lumTotal = 3.e53
-meshFile = ./output/tess_006_indices.dat
-snapFile = ./output/snap_006.hdf5
-outputFile = ./output/rays_properties.txt
+meshFile = /home/lt589/rds/rds-dirac-dp012/lt589/GGBH_project/DeboraMillennium_NoAGN/tess_126_indices.dat
+snapFile = /home/lt589/rds/rds-dirac-dp012/lt589/GGBH_project/DeboraMillennium_NoAGN/snap_126.hdf5
+outputFile = /home/lt589/vorolite-rt/rays_output_126.txt

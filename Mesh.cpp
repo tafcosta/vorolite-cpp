@@ -135,29 +135,46 @@ void Mesh::resetFluxes(){
 
 void Mesh::readSnapshot(const std::string& snapshotBase) {
     try {
-    	std::vector<std::string> files = getSnapshotFiles(snapshotBase);
+        // std::cout << "Getting into getSnapshotFiles" << std::endl;
+    	// std::vector<std::string> files = getSnapshotFiles(snapshotBase);
 
-    	std::cout << "[DEBUG] getSnapshotFiles() returned " << files.size() << " files:" << std::endl;
-    	for (const auto& f : files) {
-    	    std::cout << " - " << f << std::endl;
-    	}
+    	// std::cout << "[DEBUG] getSnapshotFiles() returned " << files.size() << " files:" << std::endl;
+    	// for (const auto& f : files) {
+    	//     std::cout << " - " << f << std::endl;
+    	// }
+
+        // // std::vector<std::string> files = snapshotBase;
+
+        // bool headerRead = false;
+
+        // for (const std::string& fileName : files) {
+        //     H5::H5File file(fileName, H5F_ACC_RDONLY);
+
+        //     if (!headerRead) {
+        //         readHeader(file);
+        //         headerRead = true;
+        //     }
+
+        //     appendDensity(file);
+        //     appendMass(file);
+        //     appendIDs(file);
+        //     appendCoordinates(file);
+        //     appendVelocities(file);
+        // }
 
         bool headerRead = false;
 
-        for (const std::string& fileName : files) {
-            H5::H5File file(fileName, H5F_ACC_RDONLY);
-
-            if (!headerRead) {
-                readHeader(file);
-                headerRead = true;
-            }
-
-            appendDensity(file);
-            appendMass(file);
-            appendIDs(file);
-            appendCoordinates(file);
-            appendVelocities(file);
+        H5::H5File file(snapshotBase, H5F_ACC_RDONLY);
+        if (!headerRead) {
+            readHeader(file);
+            headerRead = true;
         }
+
+        appendDensity(file);
+        appendMass(file);
+        appendIDs(file);
+        appendCoordinates(file);
+        appendVelocities(file);
 
         numCells = cellDensity.size();
         cellIndices.resize(numCells);
@@ -435,27 +452,37 @@ std::vector<std::string> Mesh::getSnapshotFiles(const std::string& snapshotPath)
     std::filesystem::path dir = inputPath.parent_path();
     if (dir.empty()) dir = ".";
 
-    std::string baseName = inputPath.stem().string();     // "snap_006"
-    std::string extension = inputPath.extension().string(); // ".hdf5"
+    // std::cout << "Trying baseName" << std::endl;
+    // std::cout << "baseName" << inputPath << std::endl;
+    // std::string baseName = inputPath.stem().string();     // "snap_006"
+    // std::cout << "Trying extension" << std::endl;
+    // std::string extension = inputPath.extension().string(); // ".hdf5"
 
-    // Step 1: Look for split files like snap_006.0.hdf5, snap_006.1.hdf5, ...
-    for (const auto& entry : std::filesystem::directory_iterator(dir)) {
-        if (!entry.is_regular_file()) continue;
+    // std::cout << "Trying step 1" << std::endl;
+    // // Step 1: Look for split files like snap_006.0.hdf5, snap_006.1.hdf5, ...
+    // for (const auto& entry : std::filesystem::directory_iterator(dir)) {
+    //     if (!entry.is_regular_file()) continue;
 
-        std::string fname = entry.path().filename().string();
+    //     std::string fname = entry.path().filename().string();
 
-        // Match baseName.N.hdf5, e.g., snap_006.0.hdf5
-        if (fname.rfind(baseName + ".", 0) == 0 &&
-            fname.size() > baseName.size() + 6 &&
-            fname.compare(fname.size() - 6, 6, ".hdf5") == 0) {
-            files.push_back(entry.path().string());
-        }
-    }
+    //     // Match baseName.N.hdf5, e.g., snap_006.0.hdf5
+    //     if (fname.rfind(baseName + ".", 0) == 0 &&
+    //         fname.size() > baseName.size() + 6 &&
+    //         fname.compare(fname.size() - 6, 6, ".hdf5") == 0) {
+    //         files.push_back(entry.path().string());
+    //     }
+    // }
 
+    std::cout << "Going directly to step 2" << std::endl;
+    std::cout << "Trying with " << snapshotPath << std::endl;
+    std::cout << "Empty? " << files.empty() << std::endl;
+    std::cout << "Exists? " << std::filesystem::exists(snapshotPath) << std::endl;
     // Step 2: Fallback to monolithic file if no split files found
     if (files.empty() && std::filesystem::exists(snapshotPath)) {
+        std::cout << "Made it here" << std::endl;
         files.push_back(snapshotPath);
     }
+    std::cout << "Got through step 2" << std::endl;
 
     std::sort(files.begin(), files.end());
     return files;

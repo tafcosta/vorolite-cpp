@@ -451,6 +451,7 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 			mesh.setFluxOfRayInCell(iRay, i, fluxOfRay[i]);
 
 	}
+	// in current version, above is not used and instead we use below (time-independent computation)
 	else
 	{
 		for (int i = 0; i < visitedCells[iRay].size(); i++){

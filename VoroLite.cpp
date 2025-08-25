@@ -4,8 +4,8 @@
 #include "Rays.h"
 
 void parseRayParamFile(const std::string& fileName, double& ionisationXsection, double& recombinationCoefficient, double& maxRadius,
-                       std::vector<double>& sourceLocation, double& lumTotal, std::string& meshFile,
-                       std::string& snapFile, std::string& ofileName);
+                       std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, std::string& meshFile,
+                       std::string& snapFile, std::string& oDirectory);
 
 
 int main(int argc, char* argv[]) {
@@ -22,10 +22,11 @@ int main(int argc, char* argv[]) {
     double recombinationCoefficient = 0.0;
     double maxRadius = 0.0;
     double lumTotal = 0.0;
+    double timeMax = 0.0;
     std::vector<double> sourcePosition(3, 0.5);
-    std::string meshFile, snapFile, ofileName;
+    std::string meshFile, snapFile, oDirectory;
 
-    parseRayParamFile(paramFile, ionisationCrossSection, recombinationCoefficient, maxRadius, sourcePosition, lumTotal, meshFile, snapFile, ofileName);
+    parseRayParamFile(paramFile, ionisationCrossSection, recombinationCoefficient, maxRadius, sourcePosition, lumTotal, timeMax, meshFile, snapFile, oDirectory);
 
     if (maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
         std::cerr << "Error: Missing or invalid parameters in rayParam.txt" << std::endl;
@@ -34,12 +35,20 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "Starting VoroLite++ RT (Version 0.1)!" << std::endl;
 
+    std::cout << "Mesh initialisation starting..." << std::endl;
     Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, sourcePosition);
+    std::cout << "Mesh initialisation OK" << std::endl;
+
+    std::cout << "Rays initialisation starting..." << std::endl;
     Rays *rays = new Rays(ionisationCrossSection, maxRadius, sourcePosition, lumTotal, *mesh);
+    std::cout << "Rays initialisation OK" << std::endl;
+
+    std::cout << "Photochemistry initialisation starting..." << std::endl;
     Photochemistry *photochemistry = new Photochemistry(*mesh, ionisationCrossSection, recombinationCoefficient);
+    std::cout << "Photochemistry initialisation OK" << std::endl;
 
     double time = 0;
-    double timeMax = 0.00003;
+    // double timeMax = 0.00003;
     double dtime   = 0.0000001;
 
     double printInterval = timeMax/50;
@@ -48,6 +57,10 @@ int main(int argc, char* argv[]) {
     int snapshotIndex = 0;
 
     rays->calculateRays();
+
+    std::ostringstream ofName;
+    ofName << oDirectory << "rays_output_" << snapshotIndex << ".txt";
+    std::string ofileName = ofName.str();
     rays->outputResults(ofileName);
 
     std::cout << "Starting radiative transfer" << std::endl;
@@ -60,7 +73,7 @@ int main(int argc, char* argv[]) {
             std::cout << "time = " << time << std::endl;
 
             std::ostringstream filename;
-            filename << "HIIfraction_" << snapshotIndex << ".txt";
+            filename << oDirectory << "HIIfraction_" << snapshotIndex << ".txt";
 
             std::ofstream outFile(filename.str());
             if (outFile.is_open()) {
@@ -92,8 +105,8 @@ int main(int argc, char* argv[]) {
 }
 
 void parseRayParamFile(const std::string& fileName, double& ionisationCrossSection, double& recombinationCrossSection, double& maxRadius,
-                       std::vector<double>& sourceLocation, double& lumTotal, std::string& meshFile,
-                       std::string& snapFile, std::string& ofileName) {
+                       std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, std::string& meshFile,
+                       std::string& snapFile, std::string& oDirectory) {
     std::ifstream inputFile(fileName);
     std::string line;
 
@@ -136,14 +149,17 @@ void parseRayParamFile(const std::string& fileName, double& ionisationCrossSecti
         else if (key == "lumTotal") {
             lumTotal = std::stod(value);
         }
+        else if (key == "timeMax") {
+            timeMax = std::stod(value);
+        }
         else if (key == "meshFile") {
             meshFile = value;
         }
         else if (key == "snapFile") {
             snapFile = value;
         }
-        else if (key == "outputFile") {
-            ofileName = value;
+        else if (key == "outputDirectory") {
+            oDirectory = value;
         }
     }
 }
