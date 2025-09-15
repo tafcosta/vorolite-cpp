@@ -4,7 +4,7 @@
 #include "Rays.h"
 
 void parseRayParamFile(const std::string& fileName, double& ionisationXsection, double& recombinationCoefficient, double& maxRadius,
-                       std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, std::string& meshFile,
+                       std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, int64_t& Nside, std::string& meshFile,
                        std::string& snapFile, std::string& oDirectory);
 
 
@@ -23,10 +23,11 @@ int main(int argc, char* argv[]) {
     double maxRadius = 0.0;
     double lumTotal = 0.0;
     double timeMax = 0.0;
+    int64_t Nside = 0;
     std::vector<double> sourcePosition(3, 0.5);
     std::string meshFile, snapFile, oDirectory;
 
-    parseRayParamFile(paramFile, ionisationCrossSection, recombinationCoefficient, maxRadius, sourcePosition, lumTotal, timeMax, meshFile, snapFile, oDirectory);
+    parseRayParamFile(paramFile, ionisationCrossSection, recombinationCoefficient, maxRadius, sourcePosition, lumTotal, timeMax, Nside, meshFile, snapFile, oDirectory);
 
     if (maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
         std::cerr << "Error: Missing or invalid parameters in rayParam.txt" << std::endl;
@@ -40,7 +41,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Mesh initialisation OK" << std::endl;
 
     std::cout << "Rays initialisation starting..." << std::endl;
-    Rays *rays = new Rays(ionisationCrossSection, maxRadius, sourcePosition, lumTotal, *mesh);
+    Rays *rays = new Rays(ionisationCrossSection, maxRadius, sourcePosition, lumTotal, Nside, *mesh);
     std::cout << "Rays initialisation OK" << std::endl;
 
     std::cout << "Photochemistry initialisation starting..." << std::endl;
@@ -51,7 +52,7 @@ int main(int argc, char* argv[]) {
     // double timeMax = 0.00003;
     double dtime   = 0.0000001;
 
-    double printInterval = timeMax/50;
+    double printInterval = timeMax/100;
     double TimeNextOutput = printInterval;
 
     int snapshotIndex = 0;
@@ -65,9 +66,15 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Starting radiative transfer" << std::endl;
     while (time < timeMax) {
+        // std::cout << "Resetting fluxes..." << std::endl;
     	mesh->resetFluxes();
+        // std::cout << "Fluxes OK!" << std::endl;
+        // std::cout << "Doing radiative transfer..." << std::endl;
         rays->doRadiativeTransfer(time, dtime);
+        // std::cout << "Radiative transfer OK!" << std::endl;
+        // std::cout << "Evolving ionisation..." << std::endl;
         photochemistry->evolveIonisation(dtime);
+        // std::cout << "Ionisation OK!" << std::endl;
 
         if (time >= TimeNextOutput) {
             std::cout << "time = " << time << std::endl;
@@ -105,7 +112,7 @@ int main(int argc, char* argv[]) {
 }
 
 void parseRayParamFile(const std::string& fileName, double& ionisationCrossSection, double& recombinationCrossSection, double& maxRadius,
-                       std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, std::string& meshFile,
+                       std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, int64_t& Nside, std::string& meshFile,
                        std::string& snapFile, std::string& oDirectory) {
     std::ifstream inputFile(fileName);
     std::string line;
@@ -160,6 +167,9 @@ void parseRayParamFile(const std::string& fileName, double& ionisationCrossSecti
         }
         else if (key == "outputDirectory") {
             oDirectory = value;
+        }
+        else if (key == "Nside") {
+            Nside = std::stoll(value);
         }
     }
 }

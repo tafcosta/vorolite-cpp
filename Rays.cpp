@@ -9,7 +9,7 @@
 #include "Rays.h"
 #include "Mesh.h"
 
-Rays::Rays(double ionisationCrossSection, double maxRadius, std::vector<double> sourcePosition, double lumTotal, Mesh& mesh) : ionisationCrossSection(ionisationCrossSection), maxRadius(maxRadius), sourcePosition(sourcePosition), lumTotal(lumTotal), mesh(mesh) {
+Rays::Rays(double ionisationCrossSection, double maxRadius, std::vector<double> sourcePosition, double lumTotal, int64_t Nside, Mesh& mesh) : ionisationCrossSection(ionisationCrossSection), maxRadius(maxRadius), sourcePosition(sourcePosition), lumTotal(lumTotal), Nside(Nside), mesh(mesh) {
 
 	ionisationCrossSection_inInternalUnits = ionisationCrossSection / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 
@@ -26,7 +26,7 @@ Rays::Rays(double ionisationCrossSection, double maxRadius, std::vector<double> 
 	phi          = std::vector<double>(nRays, 0.0);
 	rayWeight    = std::vector<double>(nRays, 0.0);
 	initializeDirections();
-	assignToHealpix();
+	assignToHealpix(Nside);
 
 	rayPosition = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
 	initializePositions();
@@ -104,8 +104,9 @@ void Rays::initializeDirections() {
     }
 }
 
-void Rays::assignToHealpix() {
-	int64_t healpixNside = 8;
+void Rays::assignToHealpix(int64_t healpixNside) {
+	// int64_t healpixNside = 8;
+	// int64_t healpixNside = 16;
 	int64_t nPix = nside2npix(healpixNside);
 	std::vector<int> raysPerPixel(nPix, 0);
 

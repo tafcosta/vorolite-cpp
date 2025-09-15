@@ -42,9 +42,9 @@ void Photochemistry::evolveIonisation(double dtime) {
         double k4 = computeRate(x0 + k3 * dtime_in_cgs);
 
         double delta = (dtime_in_cgs / 6.0) * (k1 + 2*k2 + 2*k3 + k4);
+        double new_x = x0 + delta;
 
-    	mesh.setHIIFraction(iCell, x0 + delta);
-
+        mesh.setHIIFraction(iCell, new_x);
     }
 }
 
@@ -56,7 +56,6 @@ double Photochemistry::getIonisationRate(double volume, double flux, double nH){
 double Photochemistry::getRecombinationRate(double xHII, double electronDensity){
 	return  electronDensity * xHII * recombinationCoefficient;
 }
-
 
 Photochemistry::~Photochemistry() {
 	// TODO Auto-generated destructor stub

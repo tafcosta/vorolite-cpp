@@ -12,7 +12,7 @@
 
 class Rays {
 public:
-	Rays(double ionisationCrossSection, double maxRadius, std::vector<double> sourcePosition, double lumTotal, Mesh& mesh);
+	Rays(double ionisationCrossSection, double maxRadius, std::vector<double> sourcePosition, double lumTotal, int64_t Nside, Mesh& mesh);
 	virtual ~Rays();
 
 	bool timeDependent = false;
@@ -21,6 +21,7 @@ public:
 	double ionisationCrossSection_inInternalUnits;
 	double maxRadius;
 	double lumTotal;
+	int64_t Nside;
 
 	std::vector<double> sourcePosition;
 	std::vector<double> phi, theta;
@@ -57,7 +58,7 @@ protected:
 	int travelToNextCell(int iCell, int iRay, bool verbose);
 	std::vector<int> rayTargetCell;
 
-	void assignToHealpix();
+	void assignToHealpix(int64_t healpixNside);
 	void updateRayPosition(int iRay, double distance);
 	void updateColumnAndFlux(int iRay, double time, double dtime);
 	int findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose);
