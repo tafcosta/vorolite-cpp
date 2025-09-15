@@ -24,8 +24,9 @@
 #include <unordered_set>
 #include <iomanip>
 #include <numeric>
-extern "C" {
-  #include "chealpix.h"
-}
+#include "chealpix.h"
+// extern "C" {
+//   #include "chealpix.h"
+// }
 
 #endif /* COMMON_INCLUDES_H_ */
