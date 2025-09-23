@@ -175,6 +175,9 @@ void Mesh::readSnapshot(const std::string& snapshotBase) {
         appendIDs(file);
         appendCoordinates(file);
         appendVelocities(file);
+        appendHIFraction(file);
+        appendElectronFraction(file);
+        appendXH(file);
 
         numCells = cellDensity.size();
         cellIndices.resize(numCells);
@@ -405,7 +408,6 @@ void Mesh::appendIDs(H5::H5File& file) {
     cellIDs.insert(cellIDs.end(), buffer.begin(), buffer.end());
 }
 
-
 void Mesh::appendCoordinates(H5::H5File& file) {
     H5::DataSet dataset = file.openDataSet("/PartType0/Coordinates");
     H5::DataSpace space = dataset.getSpace();
@@ -444,6 +446,45 @@ void Mesh::appendVelocities(H5::H5File& file) {
     }
 }
 
+void Mesh::appendHIFraction(H5::H5File& file) {
+    H5::DataSet dataset = file.openDataSet("/PartType0/NeutralHydrogenAbundance");
+    H5::DataSpace space = dataset.getSpace();
+
+    hsize_t numElements;
+    space.getSimpleExtentDims(&numElements);
+
+    std::vector<double> buffer(numElements);
+    dataset.read(buffer.data(), H5::PredType::NATIVE_DOUBLE);
+    cellHIFraction.insert(cellHIFraction.end(), buffer.begin(), buffer.end());
+}
+
+void Mesh::appendElectronFraction(H5::H5File& file) {
+    H5::DataSet dataset = file.openDataSet("/PartType0/ElectronAbundance");
+    H5::DataSpace space = dataset.getSpace();
+
+    hsize_t numElements;
+    space.getSimpleExtentDims(&numElements);
+
+    std::vector<double> buffer(numElements);
+    dataset.read(buffer.data(), H5::PredType::NATIVE_DOUBLE);
+    cellElectronFraction.insert(cellElectronFraction.end(), buffer.begin(), buffer.end());
+}
+
+void Mesh::appendXH(H5::H5File& file) {
+    H5::DataSet dataset = file.openDataSet("/PartType0/GFM_Metals");
+    H5::DataSpace space = dataset.getSpace();
+
+    hsize_t dims[2];
+    space.getSimpleExtentDims(dims);
+
+    std::vector<float> buffer(dims[0] * dims[1]);
+    dataset.read(buffer.data(), H5::PredType::NATIVE_FLOAT);
+
+    for (hsize_t i = 0; i < dims[0]; ++i) {
+        double XH = buffer[i * dims[1] + 0]; // Assuming Hydrogen is the first element
+        cellXH.push_back(XH);
+    }
+}
 
 std::vector<std::string> Mesh::getSnapshotFiles(const std::string& snapshotPath) {
     std::vector<std::string> files;

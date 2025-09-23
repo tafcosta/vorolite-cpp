@@ -33,6 +33,9 @@ public:
 
     std::vector<double> cellLocalColumn;
     std::vector<double> cellHIIFraction;
+	std::vector<double> cellHIFraction;
+	std::vector<double> cellElectronFraction;
+	std::vector<double> cellXH;
     std::vector<std::vector<float>> cellCoordinates;
     std::vector<std::vector<float>> cellVelocities;
 
@@ -74,6 +77,9 @@ private:
     void appendIDs(H5::H5File& file);
     void appendCoordinates(H5::H5File& file);
     void appendVelocities(H5::H5File& file);
+	void appendHIFraction(H5::H5File& file);
+	void appendElectronFraction(H5::H5File& file);
+	void appendXH(H5::H5File& file);
     void readHeader(H5::H5File& file);
     std::vector<std::string> getSnapshotFiles(const std::string& snapshotBase);
 
