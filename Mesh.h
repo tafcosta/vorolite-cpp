@@ -25,6 +25,8 @@ public:
     double unitLength;
     double unitMass;
     double unitVelocity;
+	double HubbleParam;
+	double scaleFactor;
 
     std::vector<int> cellVisitsByRay;
 
@@ -55,6 +57,7 @@ public:
 	double getNumberDensity_in_cgs(int iCell);
 	double getElectronNumberDensity_in_cgs(int iCell);
 	double getMeanMolecularWeight(int iCell);
+	double getSelfShieldingCorrection(int iCell);
     double getFlux(int iCell);
     double getIncomingFlux(int iCell);
 
@@ -63,6 +66,7 @@ public:
 	void setHIIFraction(int iCell, double newValue);
     void resetFluxes();
     void resizeFluxOfRayInCell(int iRay, int numVisitedCells);
+	void doSelfShieldingCorrection();
 
 private:
 	std::vector<int> cellIndices;

@@ -20,10 +20,10 @@ void Photochemistry::evolveIonisation(double dtime) {
 
     	double dtime_in_cgs    = dtime * mesh.unitLength / mesh.unitVelocity;
         double x0              = mesh.getHIIFraction(iCell);
-    	double localColumn     = mesh.cellLocalColumn[iCell] * mesh.unitMass / mesh.protonMass / mesh.unitLength / mesh.unitLength;
+    	double localColumn     = mesh.cellLocalColumn[iCell] / mesh.protonMass * (mesh.unitMass / (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength)) * mesh.HubbleParam;
         double incomingFlux    = mesh.getIncomingFlux(iCell);
         double nH              = mesh.getNumberDensity_in_cgs(iCell);
-        double volume          = mesh.getMass(iCell)/mesh.getDensity(iCell) * mesh.unitLength * mesh.unitLength * mesh.unitLength;
+        double volume          = mesh.getMass(iCell)/mesh.getDensity(iCell) * (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength) * mesh.HubbleParam * mesh.HubbleParam * mesh.HubbleParam;
 
         auto computeRate = [&](double x) {
 

@@ -48,6 +48,27 @@ int main(int argc, char* argv[]) {
     Photochemistry *photochemistry = new Photochemistry(*mesh, ionisationCrossSection, recombinationCoefficient);
     std::cout << "Photochemistry initialisation OK" << std::endl;
 
+    // double unitnDens = (mesh->unitMass / (mesh->scaleFactor * mesh->unitLength * mesh->scaleFactor * mesh->unitLength * mesh->scaleFactor * mesh->unitLength)) / mesh->protonMass * mesh->HubbleParam * mesh->HubbleParam;
+    // std::cout << "The units for number density is equal to " << unitnDens << std::endl;
+
+    // Initial output at t=0, for reference
+    std::ostringstream filename;
+    filename << oDirectory << "HIIfraction_init.txt";
+
+    std::ofstream outFile(filename.str());
+    if (outFile.is_open()) {
+        for (int iCell = 0; iCell < mesh->numCells; ++iCell) {
+            outFile << mesh->getIndex(iCell) << " ";
+            for (float coord : mesh->cellCoordinates[iCell]) {
+                outFile << coord << " ";
+            }
+            outFile << mesh->getHIIFraction(iCell) << " " << mesh->cellIncomingFlux[iCell] << std::endl;
+        }
+        outFile.close();
+    } else {
+        std::cerr << "Unable to open file " << filename.str() << " for writing." << std::endl;
+    }
+
     double time = 0;
     // double timeMax = 0.00003;
     double dtime   = 0.0000001;
@@ -66,6 +87,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Starting radiative transfer" << std::endl;
     while (time < timeMax) {
+
         // std::cout << "Resetting fluxes..." << std::endl;
     	mesh->resetFluxes();
         // std::cout << "Fluxes OK!" << std::endl;
@@ -102,7 +124,6 @@ int main(int argc, char* argv[]) {
 
         time += dtime;
     }
-
   
 	delete mesh;
 	delete rays;

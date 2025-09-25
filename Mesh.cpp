@@ -21,6 +21,8 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 	cellHIIFraction.resize(numCells, 0.0);
 	fluxOfRayInCell.resize(numCells); //The first dimension should be number of rays
 
+    doSelfShieldingCorrection();
+
 	IdPairs       = readVoronoiIndices(fileMeshIndices);
 	neighbourList = collectNeighbours(IdPairs, cellIDs);
 }
@@ -38,7 +40,7 @@ double Mesh::getDensity(int iCell){
 }
 
 double Mesh::getNumberDensity_in_cgs(int iCell){
-	return cellDensity[iCell] * unitMass / unitLength / unitLength / unitLength / protonMass;
+	return cellDensity[iCell] / protonMass * (unitMass / (scaleFactor * unitLength * scaleFactor * unitLength * scaleFactor * unitLength)) * HubbleParam * HubbleParam;
 }
 
 double Mesh::getElectronNumberDensity_in_cgs(int iCell){
@@ -47,6 +49,37 @@ double Mesh::getElectronNumberDensity_in_cgs(int iCell){
 
 double Mesh::getMeanMolecularWeight(int iCell){
 	return 1./(1 + cellHIIFraction[iCell]);
+}
+
+double Mesh::getSelfShieldingCorrection(int iCell) {
+    const double rho_s = 1.52e-2;
+    const double rho_u = 4.53e-3;
+    const double p     = 2.68;
+
+    double nH   = cellXH[iCell] * getNumberDensity_in_cgs(iCell);
+    double f_hi = cellHIFraction[iCell];
+
+    double new_f_hi = f_hi;
+
+    if (nH >= rho_u && nH <= rho_s) {
+        double numerator   = f_hi * std::pow(rho_s - nH, p)
+                           + std::pow(nH - rho_u, p);
+        double denominator = std::pow(rho_s - rho_u, p);
+        new_f_hi = numerator / denominator;
+    } 
+    else if (nH > rho_s) {
+        new_f_hi = 1.0;
+    }
+
+    return new_f_hi;
+}
+
+void Mesh::doSelfShieldingCorrection() {
+    for (int iCell = 0; iCell < numCells; ++iCell) {
+        double newcellHIFraction = getSelfShieldingCorrection(iCell);
+        cellHIFraction[iCell] = newcellHIFraction;
+        cellHIIFraction[iCell] = 1.0 - newcellHIFraction;
+    }
 }
 
 double Mesh::getFluxOfRayInCell(int iRay, int iCell){
@@ -200,6 +233,8 @@ void Mesh::readHeader(H5::H5File& file) {
     headerGroup.openAttribute("UnitLength_in_cm").read(H5::PredType::NATIVE_DOUBLE, &unitLength);
     headerGroup.openAttribute("UnitMass_in_g").read(H5::PredType::NATIVE_DOUBLE, &unitMass);
     headerGroup.openAttribute("UnitVelocity_in_cm_per_s").read(H5::PredType::NATIVE_DOUBLE, &unitVelocity);
+    headerGroup.openAttribute("HubbleParam").read(H5::PredType::NATIVE_DOUBLE, &HubbleParam);
+    headerGroup.openAttribute("Time").read(H5::PredType::NATIVE_DOUBLE, &scaleFactor);
 }
 
 
@@ -529,9 +564,6 @@ std::vector<std::string> Mesh::getSnapshotFiles(const std::string& snapshotPath)
     return files;
 }
 
-
-
 Mesh::~Mesh() {
 
 }
-
