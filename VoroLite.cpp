@@ -3,10 +3,9 @@
 #include "Photochemistry.h"
 #include "Rays.h"
 
-void parseRayParamFile(const std::string& fileName, double& ionisationXsection, double& recombinationCoefficient, double& maxRadius,
+void parseRayParamFile(const std::string& fileName, double& ionisationXsection, double& recombinationCoefficient, double& dustAbsorptionOpacity, double& maxRadius,
                        std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, int64_t& Nside, std::string& meshFile,
                        std::string& snapFile, std::string& oDirectory);
-
 
 int main(int argc, char* argv[]) {
 
@@ -20,14 +19,16 @@ int main(int argc, char* argv[]) {
 
     double ionisationCrossSection   = 0.0;
     double recombinationCoefficient = 0.0;
+    double dustAbsorptionOpacity = 0.0;
+
     double maxRadius = 0.0;
     double lumTotal = 0.0;
     double timeMax = 0.0;
-    int64_t Nside = 0;
+    int64_t Nside = 4;
     std::vector<double> sourcePosition(3, 0.5);
     std::string meshFile, snapFile, oDirectory;
 
-    parseRayParamFile(paramFile, ionisationCrossSection, recombinationCoefficient, maxRadius, sourcePosition, lumTotal, timeMax, Nside, meshFile, snapFile, oDirectory);
+    parseRayParamFile(paramFile, ionisationCrossSection, recombinationCoefficient, dustAbsorptionOpacity, maxRadius, sourcePosition, lumTotal, timeMax, Nside, meshFile, snapFile, oDirectory);
 
     if (maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
         std::cerr << "Error: Missing or invalid parameters in rayParam.txt" << std::endl;
@@ -132,9 +133,10 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-void parseRayParamFile(const std::string& fileName, double& ionisationCrossSection, double& recombinationCrossSection, double& maxRadius,
+void parseRayParamFile(const std::string& fileName, double& ionisationCrossSection, double& recombinationCrossSection, double& dustAbsorptionOpacity, double& maxRadius,
                        std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, int64_t& Nside, std::string& meshFile,
                        std::string& snapFile, std::string& oDirectory) {
+
     std::ifstream inputFile(fileName);
     std::string line;
 
@@ -163,6 +165,9 @@ void parseRayParamFile(const std::string& fileName, double& ionisationCrossSecti
         }
         else if (key == "recombinationCoefficient") {
         	recombinationCrossSection = std::stod(value);
+        }
+        else if (key == "dustAbsorptionOpacity") {
+        	dustAbsorptionOpacity = std::stod(value);
         }
         else if (key == "maxRadius") {
             maxRadius = std::stod(value);

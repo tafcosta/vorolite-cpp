@@ -51,6 +51,10 @@ double Mesh::getMeanMolecularWeight(int iCell){
 	return 1./(1 + cellHIIFraction[iCell]);
 }
 
+double Mesh::getMetallicityInSolar(int iCell){
+	return cellMetallicity[iCell]/0.0127;
+}
+
 double Mesh::getSelfShieldingCorrection(int iCell) {
     const double rho_s = 1.52e-2;
     const double rho_u = 4.53e-3;
@@ -208,6 +212,7 @@ void Mesh::readSnapshot(const std::string& snapshotBase) {
         appendIDs(file);
         appendCoordinates(file);
         appendVelocities(file);
+        appendMetallicity(file);
         appendHIFraction(file);
         appendElectronFraction(file);
         appendXH(file);
@@ -429,6 +434,19 @@ void Mesh::appendMass(H5::H5File& file) {
     std::vector<double> buffer(numElements);
     dataset.read(buffer.data(), H5::PredType::NATIVE_DOUBLE);
     cellMass.insert(cellMass.end(), buffer.begin(), buffer.end());
+}
+
+void Mesh::appendMetallicity(H5::H5File& file) {
+    H5::DataSet dataset = file.openDataSet("/PartType0/GFM_Metallicity");
+    H5::DataSpace dataspace = dataset.getSpace();
+
+    hsize_t numElements;
+    dataspace.getSimpleExtentDims(&numElements);
+
+    size_t offset = cellMetallicity.size();
+    cellMetallicity.resize(offset + numElements);
+
+    dataset.read(cellMetallicity.data() + offset, H5::PredType::NATIVE_DOUBLE);
 }
 
 void Mesh::appendIDs(H5::H5File& file) {

@@ -19,6 +19,8 @@ public:
 
 	double ionisationCrossSection;
 	double ionisationCrossSection_inInternalUnits;
+	double dustAbsorptionOpacity;
+	double dustAbsorptionOpacity_inInternalUnits;
 	double maxRadius;
 	double lumTotal;
 	int64_t Nside;
@@ -30,6 +32,8 @@ public:
 	std::vector<std::vector<double>> rayPosition;
 
 	std::vector<double> columnHI;
+	std::vector<double> columnDust;
+
 	std::vector<double> rayWeight;
 
 	std::vector<double> distanceTravelled;

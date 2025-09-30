@@ -38,6 +38,7 @@ public:
 	std::vector<double> cellHIFraction;
 	std::vector<double> cellElectronFraction;
 	std::vector<double> cellXH;
+	std::vector<double> cellMetallicity;
     std::vector<std::vector<float>> cellCoordinates;
     std::vector<std::vector<float>> cellVelocities;
 
@@ -57,6 +58,7 @@ public:
 	double getNumberDensity_in_cgs(int iCell);
 	double getElectronNumberDensity_in_cgs(int iCell);
 	double getMeanMolecularWeight(int iCell);
+	double getMetallicityInSolar(int iCell);
 	double getSelfShieldingCorrection(int iCell);
     double getFlux(int iCell);
     double getIncomingFlux(int iCell);
@@ -84,6 +86,7 @@ private:
 	void appendHIFraction(H5::H5File& file);
 	void appendElectronFraction(H5::H5File& file);
 	void appendXH(H5::H5File& file);
+    void appendMetallicity(H5::H5File& file);
     void readHeader(H5::H5File& file);
     std::vector<std::string> getSnapshotFiles(const std::string& snapshotBase);
 
