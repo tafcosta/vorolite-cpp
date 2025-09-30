@@ -2,7 +2,7 @@
  * Source.h
  *
  *  Created on: 30 Sept 2025
- *      Author: ntc132
+ *      Author: Tiago Costa
  */
 
 #ifndef SOURCE_H_
@@ -18,8 +18,17 @@ public:
 	double getLuminosity(double time);
 
 	std::vector<double> sourcePosition;
-	std::string& lightcurve;
 	double sourceLuminosity;
+
+private:
+
+    std::string lightcurveFile_;
+
+    std::vector<double> times_;
+    std::vector<double> luminosities_;
+
+    void loadLightcurve_();
+
 
 };
 

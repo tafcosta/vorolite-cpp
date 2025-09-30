@@ -14,8 +14,11 @@
 #include <chrono>
 #include <H5Cpp.h>
 #include <fstream>
+#include <filesystem>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
+#include <cctype>
 #include <limits>
 #include <iomanip>
 #include <vector>
@@ -25,6 +28,9 @@
 #include <iomanip>
 #include <numeric>
 #include "chealpix.h"
+
+
+
 // extern "C" {
 //   #include "chealpix.h"
 // }

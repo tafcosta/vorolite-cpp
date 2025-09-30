@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
     int64_t Nside = 4;
     std::vector<double> sourcePosition(3, 0.5);
     std::string meshFile, snapFile, oDirectory;
-    std::string lightcurvefile = "lightcurvedata";
+    std::filesystem::path lightcurvefile = "data/Lion_basic_ref.txt";
 
     parseRayParamFile(paramFile, ionisationCrossSection, recombinationCoefficient, dustAbsorptionOpacity, maxRadius, sourcePosition, lumTotal, timeMax, Nside, meshFile, snapFile, oDirectory);
 
