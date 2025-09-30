@@ -2,9 +2,10 @@
 #include "Mesh.h"
 #include "Photochemistry.h"
 #include "Rays.h"
+#include "Source.h"
 
 void parseRayParamFile(const std::string& fileName, double& ionisationXsection, double& recombinationCoefficient, double& dustAbsorptionOpacity, double& maxRadius,
-                       std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, int64_t& Nside, std::string& meshFile,
+                       std::vector<double>& sourcePosition, double& lumTotal, double& timeMax, int64_t& Nside, std::string& meshFile,
                        std::string& snapFile, std::string& oDirectory);
 
 int main(int argc, char* argv[]) {
@@ -27,6 +28,7 @@ int main(int argc, char* argv[]) {
     int64_t Nside = 4;
     std::vector<double> sourcePosition(3, 0.5);
     std::string meshFile, snapFile, oDirectory;
+    std::string lightcurvefile = "lightcurvedata";
 
     parseRayParamFile(paramFile, ionisationCrossSection, recombinationCoefficient, dustAbsorptionOpacity, maxRadius, sourcePosition, lumTotal, timeMax, Nside, meshFile, snapFile, oDirectory);
 
@@ -41,8 +43,12 @@ int main(int argc, char* argv[]) {
     Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, sourcePosition);
     std::cout << "Mesh initialisation OK" << std::endl;
 
+    std::cout << "Source initialisation starting..." << std::endl;
+    Source *source = new Source(sourcePosition, lightcurvefile, lumTotal);
+    std::cout << "Source initialisation OK" << std::endl;
+
     std::cout << "Rays initialisation starting..." << std::endl;
-    Rays *rays = new Rays(ionisationCrossSection, maxRadius, sourcePosition, lumTotal, Nside, *mesh);
+    Rays *rays = new Rays(ionisationCrossSection, maxRadius, sourcePosition, lumTotal, Nside, *mesh, *source);
     std::cout << "Rays initialisation OK" << std::endl;
 
     std::cout << "Photochemistry initialisation starting..." << std::endl;
@@ -71,7 +77,6 @@ int main(int argc, char* argv[]) {
     }
 
     double time = 0;
-    // double timeMax = 0.00003;
     double dtime   = 0.0000001;
 
     double printInterval = timeMax/100;
@@ -128,6 +133,7 @@ int main(int argc, char* argv[]) {
   
 	delete mesh;
 	delete rays;
+	delete source;
 	delete photochemistry;
 
 	return 0;

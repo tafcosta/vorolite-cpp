@@ -9,10 +9,11 @@
 #define RAYS_H_
 
 #include "Mesh.h"
+#include "Source.h"
 
 class Rays {
 public:
-	Rays(double ionisationCrossSection, double maxRadius, std::vector<double> sourcePosition, double lumTotal, int64_t Nside, Mesh& mesh);
+	Rays(double ionisationCrossSection, double maxRadius, std::vector<double> sourcePosition, double lumTotal, int64_t Nside, Mesh& mesh, Source& source);
 	virtual ~Rays();
 
 	bool timeDependent = false;
@@ -35,7 +36,6 @@ public:
 	std::vector<double> columnDust;
 
 	std::vector<double> rayWeight;
-
 	std::vector<double> distanceTravelled;
 
 	std::vector<std::vector<double>> visitedCellColumn;
@@ -46,6 +46,7 @@ public:
 
 	int nRays;
 	Mesh& mesh;
+	Source& source;
 
 	const double speedOfLight = 2.99792458e10;
 	double speedOfLightInternal = speedOfLight/mesh.unitVelocity;
@@ -54,8 +55,6 @@ public:
 	void doRadiativeTransfer(double time, double dtime);
 	void outputResults(std::string& ofileName);
 	void initializeHealpixDirections(int healpixNside);
-
-	double getLuminosity(double time);
 
 protected:
 	int startCell;
