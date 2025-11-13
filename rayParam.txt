@@ -1,9 +1,9 @@
 ionisationCrossSection = 6.3e-18
 recombinationCoefficient = 2.59e-13
-maxRadius = 0.3
+maxRadius = 0.1
 sourceLocation = 0.5, 0.5, 0.5
 lumTotal = 3.e53
-timeMax = 3.e-5
+timeMax = 1.e-3
 meshFile = /Users/ntc132/eclipse-workspace/VoroLite++/output/tess_005_indices.dat
 snapFile = /Users/ntc132/eclipse-workspace/VoroLite++/output/snap_005.hdf5
 outputDirectory = /Users/ntc132/eclipse-workspace/VoroLite++/output/

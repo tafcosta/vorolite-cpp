@@ -24,7 +24,6 @@ public:
 	double HeIrecombinationCoefficient;
 	double HeIionisationCrossSection;
 
-
 	void evolveIonisation(double dtime);
 	double getIonisationRate(double volume, double flux, double nH);
 	double getRecombinationRate(double xHII, double electronDensity);

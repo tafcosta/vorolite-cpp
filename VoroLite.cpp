@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Mesh initialisation OK" << std::endl;
 
     std::cout << "Source initialisation starting..." << std::endl;
-    Source *source = new Source(sourcePosition, lightcurvefile, lumTotal);
+    Source *source = new Source(sourcePosition, lumTotal);
     std::cout << "Source initialisation OK" << std::endl;
 
     std::cout << "Rays initialisation starting..." << std::endl;
@@ -94,15 +94,10 @@ int main(int argc, char* argv[]) {
     std::cout << "Starting radiative transfer" << std::endl;
     while (time < timeMax) {
 
-        // std::cout << "Resetting fluxes..." << std::endl;
+        std::cout << "time = " << time << std::endl;
     	mesh->resetFluxes();
-        // std::cout << "Fluxes OK!" << std::endl;
-        // std::cout << "Doing radiative transfer..." << std::endl;
         rays->doRadiativeTransfer(time, dtime);
-        // std::cout << "Radiative transfer OK!" << std::endl;
-        // std::cout << "Evolving ionisation..." << std::endl;
         photochemistry->evolveIonisation(dtime);
-        // std::cout << "Ionisation OK!" << std::endl;
 
         if (time >= TimeNextOutput) {
             std::cout << "time = " << time << std::endl;

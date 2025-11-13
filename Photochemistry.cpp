@@ -25,7 +25,7 @@ void Photochemistry::evolveIonisation(double dtime) {
 
     	double localColumn     = mesh.cellLocalColumn[iCell] / mesh.protonMass * (mesh.unitMass / (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength)) * mesh.HubbleParam;
         double incomingFlux    = mesh.getIncomingFlux(iCell);
-        double nH              = mesh.getNumberDensity_in_cgs(iCell);
+        double nH              = mesh.getHNumberDensity_in_cgs(iCell);
         double volume          = mesh.getMass(iCell)/mesh.getDensity(iCell) * (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength) * mesh.HubbleParam * mesh.HubbleParam * mesh.HubbleParam;
 
         auto computeRate = [&](double x) {
@@ -34,7 +34,7 @@ void Photochemistry::evolveIonisation(double dtime) {
         		x = 1;
 
         	double ne = x * nH;
-        	double localHIcolumn = localColumn * (1 - x);
+        	double localHIcolumn = localColumn * (1 - x) * mesh.xHydrogen;
         	double flux = incomingFlux * (1 - std::exp(-localHIcolumn * HIionisationCrossSection));
         	return getIonisationRate(volume, flux, nH) - getRecombinationRate(x, ne);
         };

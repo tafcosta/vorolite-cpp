@@ -12,22 +12,13 @@
 
 class Source {
 public:
-	Source(std::vector<double> sourcePosition, std::string lightcurveFile, double lumTotal);
+	Source(std::vector<double> sourcePosition, double lumTotal);
 	virtual ~Source();
 
 	double getLuminosity(double time);
 
 	std::vector<double> sourcePosition;
 	double sourceLuminosity;
-
-private:
-
-    std::string lightcurveFile_;
-
-    std::vector<double> times_;
-    std::vector<double> luminosities_;
-
-    void loadLightcurve_();
 
 
 };

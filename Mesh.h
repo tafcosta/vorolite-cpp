@@ -28,6 +28,9 @@ public:
 	double HubbleParam;
 	double scaleFactor;
 
+	double xHydrogen = 0.76;
+	double xHelium   = 0.24;
+
     std::vector<int> cellVisitsByRay;
 
     std::vector<double> cellFlux;
@@ -61,7 +64,7 @@ public:
 
 	double getMass(int iCell);
 	double getDensity(int iCell);
-	double getNumberDensity_in_cgs(int iCell);
+	double getHNumberDensity_in_cgs(int iCell);
 	double getElectronNumberDensity_in_cgs(int iCell);
 	double getMeanMolecularWeight(int iCell);
 	double getMetallicityInSolar(int iCell);

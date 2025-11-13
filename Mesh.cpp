@@ -40,12 +40,12 @@ double Mesh::getDensity(int iCell){
 	return cellDensity[iCell];
 }
 
-double Mesh::getNumberDensity_in_cgs(int iCell){
-	return cellDensity[iCell] / protonMass * (unitMass / (scaleFactor * unitLength * scaleFactor * unitLength * scaleFactor * unitLength)) * HubbleParam * HubbleParam;
+double Mesh::getHNumberDensity_in_cgs(int iCell){
+	return xHydrogen * cellDensity[iCell] / protonMass * (unitMass / (scaleFactor * unitLength * scaleFactor * unitLength * scaleFactor * unitLength)) * HubbleParam * HubbleParam;
 }
 
 double Mesh::getElectronNumberDensity_in_cgs(int iCell){
-	return cellHIIFraction[iCell] * getNumberDensity_in_cgs(iCell);
+	return cellHIIFraction[iCell] * getHNumberDensity_in_cgs(iCell);
 }
 
 double Mesh::getMeanMolecularWeight(int iCell){
@@ -61,7 +61,7 @@ double Mesh::getSelfShieldingCorrection(int iCell) {
     const double rho_u = 4.53e-3;
     const double p     = 2.68;
 
-    double nH   = cellXH[iCell] * getNumberDensity_in_cgs(iCell);
+    double nH   = cellXH[iCell] * getHNumberDensity_in_cgs(iCell);
     double f_hi = cellHIFraction[iCell];
 
     double new_f_hi = f_hi;
