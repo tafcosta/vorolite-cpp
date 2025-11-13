@@ -4,9 +4,12 @@
 #include "Rays.h"
 #include "Source.h"
 
-void parseRayParamFile(const std::string& fileName, double& ionisationXsection, double& recombinationCoefficient, double& dustAbsorptionOpacity, double& maxRadius,
-                       std::vector<double>& sourcePosition, double& lumTotal, double& timeMax, int64_t& Nside, std::string& meshFile,
-                       std::string& snapFile, std::string& oDirectory);
+void parseRayParamFile(const std::string& fileName, double& HIionisationXsection, double& HIrecombinationCoefficient,
+		double& HeIionisationXsection,  double& HeIrecombinationCoefficient,
+		double& HeIIionisationXsection, double& HeIIrecombinationCoefficient,
+		double& dustAbsorptionOpacity,  double& maxRadius,
+        std::vector<double>& sourcePosition, double& lumTotal, double& timeMax, int64_t& Nside, std::string& meshFile,
+        std::string& snapFile, std::string& oDirectory);
 
 int main(int argc, char* argv[]) {
 
@@ -18,12 +21,12 @@ int main(int argc, char* argv[]) {
     std::string paramFile = argv[1];
     std::cout << "We are getting our parameters from \'" << paramFile << "\'" <<  std::endl;
 
-    double HIionisationCrossSection    = 0.0;
-    double HIrecombinationCoefficient  = 0.0;
-    double HeIionisationCrossSection   = 0.0;
-    double HeIrecombinationCoefficient = 0.;
-    double HeIIionisationCrossSection  = 0.0;
-    double HeIIrecombinationCoefficient = 0.;
+    double HIionisationCrossSection     = 0.0;
+    double HIrecombinationCoefficient   = 0.0;
+    double HeIionisationCrossSection    = 0.0;
+    double HeIrecombinationCoefficient  = 0.0;
+    double HeIIionisationCrossSection   = 0.0;
+    double HeIIrecombinationCoefficient = 0.0;
 
     double dustAbsorptionOpacity = 0.0;
 
@@ -35,7 +38,7 @@ int main(int argc, char* argv[]) {
     std::string meshFile, snapFile, oDirectory;
     std::filesystem::path lightcurvefile = "data/Lion_basic_ref.txt";
 
-    parseRayParamFile(paramFile, HIionisationCrossSection, HIrecombinationCoefficient, dustAbsorptionOpacity, maxRadius, sourcePosition, lumTotal, timeMax, Nside, meshFile, snapFile, oDirectory);
+    parseRayParamFile(paramFile, HIionisationCrossSection, HIrecombinationCoefficient, HeIionisationCrossSection, HeIrecombinationCoefficient, HeIIionisationCrossSection, HeIIrecombinationCoefficient, dustAbsorptionOpacity, maxRadius, sourcePosition, lumTotal, timeMax, Nside, meshFile, snapFile, oDirectory);
 
     if (maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
         std::cerr << "Error: Missing or invalid parameters in rayParam.txt" << std::endl;
@@ -144,9 +147,12 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-void parseRayParamFile(const std::string& fileName, double& ionisationCrossSection, double& recombinationCrossSection, double& dustAbsorptionOpacity, double& maxRadius,
-                       std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, int64_t& Nside, std::string& meshFile,
-                       std::string& snapFile, std::string& oDirectory) {
+void parseRayParamFile(const std::string& fileName, double& HIionisationCrossSection, double& HIrecombinationCrossSection,
+		double& HeIionisationCrossSection, double& HeIrecombinationCrossSection,
+		double& HeIIionisationCrossSection, double& HeIIrecombinationCrossSection,
+		double& dustAbsorptionOpacity, double& maxRadius,
+        std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, int64_t& Nside, std::string& meshFile,
+        std::string& snapFile, std::string& oDirectory) {
 
     std::ifstream inputFile(fileName);
     std::string line;
@@ -171,11 +177,23 @@ void parseRayParamFile(const std::string& fileName, double& ionisationCrossSecti
         value.erase(0, value.find_first_not_of(" \t"));
         value.erase(value.find_last_not_of(" \t") + 1);
 
-        if (key == "ionisationCrossSection") {
-        	ionisationCrossSection = std::stod(value);
+        if (key == "HIionisationCrossSection") {
+        	HIionisationCrossSection = std::stod(value);
         }
-        else if (key == "recombinationCoefficient") {
-        	recombinationCrossSection = std::stod(value);
+        else if (key == "HIrecombinationCoefficient") {
+        	HIrecombinationCrossSection = std::stod(value);
+        }
+        else if (key == "HeIionisationCrossSection") {
+        	HeIrecombinationCrossSection = std::stod(value);
+        }
+        else if (key == "HeIrecombinationCoefficient") {
+        	HeIrecombinationCrossSection = std::stod(value);
+        }
+        else if (key == "HeIIionisationCrossSection") {
+        	HeIIrecombinationCrossSection = std::stod(value);
+        }
+        else if (key == "HeIIrecombinationCoefficient") {
+        	HeIIrecombinationCrossSection = std::stod(value);
         }
         else if (key == "dustAbsorptionOpacity") {
         	dustAbsorptionOpacity = std::stod(value);

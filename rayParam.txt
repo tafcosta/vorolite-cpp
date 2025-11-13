@@ -1,5 +1,5 @@
-ionisationCrossSection = 6.3e-18
-recombinationCoefficient = 2.59e-13
+HIionisationCrossSection = 6.3e-18
+HIrecombinationCoefficient = 2.59e-13
 maxRadius = 0.1
 sourceLocation = 0.5, 0.5, 0.5
 lumTotal = 3.e53
