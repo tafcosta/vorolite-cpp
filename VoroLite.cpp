@@ -18,8 +18,13 @@ int main(int argc, char* argv[]) {
     std::string paramFile = argv[1];
     std::cout << "We are getting our parameters from \'" << paramFile << "\'" <<  std::endl;
 
-    double ionisationCrossSection   = 0.0;
-    double recombinationCoefficient = 0.0;
+    double HIionisationCrossSection    = 0.0;
+    double HIrecombinationCoefficient  = 0.0;
+    double HeIionisationCrossSection   = 0.0;
+    double HeIrecombinationCoefficient = 0.;
+    double HeIIionisationCrossSection  = 0.0;
+    double HeIIrecombinationCoefficient = 0.;
+
     double dustAbsorptionOpacity = 0.0;
 
     double maxRadius = 0.0;
@@ -30,7 +35,7 @@ int main(int argc, char* argv[]) {
     std::string meshFile, snapFile, oDirectory;
     std::filesystem::path lightcurvefile = "data/Lion_basic_ref.txt";
 
-    parseRayParamFile(paramFile, ionisationCrossSection, recombinationCoefficient, dustAbsorptionOpacity, maxRadius, sourcePosition, lumTotal, timeMax, Nside, meshFile, snapFile, oDirectory);
+    parseRayParamFile(paramFile, HIionisationCrossSection, HIrecombinationCoefficient, dustAbsorptionOpacity, maxRadius, sourcePosition, lumTotal, timeMax, Nside, meshFile, snapFile, oDirectory);
 
     if (maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
         std::cerr << "Error: Missing or invalid parameters in rayParam.txt" << std::endl;
@@ -48,11 +53,16 @@ int main(int argc, char* argv[]) {
     std::cout << "Source initialisation OK" << std::endl;
 
     std::cout << "Rays initialisation starting..." << std::endl;
-    Rays *rays = new Rays(ionisationCrossSection, maxRadius, sourcePosition, lumTotal, Nside, *mesh, *source);
+    Rays *rays = new Rays(HIionisationCrossSection, maxRadius, sourcePosition, lumTotal, Nside, *mesh, *source);
     std::cout << "Rays initialisation OK" << std::endl;
 
     std::cout << "Photochemistry initialisation starting..." << std::endl;
-    Photochemistry *photochemistry = new Photochemistry(*mesh, ionisationCrossSection, recombinationCoefficient);
+    Photochemistry *photochemistry = new Photochemistry(
+        *mesh,
+        HIionisationCrossSection, HIrecombinationCoefficient,
+        HeIionisationCrossSection, HeIrecombinationCoefficient,
+        HeIIionisationCrossSection, HeIIrecombinationCoefficient
+    );
     std::cout << "Photochemistry initialisation OK" << std::endl;
 
     // double unitnDens = (mesh->unitMass / (mesh->scaleFactor * mesh->unitLength * mesh->scaleFactor * mesh->unitLength * mesh->scaleFactor * mesh->unitLength)) / mesh->protonMass * mesh->HubbleParam * mesh->HubbleParam;
@@ -112,7 +122,7 @@ int main(int argc, char* argv[]) {
                     for (float coord : mesh->cellCoordinates[iCell]) {
                         outFile << coord << " ";
                     }
-                    outFile << mesh->getHIIFraction(iCell) << " " << mesh->cellIncomingFlux[iCell] << std::endl;
+                    outFile << mesh->getHIIFraction(iCell) << " " << mesh->getHeIIFraction(iCell) << " " << mesh->cellIncomingFlux[iCell] << std::endl;
                 }
                 outFile.close();
             } else {

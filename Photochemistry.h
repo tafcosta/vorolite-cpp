@@ -13,20 +13,27 @@
 
 class Photochemistry {
 public:
-	Photochemistry(Mesh& mesh, double ionisationCrossSection, double recombinationCoefficient);
-	virtual ~Photochemistry();
+    Photochemistry(Mesh& mesh, double HIcross, double HIrecomb,
+                   double HeIcross, double HeIrecomb,
+                   double HeIIcross, double HeIIrecomb);	virtual ~Photochemistry();
 
 	Mesh& mesh;
 
-	double HIrecombinationCoefficient;
-	double HIionisationCrossSection;
+    enum class Species { HI, HeII, HeIII };
 
-	double HeIrecombinationCoefficient;
-	double HeIionisationCrossSection;
+    double HIrecombinationCoefficient;
+    double HIionisationCrossSection;
 
-	void evolveIonisation(double dtime);
-	double getIonisationRate(double volume, double flux, double nH);
-	double getRecombinationRate(double xHII, double electronDensity);
+    double HeIrecombinationCoefficient;
+    double HeIionisationCrossSection;
+
+    double HeIIrecombinationCoefficient;
+    double HeIIionisationCrossSection;
+
+    void evolveIonisation(double dtime);
+
+    double getIonisationRate(double volume, double flux, double nH);
+    double getRecombinationRate(Species species, double fraction, double electronDensity);
 };
 
 #endif /* PHOTOCHEMISTRY_H_ */

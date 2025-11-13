@@ -18,8 +18,11 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     cellFlux.resize(numCells, 0.0);
     cellIncomingFlux.resize(numCells, 0.0);
     cellLocalColumn.resize(numCells, 0.0);
+
 	cellHIIFraction.resize(numCells, 0.0);
 	cellHeIIFraction.resize(numCells, 0.0);
+	cellHeIIIFraction.resize(numCells, 0.0);
+
 	fluxOfRayInCell.resize(numCells);       //The first dimension should be number of rays
 
     //doSelfShieldingCorrection();
@@ -42,6 +45,11 @@ double Mesh::getDensity(int iCell){
 
 double Mesh::getHNumberDensity_in_cgs(int iCell){
 	return xHydrogen * cellDensity[iCell] / protonMass * (unitMass / (scaleFactor * unitLength * scaleFactor * unitLength * scaleFactor * unitLength)) * HubbleParam * HubbleParam;
+}
+
+double Mesh::getHeNumberDensity_in_cgs(int iCell) {
+    double heliumMass = 4.0 * protonMass;
+    return xHelium * cellDensity[iCell] / heliumMass * (unitMass / (scaleFactor * unitLength * scaleFactor * unitLength * scaleFactor * unitLength)) * HubbleParam * HubbleParam;
 }
 
 double Mesh::getElectronNumberDensity_in_cgs(int iCell){
@@ -105,6 +113,26 @@ void Mesh::setHIIFraction(int iCell, double newValue){
 		cellHIIFraction[iCell] = 1.e-5;
 }
 
+void Mesh::setHeIIFraction(int iCell, double newValue){
+	cellHeIIFraction[iCell] = newValue;
+
+	if(newValue > 1)
+		cellHeIIFraction[iCell] = 1;
+
+	if(newValue < 1e-5)
+		cellHeIIFraction[iCell] = 1.e-5;
+}
+
+void Mesh::setHeIIIFraction(int iCell, double newValue){
+	cellHeIIIFraction[iCell] = newValue;
+
+	if(newValue > 1)
+		cellHeIIIFraction[iCell] = 1;
+
+	if(newValue < 1e-5)
+		cellHeIIIFraction[iCell] = 1.e-5;
+}
+
 double Mesh::getFlux(int iCell){
 	return cellFlux[iCell];
 }
@@ -119,6 +147,10 @@ double Mesh::getHIIFraction(int iCell){
 
 double Mesh::getHeIIFraction(int iCell){
 	return cellHeIIFraction[iCell];
+}
+
+double Mesh::getHeIIIFraction(int iCell){
+	return cellHeIIIFraction[iCell];
 }
 
 int Mesh::getIndex(int iCell){

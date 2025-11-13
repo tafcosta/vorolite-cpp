@@ -41,7 +41,7 @@ public:
 	std::vector<double> cellHIFraction;
 
     std::vector<double> cellHeIIFraction;
-
+    std::vector<double> cellHeIIIFraction;
 
 	std::vector<double> cellElectronFraction;
 	std::vector<double> cellXH;
@@ -61,10 +61,13 @@ public:
 
 	double getHIIFraction(int iCell);
 	double getHeIIFraction(int iCell);
+	double getHeIIIFraction(int iCell);
 
 	double getMass(int iCell);
 	double getDensity(int iCell);
 	double getHNumberDensity_in_cgs(int iCell);
+	double getHeNumberDensity_in_cgs(int iCell);
+
 	double getElectronNumberDensity_in_cgs(int iCell);
 	double getMeanMolecularWeight(int iCell);
 	double getMetallicityInSolar(int iCell);
@@ -75,6 +78,9 @@ public:
 	int getIndex(int iCell);
 
 	void setHIIFraction(int iCell, double newValue);
+	void setHeIIFraction(int iCell, double newValue);
+	void setHeIIIFraction(int iCell, double newValue);
+
     void resetFluxes();
     void resizeFluxOfRayInCell(int iRay, int numVisitedCells);
 	void doSelfShieldingCorrection();
