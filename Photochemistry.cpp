@@ -26,8 +26,8 @@ Photochemistry::Photochemistry(Mesh& mesh,
 void Photochemistry::evolveIonisation(double dtime) {
 
     const double sigma_HI   = HIionisationCrossSection;
-    const double sigma_HeI  = 7.83e-18;
-    const double sigma_HeII = 1.60e-18;
+    const double sigma_HeI  = HeIionisationCrossSection;
+    const double sigma_HeII = HeIIionisationCrossSection;
 
     for (int iCell = 0; iCell < mesh.numCells; ++iCell) {
 
@@ -153,10 +153,10 @@ double Photochemistry::getRecombinationRate(Species species, double fraction, do
             alpha = HIrecombinationCoefficient;
             break;
         case Species::HeII:
-            alpha = HeIrecombinationCoefficient; // HeII recombines to HeI
+            alpha = HeIrecombinationCoefficient;
             break;
         case Species::HeIII:
-            alpha = HeIIrecombinationCoefficient; // HeIII recombines to HeII
+            alpha = HeIIrecombinationCoefficient;
             break;
     }
 

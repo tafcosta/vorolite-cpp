@@ -451,7 +451,7 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 	{
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
 
-			mesh.cellIncomingFlux[visitedCells[iRay][i]] += source.getLuminosity(0.0) * rayWeight[iRay] * std::exp(-ionisationCrossSection_inInternalUnits * columnHI[iRay] - dustAbsorptionOpacity_inInternalUnits * columnDust[iRay]);
+			mesh.cellIncomingFlux[visitedCells[iRay][i]] += source.getLuminosity(time) * rayWeight[iRay] * std::exp(-ionisationCrossSection_inInternalUnits * columnHI[iRay] - dustAbsorptionOpacity_inInternalUnits * columnDust[iRay]);
 
 			columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.getHIIFraction(visitedCells[iRay][i]));
 			//columnDust[iRay] += visitedCellColumn[iRay][i] * mesh.getMetallicityInSolar(visitedCells[iRay][i]) * (1 - mesh.getHIIFraction(visitedCells[iRay][i]));
