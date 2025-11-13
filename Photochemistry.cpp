@@ -49,12 +49,14 @@ void Photochemistry::evolveIonisation(double dtime) {
         double volume          = mesh.getMass(iCell)/mesh.getDensity(iCell) * (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength) * mesh.HubbleParam * mesh.HubbleParam * mesh.HubbleParam;
 
         auto computeRateH = [&](double x) -> double {
+
             if (x > 1.0) x = 1.0;
             if (x < 0.0) x = 0.0;
             double ne = x * nH + (yHe + 2.0 * zHe) * nHe;
             double ion = getIonisationRate(volume, incomingFlux * sigma_HI, nH);
             double rec = getRecombinationRate(Species::HI, x, ne);
             return ion - rec;
+
         };
 
         auto computeRateHeI = [&](double y) -> double {
@@ -126,6 +128,9 @@ void Photochemistry::evolveIonisation(double dtime) {
         xH  += delta_x;
         yHe += delta_y;
         zHe += delta_z;
+
+        if(incomingFlux > 0)
+        	std::cout << xH << std::endl;
 
         if (xH < 0.0) xH = 0.0; if (xH > 1.0) xH = 1.0;
         if (yHe < 0.0) yHe = 0.0;
