@@ -57,7 +57,12 @@ double Mesh::getElectronNumberDensity_in_cgs(int iCell){
 }
 
 double Mesh::getMeanMolecularWeight(int iCell){
-	return 1./(1 + cellHIIFraction[iCell]);
+    double xHII   = getHIIFraction(iCell);
+    double yHeII  = getHeIIFraction(iCell);
+    double zHeIII = getHeIIIFraction(iCell);
+
+    double muInv = xHydrogen * (1.0 + xHII) + (xHelium / 4.0) * (1.0 + yHeII + 2.0 * zHeIII);
+    return 1.0 / muInv;
 }
 
 double Mesh::getMetallicityInSolar(int iCell){
