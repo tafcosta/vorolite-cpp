@@ -18,8 +18,12 @@ public:
 
 	Mesh& mesh;
 
-	double recombinationCoefficient;
-	double ionisationCrossSection;
+	double HIrecombinationCoefficient;
+	double HIionisationCrossSection;
+
+	double HeIrecombinationCoefficient;
+	double HeIionisationCrossSection;
+
 
 	void evolveIonisation(double dtime);
 	double getIonisationRate(double volume, double flux, double nH);

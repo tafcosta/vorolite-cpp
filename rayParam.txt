@@ -1,9 +1,9 @@
 ionisationCrossSection = 6.3e-18
 recombinationCoefficient = 2.59e-13
-maxRadius = 0.02555002555002555
-sourceLocation = 249.90869140625, 249.9569854736328, 249.9822540283203
+maxRadius = 0.3
+sourceLocation = 0.5, 0.5, 0.5
 lumTotal = 3.e53
 timeMax = 3.e-5
-meshFile = /home/lt589/rds/rds-dirac-dp012/lt589/GGBH_project/DeboraMillennium_NoAGN/tess_126_indices.dat
-snapFile = /home/lt589/rds/rds-dirac-dp012/lt589/GGBH_project/DeboraMillennium_NoAGN/snap_126.hdf5
-outputDirectory = /home/lt589/vorolite-rt/test/
+meshFile = /Users/ntc132/eclipse-workspace/VoroLite++/output/tess_005_indices.dat
+snapFile = /Users/ntc132/eclipse-workspace/VoroLite++/output/snap_005.hdf5
+outputDirectory = /Users/ntc132/eclipse-workspace/VoroLite++/output/

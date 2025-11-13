@@ -36,6 +36,10 @@ public:
     std::vector<double> cellLocalColumn;
     std::vector<double> cellHIIFraction;
 	std::vector<double> cellHIFraction;
+
+    std::vector<double> cellHeIIFraction;
+
+
 	std::vector<double> cellElectronFraction;
 	std::vector<double> cellXH;
 	std::vector<double> cellMetallicity;
@@ -53,6 +57,8 @@ public:
 	void setFluxOfRayInCell(int iRay, int iCell, double newValue);
 
 	double getHIIFraction(int iCell);
+	double getHeIIFraction(int iCell);
+
 	double getMass(int iCell);
 	double getDensity(int iCell);
 	double getNumberDensity_in_cgs(int iCell);

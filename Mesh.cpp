@@ -19,9 +19,10 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     cellIncomingFlux.resize(numCells, 0.0);
     cellLocalColumn.resize(numCells, 0.0);
 	cellHIIFraction.resize(numCells, 0.0);
-	fluxOfRayInCell.resize(numCells); //The first dimension should be number of rays
+	cellHeIIFraction.resize(numCells, 0.0);
+	fluxOfRayInCell.resize(numCells);       //The first dimension should be number of rays
 
-    doSelfShieldingCorrection();
+    //doSelfShieldingCorrection();
 
 	IdPairs       = readVoronoiIndices(fileMeshIndices);
 	neighbourList = collectNeighbours(IdPairs, cellIDs);
@@ -116,12 +117,15 @@ double Mesh::getHIIFraction(int iCell){
 	return cellHIIFraction[iCell];
 }
 
+double Mesh::getHeIIFraction(int iCell){
+	return cellHeIIFraction[iCell];
+}
+
 int Mesh::getIndex(int iCell){
 	return cellIndices[iCell];
 }
 
 void Mesh::getNumCellsInRegion(){
-
     std::vector<std::vector<float>> filteredCoordinates;
     std::vector<std::vector<float>> filteredVelocities;
     std::vector<double> filteredDensity;
@@ -212,10 +216,10 @@ void Mesh::readSnapshot(const std::string& snapshotBase) {
         appendIDs(file);
         appendCoordinates(file);
         appendVelocities(file);
-        appendMetallicity(file);
-        appendHIFraction(file);
-        appendElectronFraction(file);
-        appendXH(file);
+        //appendMetallicity(file);
+        //appendHIFraction(file);
+        //appendElectronFraction(file);
+        //appendXH(file);
 
         numCells = cellDensity.size();
         cellIndices.resize(numCells);
@@ -436,6 +440,7 @@ void Mesh::appendMass(H5::H5File& file) {
     cellMass.insert(cellMass.end(), buffer.begin(), buffer.end());
 }
 
+/*
 void Mesh::appendMetallicity(H5::H5File& file) {
     H5::DataSet dataset = file.openDataSet("/PartType0/GFM_Metallicity");
     H5::DataSpace dataspace = dataset.getSpace();
@@ -448,6 +453,7 @@ void Mesh::appendMetallicity(H5::H5File& file) {
 
     dataset.read(cellMetallicity.data() + offset, H5::PredType::NATIVE_DOUBLE);
 }
+*/
 
 void Mesh::appendIDs(H5::H5File& file) {
     H5::DataSet dataset = file.openDataSet("/PartType0/ParticleIDs");
@@ -499,6 +505,7 @@ void Mesh::appendVelocities(H5::H5File& file) {
     }
 }
 
+/*
 void Mesh::appendHIFraction(H5::H5File& file) {
     H5::DataSet dataset = file.openDataSet("/PartType0/NeutralHydrogenAbundance");
     H5::DataSpace space = dataset.getSpace();
@@ -522,7 +529,9 @@ void Mesh::appendElectronFraction(H5::H5File& file) {
     dataset.read(buffer.data(), H5::PredType::NATIVE_DOUBLE);
     cellElectronFraction.insert(cellElectronFraction.end(), buffer.begin(), buffer.end());
 }
+*/
 
+/*
 void Mesh::appendXH(H5::H5File& file) {
     H5::DataSet dataset = file.openDataSet("/PartType0/GFM_Metals");
     H5::DataSpace space = dataset.getSpace();
@@ -538,6 +547,7 @@ void Mesh::appendXH(H5::H5File& file) {
         cellXH.push_back(XH);
     }
 }
+*/
 
 std::vector<std::string> Mesh::getSnapshotFiles(const std::string& snapshotPath) {
     std::vector<std::string> files;

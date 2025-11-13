@@ -8,7 +8,7 @@
 #include "Photochemistry.h"
 
 
-Photochemistry::Photochemistry(Mesh& mesh, double ionisationCrossSection, double recombinationCoefficient) : mesh(mesh), ionisationCrossSection(ionisationCrossSection), recombinationCoefficient(recombinationCoefficient) {
+Photochemistry::Photochemistry(Mesh& mesh, double ionisationCrossSection, double recombinationCoefficient) : mesh(mesh), HIionisationCrossSection(ionisationCrossSection), HIrecombinationCoefficient(recombinationCoefficient) {
 	// TODO Auto-generated constructor stub
 }
 
@@ -19,7 +19,10 @@ void Photochemistry::evolveIonisation(double dtime) {
     		continue;
 
     	double dtime_in_cgs    = dtime * mesh.unitLength / mesh.unitVelocity;
+
         double x0              = mesh.getHIIFraction(iCell);
+        double y0              = mesh.getHeIIFraction(iCell);
+
     	double localColumn     = mesh.cellLocalColumn[iCell] / mesh.protonMass * (mesh.unitMass / (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength)) * mesh.HubbleParam;
         double incomingFlux    = mesh.getIncomingFlux(iCell);
         double nH              = mesh.getNumberDensity_in_cgs(iCell);
@@ -32,7 +35,7 @@ void Photochemistry::evolveIonisation(double dtime) {
 
         	double ne = x * nH;
         	double localHIcolumn = localColumn * (1 - x);
-        	double flux = incomingFlux * (1 - std::exp(-localHIcolumn * ionisationCrossSection));
+        	double flux = incomingFlux * (1 - std::exp(-localHIcolumn * HIionisationCrossSection));
         	return getIonisationRate(volume, flux, nH) - getRecombinationRate(x, ne);
         };
 
@@ -54,7 +57,7 @@ double Photochemistry::getIonisationRate(double volume, double flux, double nH){
 }
 
 double Photochemistry::getRecombinationRate(double xHII, double electronDensity){
-	return  electronDensity * xHII * recombinationCoefficient;
+	return  electronDensity * xHII * HIrecombinationCoefficient;
 }
 
 Photochemistry::~Photochemistry() {
