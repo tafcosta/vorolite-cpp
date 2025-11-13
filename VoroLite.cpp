@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
                     for (float coord : mesh->cellCoordinates[iCell]) {
                         outFile << coord << " ";
                     }
-                    outFile << mesh->getHIIFraction(iCell) << " " << mesh->getHeIIFraction(iCell) << " " << mesh->cellIncomingFlux[iCell] << std::endl;
+                    outFile << mesh->getHIIFraction(iCell) << " " << mesh->getHeIIFraction(iCell) << " " << mesh->getHeIIIFraction(iCell) << " " << mesh->cellIncomingFlux[iCell] << std::endl;
                 }
                 outFile.close();
             } else {
