@@ -31,8 +31,8 @@ int main(int argc, char* argv[]) {
     double dustAbsorptionOpacity = 0.0;
 
     double maxRadius = 0.0;
-    double lumTotal = 0.0;
-    double timeMax = 0.0;
+    double lumTotal  = 0.0;
+    double timeMax   = 0.0;
     int64_t Nside = 4;
     std::vector<double> sourcePosition(3, 0.5);
     std::string meshFile, snapFile, oDirectory;
@@ -49,15 +49,15 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Mesh initialisation starting..." << std::endl;
     Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, sourcePosition);
-    std::cout << "Mesh initialisation OK" << std::endl;
+    std::cout << "Mesh initialisation OK." << std::endl;
 
     std::cout << "Source initialisation starting..." << std::endl;
     Source *source = new Source(sourcePosition, lumTotal);
-    std::cout << "Source initialisation OK" << std::endl;
+    std::cout << "Source initialisation OK." << std::endl;
 
     std::cout << "Rays initialisation starting..." << std::endl;
     Rays *rays = new Rays(HIionisationCrossSection, maxRadius, sourcePosition, lumTotal, Nside, *mesh, *source);
-    std::cout << "Rays initialisation OK" << std::endl;
+    std::cout << "Rays initialisation OK." << std::endl;
 
     std::cout << "Photochemistry initialisation starting..." << std::endl;
     Photochemistry *photochemistry = new Photochemistry(
@@ -68,10 +68,6 @@ int main(int argc, char* argv[]) {
     );
     std::cout << "Photochemistry initialisation OK" << std::endl;
 
-    // double unitnDens = (mesh->unitMass / (mesh->scaleFactor * mesh->unitLength * mesh->scaleFactor * mesh->unitLength * mesh->scaleFactor * mesh->unitLength)) / mesh->protonMass * mesh->HubbleParam * mesh->HubbleParam;
-    // std::cout << "The units for number density is equal to " << unitnDens << std::endl;
-
-    // Initial output at t=0, for reference
     std::ostringstream filename;
     filename << oDirectory << "HIIfraction_init.txt";
 
@@ -90,14 +86,17 @@ int main(int argc, char* argv[]) {
     }
 
     double time = 0;
-    double dtime   = 0.01;
+    double dtime   = 0.5;
 
     double printInterval = timeMax/100;
     double TimeNextOutput = printInterval;
 
     int snapshotIndex = 0;
 
+    std::cout << "Setting up rays..." << std::endl;
     rays->calculateRays();
+    std::cout << "Setting up rays OK." << std::endl;
+
 
     std::ostringstream ofName;
     ofName << oDirectory << "rays_output_" << snapshotIndex << ".txt";

@@ -15,7 +15,6 @@ Rays::Rays(double ionisationCrossSection, double maxRadius, std::vector<double> 
 	dustAbsorptionOpacity_inInternalUnits  = dustAbsorptionOpacity  * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
-	std::cout << "startCell = " << startCell << std::endl;
 
 	setNumRays();
 	rayTargetCell = std::vector<int> (nRays);
@@ -409,7 +408,7 @@ double Rays::distanceSquared(std::vector<float>& a, std::vector<float>& b){
 }
 
 void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
-	columnHI[iRay] = 0.;
+	columnHI[iRay]   = 0.;
 	columnDust[iRay] = 0.;
 
 	if(timeDependent){
@@ -456,7 +455,8 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 			columnHI[iRay] += visitedCellColumn[iRay][i] * (1 - mesh.getHIIFraction(visitedCells[iRay][i]));
 			//columnDust[iRay] += visitedCellColumn[iRay][i] * mesh.getMetallicityInSolar(visitedCells[iRay][i]) * (1 - mesh.getHIIFraction(visitedCells[iRay][i]));
 
-		    mesh.cellFlux[visitedCells[iRay][i]] += source.getLuminosity(0.0) * rayWeight[iRay] * std::exp(-ionisationCrossSection_inInternalUnits * columnHI[iRay] - dustAbsorptionOpacity_inInternalUnits * columnDust[iRay]);
+		    mesh.cellFlux[visitedCells[iRay][i]] += source.getLuminosity(time) * rayWeight[iRay] * std::exp(-ionisationCrossSection_inInternalUnits * columnHI[iRay] - dustAbsorptionOpacity_inInternalUnits * columnDust[iRay]);
+
 		    if(visitedCells[iRay][i] == rayTargetCell[iRay])
 				mesh.cellLocalColumn[rayTargetCell[iRay]] = visitedCellColumn[iRay][i];
 
