@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
             for (float coord : mesh->cellCoordinates[iCell]) {
                 outFile << coord << " ";
             }
-            outFile << mesh->getHIIFraction(iCell) << " " << mesh->cellIncomingFlux[iCell] << std::endl;
+            outFile << mesh->getHIIFraction(iCell) << " " << mesh->cellIncomingPhotonRate[iCell] << std::endl;
         }
         outFile.close();
     } else {
@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
     }
 
     double time = 0;
-    double dtime   = 10;
+    double dtime  = 1e-10;
 
     double printInterval = timeMax/100;
     double TimeNextOutput = printInterval;
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
                     for (float coord : mesh->cellCoordinates[iCell]) {
                         outFile << coord << " ";
                     }
-                    outFile << mesh->getHIIFraction(iCell) << " " << mesh->getHeIIFraction(iCell) << " " << mesh->getHeIIIFraction(iCell) << " " << mesh->cellIncomingFlux[iCell] << std::endl;
+                    outFile << mesh->getHIIFraction(iCell) << " " << mesh->getHeIIFraction(iCell) << " " << mesh->getHeIIIFraction(iCell) << " " << mesh->cellIncomingPhotonRate[iCell] << std::endl;
                 }
                 outFile.close();
             } else {

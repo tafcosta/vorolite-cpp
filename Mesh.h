@@ -33,8 +33,9 @@ public:
 
     std::vector<int> cellVisitsByRay;
 
-    std::vector<double> cellFlux;
-    std::vector<double> cellIncomingFlux;
+    std::vector<double> cellPhotonRate;
+    std::vector<double> cellIncomingPhotonRate;
+    std::vector<double> cellAbsorbedPhotonRate;
 
     std::vector<double> cellLocalColumn;
     std::vector<double> cellHIIFraction;
@@ -73,7 +74,8 @@ public:
 	double getMetallicityInSolar(int iCell);
 	double getSelfShieldingCorrection(int iCell);
     double getFlux(int iCell);
-    double getIncomingFlux(int iCell);
+    double getIncomingPhotonRate(int iCell);
+    double getAbsorbedPhotonRate(int iCell);
 
 	int getIndex(int iCell);
 

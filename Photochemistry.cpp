@@ -34,30 +34,47 @@ void Photochemistry::evolveIonisation(double dtime) {
     	if(mesh.cellLocalColumn[iCell] == 0)
     		continue;
 
-    	double dtime_in_cgs    = dtime * mesh.unitLength / mesh.unitVelocity;
+        const double dtime_in_cgs = dtime * mesh.unitLength / mesh.unitVelocity;
 
         double xH  = mesh.getHIIFraction(iCell);
         double yHe = mesh.getHeIIFraction(iCell);
         double zHe = mesh.getHeIIIFraction(iCell);
 
-    	double localColumn     = mesh.cellLocalColumn[iCell] / mesh.protonMass * (mesh.unitMass / (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength)) * mesh.HubbleParam;
-        double incomingFlux    = mesh.getIncomingFlux(iCell);
+        const double NdotAbsorbed = mesh.cellAbsorbedPhotonRate[iCell];
 
-        double nH              = mesh.getHNumberDensity_in_cgs(iCell);
-        double nHe             = mesh.getHeNumberDensity_in_cgs(iCell);
+        // (May be unused for H now; keep if you still need it for something else)
+        const double localColumn = mesh.cellLocalColumn[iCell] / mesh.protonMass *
+            (mesh.unitMass / (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength)) *
+            mesh.HubbleParam;
 
-        double volume          = mesh.getMass(iCell)/mesh.getDensity(iCell) * (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength) * mesh.HubbleParam * mesh.HubbleParam * mesh.HubbleParam;
+        const double nH  = mesh.getHNumberDensity_in_cgs(iCell);   // [cm^-3]
+        const double nHe = mesh.getHeNumberDensity_in_cgs(iCell);  // [cm^-3]
+
+        const double volume =
+            mesh.getMass(iCell) / mesh.getDensity(iCell) *
+            (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength) * mesh.HubbleParam * mesh.HubbleParam * mesh.HubbleParam; // [cm^3] if units are consistent
 
         auto computeRateH = [&](double x) -> double {
 
+        	double ion = 0.;
             if (x > 1.0) x = 1.0;
             if (x < 0.0) x = 0.0;
+
             double ne = x * nH + (yHe + 2.0 * zHe) * nHe;
-            double ion = getIonisationRate(volume, incomingFlux * sigma_HI, nH);
+
+            // --- Photoionisation term ---
+            // NdotAbsorbed must be photons/s absorbed in this cell (from RT loop)
+            // Convert absorbed photons/s -> fraction rate 1/s
+            double ion_rate = 0.0;
+            if (nH > 0.0 && volume > 0.0) {
+                ion = NdotAbsorbed / (nH * volume);  // [1/s]
+            }
+
             double rec = getRecombinationRate(Species::HI, x, ne);
-            return ion;//ion - rec;
+            return ion - rec;
 
         };
+
 
 /*        auto computeRateHeI = [&](double y) -> double {
             if (y > 1.0) y = 1.0;
@@ -135,8 +152,6 @@ void Photochemistry::evolveIonisation(double dtime) {
         //if (zHe < 0.0) zHe = 0.0;
         //double he_sum = yHe + zHe;
         //if (he_sum > 1.0) { yHe /= he_sum; zHe /= he_sum; }
-
-        std::cout << "Volume = " << volume << ", dTime = " << dtime_in_cgs << ", scaleFactor, h = " << mesh.scaleFactor << " " << mesh.HubbleParam << std::endl;
 
         mesh.setHIIFraction(iCell, xH);
         mesh.setHeIIFraction(iCell, yHe);

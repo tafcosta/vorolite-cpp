@@ -15,8 +15,9 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 	getNumCellsInRegion();
 
 	cellVisitsByRay.resize(numCells, 0);
-    cellFlux.resize(numCells, 0.0);
-    cellIncomingFlux.resize(numCells, 0.0);
+    cellPhotonRate.resize(numCells, 0.0);
+    cellIncomingPhotonRate.resize(numCells, 0.0);
+    cellAbsorbedPhotonRate.resize(numCells, 0.0);
     cellLocalColumn.resize(numCells, 0.0);
 
 	cellHIIFraction.resize(numCells, 0.0);
@@ -95,7 +96,7 @@ double Mesh::getSelfShieldingCorrection(int iCell) {
 void Mesh::doSelfShieldingCorrection() {
     for (int iCell = 0; iCell < numCells; ++iCell) {
         double newcellHIFraction = getSelfShieldingCorrection(iCell);
-        cellHIFraction[iCell] = newcellHIFraction;
+        cellHIFraction[iCell]  = newcellHIFraction;
         cellHIIFraction[iCell] = 1.0 - newcellHIFraction;
     }
 }
@@ -139,11 +140,15 @@ void Mesh::setHeIIIFraction(int iCell, double newValue){
 }
 
 double Mesh::getFlux(int iCell){
-	return cellFlux[iCell];
+	return cellPhotonRate[iCell];
 }
 
-double Mesh::getIncomingFlux(int iCell){
-	return cellIncomingFlux[iCell];
+double Mesh::getIncomingPhotonRate(int iCell){
+	return cellIncomingPhotonRate[iCell];
+}
+
+double Mesh::getAbsorbedPhotonRate(int iCell){
+	return cellAbsorbedPhotonRate[iCell];
 }
 
 double Mesh::getHIIFraction(int iCell){
@@ -192,11 +197,11 @@ void Mesh::getNumCellsInRegion(){
 	}
 
     cellCoordinates = std::move(filteredCoordinates);
-    cellVelocities = std::move(filteredVelocities);
-    cellDensity = std::move(filteredDensity);
-    cellIDs = std::move(filteredIDs);
-    cellIndices = std::move(filteredCellIndices);
-    cellMass = std::move(filteredMasses);
+    cellVelocities  = std::move(filteredVelocities);
+    cellDensity     = std::move(filteredDensity);
+    cellIDs         = std::move(filteredIDs);
+    cellIndices     = std::move(filteredCellIndices);
+    cellMass        = std::move(filteredMasses);
 
     numCells = cellDensity.size();
 
@@ -205,8 +210,9 @@ void Mesh::getNumCellsInRegion(){
 
 void Mesh::resetFluxes(){
 	for(int iCell = 0; iCell < numCells; iCell++){
-		cellFlux[iCell] = 0.;
-		cellIncomingFlux[iCell] = 0.;
+		cellPhotonRate[iCell] = 0.;
+		cellIncomingPhotonRate[iCell] = 0.;
+		cellAbsorbedPhotonRate[iCell] = 0.;
 	}
 }
 
