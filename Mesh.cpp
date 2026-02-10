@@ -241,11 +241,17 @@ void Mesh::readSnapshot(const std::string& snapshotBase) {
         // }
 
         bool headerRead = false;
+        bool cosmo = false;
 
         H5::H5File file(snapshotBase, H5F_ACC_RDONLY);
         if (!headerRead) {
             readHeader(file);
             headerRead = true;
+        }
+
+        if(!cosmo){
+        	scaleFactor = 1.0;
+        	HubbleParam = 1.0;
         }
 
         appendDensity(file);

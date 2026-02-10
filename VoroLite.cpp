@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
     }
 
     double time = 0;
-    double dtime   = 0.5;
+    double dtime   = 10;
 
     double printInterval = timeMax/100;
     double TimeNextOutput = printInterval;

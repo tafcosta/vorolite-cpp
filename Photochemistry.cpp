@@ -136,6 +136,8 @@ void Photochemistry::evolveIonisation(double dtime) {
         //double he_sum = yHe + zHe;
         //if (he_sum > 1.0) { yHe /= he_sum; zHe /= he_sum; }
 
+        std::cout << "Volume = " << volume << ", dTime = " << dtime_in_cgs << ", scaleFactor, h = " << mesh.scaleFactor << " " << mesh.HubbleParam << std::endl;
+
         mesh.setHIIFraction(iCell, xH);
         mesh.setHeIIFraction(iCell, yHe);
         mesh.setHeIIIFraction(iCell, zHe);
