@@ -83,7 +83,7 @@ public:
 	void setHeIIFraction(int iCell, double newValue);
 	void setHeIIIFraction(int iCell, double newValue);
 
-    void resetFluxes();
+    void resetPhotons();
     void resizeFluxOfRayInCell(int iRay, int numVisitedCells);
 	void doSelfShieldingCorrection();
 

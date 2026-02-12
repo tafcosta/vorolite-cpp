@@ -16,7 +16,6 @@ Rays::Rays(double ionisationCrossSection, double maxRadius, std::vector<double> 
 
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
 
-	//TIAGO TEST
 	std::cout << "Source host cell ID = " << startCell << std::endl;
 	//mesh.setHIIFraction(startCell, 1.);
 
@@ -123,6 +122,13 @@ void Rays::assignToHealpix(int64_t healpixNside) {
 		int64_t iPix = rayToPixel[i];
 		rayWeight[i] = 1./raysPerPixel[iPix] * omegaPix / (4.0 * M_PI) ;
 	}
+
+	//Check weights add up
+	double rayWeightTotal = 0.;
+	for (int i = 0; i < nRays; ++i) {
+		rayWeightTotal += rayWeight[i];
+	}
+	std::cout << "Total ray weights add up to " << rayWeightTotal << std::endl;
 }
 
 void Rays::initializePositions() {
@@ -448,10 +454,7 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 		for (int i = 0; i < visitedCells[iRay].size(); i++)
 			mesh.setFluxOfRayInCell(iRay, i, fluxOfRay[i]);
 
-	}
-	// in current version, above is not used and instead we use below (time-independent computation)
-	else
-	{
+	} else {
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
 
 		    int iCell        = visitedCells[iRay][i];
@@ -460,7 +463,10 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 		    double tauIn     = ionisationCrossSection_inInternalUnits * columnHI[iRay]; /* + dustAbsorptionOpacity_inInternalUnits * columnDust[iRay]; */
 		    double NdotIn    = Ndot0 * std::exp(-tauIn);
 
-		    double dColumnHI = visitedCellColumn[iRay][i] * (1.0 - mesh.getHIIFraction(iCell));
+		    double neutral = 1.0 - mesh.getHIIFraction(iCell);
+		    neutral = std::max(neutral, 1e-12);
+		    double dColumnHI = visitedCellColumn[iRay][i] * neutral;
+
 		    double dtau      = ionisationCrossSection_inInternalUnits * dColumnHI
 		                     /*+ dustAbsorptionOpacity_inInternalUnits * dColDust*/;
 

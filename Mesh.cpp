@@ -203,12 +203,17 @@ void Mesh::getNumCellsInRegion(){
     cellIndices     = std::move(filteredCellIndices);
     cellMass        = std::move(filteredMasses);
 
+    //check values
+    /*for(int iCell = 0; iCell < cellDensity.size(); iCell++)
+    	std::cout << "nH = " << cellDensity[iCell] << std::endl;*/
+
+
     numCells = cellDensity.size();
 
     std::cout << "Reduced to " << numCells << " cells within maxRadius = " << maxRadius << std::endl;
 }
 
-void Mesh::resetFluxes(){
+void Mesh::resetPhotons(){
 	for(int iCell = 0; iCell < numCells; iCell++){
 		cellPhotonRate[iCell] = 0.;
 		cellIncomingPhotonRate[iCell] = 0.;

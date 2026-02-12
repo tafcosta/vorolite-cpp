@@ -24,15 +24,11 @@ Photochemistry::Photochemistry(Mesh& mesh,
 }
 
 void Photochemistry::evolveIonisation(double dtime) {
-
     const double sigma_HI   = HIionisationCrossSection;
     const double sigma_HeI  = HeIionisationCrossSection;
     const double sigma_HeII = HeIIionisationCrossSection;
 
     for (int iCell = 0; iCell < mesh.numCells; ++iCell) {
-
-    	if(mesh.cellLocalColumn[iCell] == 0)
-    		continue;
 
         const double dtime_in_cgs = dtime * mesh.unitLength / mesh.unitVelocity;
 
@@ -42,11 +38,6 @@ void Photochemistry::evolveIonisation(double dtime) {
 
         const double NdotAbsorbed = mesh.cellAbsorbedPhotonRate[iCell];
 
-        // (May be unused for H now; keep if you still need it for something else)
-        const double localColumn = mesh.cellLocalColumn[iCell] / mesh.protonMass *
-            (mesh.unitMass / (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength)) *
-            mesh.HubbleParam;
-
         const double nH  = mesh.getHNumberDensity_in_cgs(iCell);   // [cm^-3]
         const double nHe = mesh.getHeNumberDensity_in_cgs(iCell);  // [cm^-3]
 
@@ -54,11 +45,89 @@ void Photochemistry::evolveIonisation(double dtime) {
             mesh.getMass(iCell) / mesh.getDensity(iCell) *
             (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength) * mesh.HubbleParam * mesh.HubbleParam * mesh.HubbleParam; // [cm^3] if units are consistent
 
+
+        // Values from RT for this cell (must be reset and recomputed each RT call)
+        const double Nin  = mesh.cellIncomingPhotonRate[iCell];  // photons/s
+        const double Nabs = mesh.cellAbsorbedPhotonRate[iCell];  // photons/s
+
+        // Old state (start of the chemistry step)
+        const double x_old       = xH;
+        const double neutral_old = std::max(1.0 - x_old, 1e-12);
+
+        // Infer an "effective" optical depth for the cell from RT results:
+        // Nabs = Nin * (1 - exp(-tau_eff))  => tau_eff = -ln(1 - Nabs/Nin)
+        double tau_eff = 0.0;
+        if (Nin > 0.0) {
+            double f = Nabs / Nin;
+            if (f < 0.0) f = 0.0;
+            if (f > 1.0 - 1e-15) f = 1.0 - 1e-15;
+            tau_eff = -std::log(1.0 - f);
+        }
+
+        auto computeRateH = [&](double x) -> double {
+
+            // clamp x
+            const double xMax = 1.0 - 1.e-12;
+            if (x > xMax) x = xMax;
+            if (x < 0.0)  x = 0.0;
+
+            // electron density (your current approximation, with He fixed)
+            double ne = x * nH + (yHe + 2.0 * zHe) * nHe;
+
+            // Stage neutral fraction
+            double neutral = std::max(1.0 - x, 1e-12);
+
+            // Scale optical depth with neutral fraction (diagnostic but RT-shaped)
+            // tau(x) ≈ tau_eff * (neutral/neutral_old)
+            double tau_stage = 0.0;
+            if (tau_eff > 0.0) {
+                tau_stage = tau_eff * (neutral / neutral_old);
+                // optional safety clamp
+                if (tau_stage < 0.0) tau_stage = 0.0;
+                if (tau_stage > 700.0) tau_stage = 700.0; // avoid exp underflow issues
+            }
+
+            // Reconstruct absorbed photon rate for this RK stage using Nin and tau_stage
+            double NdotAbs_stage = 0.0;
+            if (Nin > 0.0) {
+                NdotAbs_stage = Nin * (1.0 - std::exp(-tau_stage));
+                // hard cap: can't absorb more than arrives
+                if (NdotAbs_stage > Nin) NdotAbs_stage = Nin;
+                if (NdotAbs_stage < 0.0) NdotAbs_stage = 0.0;
+            }
+
+            // Convert absorbed photons/s -> ionization fraction rate [1/s]
+            double ion = 0.0;
+            if (nH > 0.0 && volume > 0.0) {
+                ion = NdotAbs_stage / (nH * volume);
+            }
+
+            // Recombination term (your existing function)
+            double rec = getRecombinationRate(Species::HI, x, ne);
+
+            return ion - rec;
+        };
+
+
+        /*
+        if(iCell == 8820){
+        std::cout << "nH=" << nH
+                  << " NdotAbs=" << NdotAbsorbed
+                  << " dx/dt=" << NdotAbsorbed / (nH * volume)
+				  << " xH=" << xH
+				  << " neutral=" << 1 - xH
+                  << std::endl;
+        }
+        */
+
+/*
         auto computeRateH = [&](double x) -> double {
 
         	double ion = 0.;
-            if (x > 1.0) x = 1.0;
-            if (x < 0.0) x = 0.0;
+
+        	const double xMax = 1.0 - 1.e-12;
+        	if (x > xMax) x = xMax;
+            if (x < 0.0)  x = 0.0;
 
             double ne = x * nH + (yHe + 2.0 * zHe) * nHe;
 
@@ -74,7 +143,7 @@ void Photochemistry::evolveIonisation(double dtime) {
             return ion - rec;
 
         };
-
+*/
 
 /*        auto computeRateHeI = [&](double y) -> double {
             if (y > 1.0) y = 1.0;
@@ -98,10 +167,9 @@ void Photochemistry::evolveIonisation(double dtime) {
         };
 */
 
-        double x1 = xH;
         //double y1 = yHe;
         //double z1 = zHe;
-        double kx1 = computeRateH(x1);
+        double kx1 = computeRateH(xH);
         //double saved_y = yHe, saved_z = zHe;
         //yHe = y1; zHe = z1;
         //double ky1_part = computeRateHeI(y1);
@@ -147,14 +215,17 @@ void Photochemistry::evolveIonisation(double dtime) {
         //yHe += delta_y;
         //zHe += delta_z;
 
-        if (xH < 0.0)  xH  = 0.0; if (xH > 1.0) xH = 1.0;
+        if (xH < 0.0)  xH = 0.0;
+    	const double xMax = 1.0 - 1.e-12;
+    	if (xH > xMax) xH = xMax;
+
         //if (yHe < 0.0) yHe = 0.0;
         //if (zHe < 0.0) zHe = 0.0;
         //double he_sum = yHe + zHe;
         //if (he_sum > 1.0) { yHe /= he_sum; zHe /= he_sum; }
 
-        mesh.setHIIFraction(iCell, xH);
-        mesh.setHeIIFraction(iCell, yHe);
+        mesh.setHIIFraction(iCell,   xH);
+        mesh.setHeIIFraction(iCell,  yHe);
         mesh.setHeIIIFraction(iCell, zHe);
     }
 }

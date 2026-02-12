@@ -104,12 +104,24 @@ int main(int argc, char* argv[]) {
     rays->outputResults(ofileName);
 
     std::cout << "Starting radiative transfer" << std::endl;
+
+
+    double Ndot_abs_total = 0;
     while (time < timeMax) {
 
         std::cout << "time = " << time << std::endl;
     	mesh->resetFluxes();
-        rays->doRadiativeTransfer(time, dtime);
-        photochemistry->evolveIonisation(dtime);
+
+    	rays->doRadiativeTransfer(time, dtime);
+
+        /*
+        Ndot_abs_total = 0;
+        for (int i = 0; i < mesh->numCells; ++i)
+            Ndot_abs_total += mesh->cellAbsorbedPhotonRate[i];
+        std::cout << "Total absorbed photon number = " << Ndot_abs_total << std::endl;
+*/
+
+    	photochemistry->evolveIonisation(dtime);
 
         if (time >= TimeNextOutput) {
             std::cout << "time = " << time << std::endl;
