@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Photochemistry initialisation starting..." << std::endl;
     Photochemistry *photochemistry = new Photochemistry(
-        *mesh,
+        *mesh, *rays,
         HIionisationCrossSection, HIrecombinationCoefficient,
         HeIionisationCrossSection, HeIrecombinationCoefficient,
         HeIIionisationCrossSection, HeIIrecombinationCoefficient
@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
     }
 
     double time = 0;
-    double dtime  = 1e-10;
+    double dtime  = 1e-9;
 
     double printInterval = timeMax/100;
     double TimeNextOutput = printInterval;
@@ -106,22 +106,15 @@ int main(int argc, char* argv[]) {
     std::cout << "Starting radiative transfer" << std::endl;
 
 
-    double Ndot_abs_total = 0;
+    std::vector<double> xH0(mesh->numCells), yHe0(mesh->numCells), zHe0(mesh->numCells);
+    std::vector<double> Nabs0(mesh->numCells), Nabs1(mesh->numCells);
+
     while (time < timeMax) {
 
-        std::cout << "time = " << time << std::endl;
-    	mesh->resetFluxes();
-
+        mesh->resetPhotons();
     	rays->doRadiativeTransfer(time, dtime);
-
-        /*
-        Ndot_abs_total = 0;
-        for (int i = 0; i < mesh->numCells; ++i)
-            Ndot_abs_total += mesh->cellAbsorbedPhotonRate[i];
-        std::cout << "Total absorbed photon number = " << Ndot_abs_total << std::endl;
-*/
-
     	photochemistry->evolveIonisation(dtime);
+
 
         if (time >= TimeNextOutput) {
             std::cout << "time = " << time << std::endl;

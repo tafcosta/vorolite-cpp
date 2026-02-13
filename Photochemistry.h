@@ -9,11 +9,12 @@
 #define PHOTOCHEMISTRY_H_
 
 #include "Mesh.h"
+#include "Rays.h"
 
 
 class Photochemistry {
 public:
-    Photochemistry(Mesh& mesh, double HIcross, double HIrecomb,
+    Photochemistry(Mesh& mesh, Rays& rays, double HIcross, double HIrecomb,
                    double HeIcross, double HeIrecomb,
                    double HeIIcross, double HeIIrecomb);	virtual ~Photochemistry();
 
@@ -31,6 +32,7 @@ public:
     double HeIIionisationCrossSection;
 
     void evolveIonisation(double dtime);
+    void evolveIonisationWithAbsorption(double dtime, const std::vector<double>& absorbedRate);
 
     double getIonisationRate(double volume, double flux, double nH);
     double getRecombinationRate(Species species, double fraction, double electronDensity);

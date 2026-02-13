@@ -1,5 +1,5 @@
 HIionisationCrossSection = 6.3e-18
-HIrecombinationCoefficient = 2.59e-13
+HIrecombinationCoefficient = 2.6e-13
 HeIionisationCrossSection = 0.0
 HeIrecombinationCoefficient = 0.0
 HeIIionisationCrossSection = 0.0

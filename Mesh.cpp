@@ -18,7 +18,7 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     cellPhotonRate.resize(numCells, 0.0);
     cellIncomingPhotonRate.resize(numCells, 0.0);
     cellAbsorbedPhotonRate.resize(numCells, 0.0);
-    cellLocalColumn.resize(numCells, 0.0);
+    cellNetIonisationRate.resize(numCells, 0.0);
 
 	cellHIIFraction.resize(numCells, 0.0);
 	cellHeIIFraction.resize(numCells, 0.0);
@@ -216,8 +216,9 @@ void Mesh::getNumCellsInRegion(){
 void Mesh::resetPhotons(){
 	for(int iCell = 0; iCell < numCells; iCell++){
 		cellPhotonRate[iCell] = 0.;
-		cellIncomingPhotonRate[iCell] = 0.;
 		cellAbsorbedPhotonRate[iCell] = 0.;
+		cellIncomingPhotonRate[iCell] = 0.;
+		cellNetIonisationRate[iCell] = 0.;
 	}
 }
 

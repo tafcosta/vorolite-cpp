@@ -35,9 +35,9 @@ public:
 
     std::vector<double> cellPhotonRate;
     std::vector<double> cellIncomingPhotonRate;
+    std::vector<double> cellNetIonisationRate;
     std::vector<double> cellAbsorbedPhotonRate;
-
-    std::vector<double> cellLocalColumn;
+    
     std::vector<double> cellHIIFraction;
 	std::vector<double> cellHIFraction;
 

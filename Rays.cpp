@@ -123,7 +123,6 @@ void Rays::assignToHealpix(int64_t healpixNside) {
 		rayWeight[i] = 1./raysPerPixel[iPix] * omegaPix / (4.0 * M_PI) ;
 	}
 
-	//Check weights add up
 	double rayWeightTotal = 0.;
 	for (int i = 0; i < nRays; ++i) {
 		rayWeightTotal += rayWeight[i];
@@ -369,9 +368,7 @@ int Rays::findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double&
 			 if(verbose)
 				 std::cout << "New Neighbour candidate = " << neighbour << "\n";
 
-
 		 }
-
 	 }
 
 	 return exitCell;
@@ -418,8 +415,6 @@ double Rays::distanceSquared(std::vector<float>& a, std::vector<float>& b){
 }
 
 void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
-	columnHI[iRay]   = 0.;
-	columnDust[iRay] = 0.;
 
 	if(timeDependent){
 
@@ -446,15 +441,13 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 
 			fluxOfRay[i] = (j == 0? source.getLuminosity(time - dtime/2.0) * rayWeight[iRay]: mesh.getFluxOfRayInCell(iRay, j)) * std::exp(-ionisationCrossSection_inInternalUnits * columnHIIindTime);
 			mesh.cellPhotonRate[visitedCells[iRay][i]] += fluxOfRay[i];
-
-			if(visitedCells[iRay][i] == rayTargetCell[iRay])
-				mesh.cellLocalColumn[rayTargetCell[iRay]] = visitedCellColumn[iRay][i];
 		}
 
 		for (int i = 0; i < visitedCells[iRay].size(); i++)
 			mesh.setFluxOfRayInCell(iRay, i, fluxOfRay[i]);
 
 	} else {
+
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
 
 		    int iCell        = visitedCells[iRay][i];
@@ -464,7 +457,7 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 		    double NdotIn    = Ndot0 * std::exp(-tauIn);
 
 		    double neutral = 1.0 - mesh.getHIIFraction(iCell);
-		    neutral = std::max(neutral, 1e-12);
+		    neutral = std::max(neutral, 1e-20);
 		    double dColumnHI = visitedCellColumn[iRay][i] * neutral;
 
 		    double dtau      = ionisationCrossSection_inInternalUnits * dColumnHI
@@ -478,8 +471,6 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 
 		    columnHI[iRay] += dColumnHI;
 
-		    if (iCell == rayTargetCell[iRay])
-		        mesh.cellLocalColumn[iCell] = visitedCellColumn[iRay][i];
 		}
 	}
 
@@ -496,8 +487,11 @@ void Rays::calculateRays(){
 }
 
 void Rays::doRadiativeTransfer(double time, double dtime){
-	for(int iRay = 0; iRay < nRays; iRay++)
+	for(int iRay = 0; iRay < nRays; iRay++){
+		columnHI[iRay]   = 0.;
+		columnDust[iRay] = 0.;
 		updateColumnAndFlux(iRay, time, dtime);
+	}
 }
 
 
