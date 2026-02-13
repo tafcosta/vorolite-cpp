@@ -21,8 +21,12 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     cellNetIonisationRate.resize(numCells, 0.0);
 
 	cellHIIFraction.resize(numCells, 0.0);
+	cellHIFraction.resize(numCells, 0.0);
+
 	cellHeIIFraction.resize(numCells, 0.0);
 	cellHeIIIFraction.resize(numCells, 0.0);
+
+	cellRemainingHI.resize(numCells, 0.0);
 
 	fluxOfRayInCell.resize(numCells);       //The first dimension should be number of rays
 
@@ -68,6 +72,14 @@ double Mesh::getMeanMolecularWeight(int iCell){
 
 double Mesh::getMetallicityInSolar(int iCell){
 	return cellMetallicity[iCell]/0.0127;
+}
+
+double Mesh::getCellRemainingHI(int iCell){
+	return cellRemainingHI[iCell];
+}
+
+void Mesh::setCellRemainingHI(int iCell, double newValue){
+	cellRemainingHI[iCell] = newValue;
 }
 
 double Mesh::getSelfShieldingCorrection(int iCell) {
@@ -203,11 +215,6 @@ void Mesh::getNumCellsInRegion(){
     cellIndices     = std::move(filteredCellIndices);
     cellMass        = std::move(filteredMasses);
 
-    //check values
-    /*for(int iCell = 0; iCell < cellDensity.size(); iCell++)
-    	std::cout << "nH = " << cellDensity[iCell] << std::endl;*/
-
-
     numCells = cellDensity.size();
 
     std::cout << "Reduced to " << numCells << " cells within maxRadius = " << maxRadius << std::endl;
@@ -219,6 +226,22 @@ void Mesh::resetPhotons(){
 		cellAbsorbedPhotonRate[iCell] = 0.;
 		cellIncomingPhotonRate[iCell] = 0.;
 		cellNetIonisationRate[iCell] = 0.;
+
+		double neutral = 1.0 - getHIIFraction(iCell);
+	    neutral = std::max(neutral, 1e-20);
+
+        double volume = getMass(iCell) / getDensity(iCell) *
+             scaleFactor * unitLength  *
+             scaleFactor * unitLength  *
+		     scaleFactor * unitLength  *
+			 HubbleParam * HubbleParam * HubbleParam;
+
+        double nH = getHNumberDensity_in_cgs(iCell);
+	    double NH  = nH * volume;
+
+		cellRemainingHI[iCell] = neutral * NH;
+
+;
 	}
 }
 

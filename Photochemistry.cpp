@@ -46,9 +46,10 @@ void Photochemistry::evolveIonisation(double dtime) {
             mesh.getMass(iCell) / mesh.getDensity(iCell) *
             (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength) * mesh.HubbleParam * mesh.HubbleParam * mesh.HubbleParam;
 
+        /*
         if(iCell == 8820){
         	std::cout << "nAbsCand = " << NdotAbsorbed * dtime_in_cgs << ", nNeutrals = " << nH * volume * (1- xH) << std::endl;
-        }
+        }*/
 
 
         auto computeRateH = [&](double x) -> double {

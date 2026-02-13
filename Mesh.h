@@ -44,6 +44,8 @@ public:
     std::vector<double> cellHeIIFraction;
     std::vector<double> cellHeIIIFraction;
 
+	std::vector<double> cellRemainingHI;
+
 	std::vector<double> cellElectronFraction;
 	std::vector<double> cellXH;
 	std::vector<double> cellMetallicity;
@@ -76,12 +78,14 @@ public:
     double getFlux(int iCell);
     double getIncomingPhotonRate(int iCell);
     double getAbsorbedPhotonRate(int iCell);
+    double getCellRemainingHI(int iCell);
 
 	int getIndex(int iCell);
 
 	void setHIIFraction(int iCell, double newValue);
 	void setHeIIFraction(int iCell, double newValue);
 	void setHeIIIFraction(int iCell, double newValue);
+	void setCellRemainingHI(int iCell, double newValue);
 
     void resetPhotons();
     void resizeFluxOfRayInCell(int iRay, int numVisitedCells);

@@ -40,8 +40,8 @@ Rays::Rays(double ionisationCrossSection, double maxRadius, std::vector<double> 
 	insideDomain      = std::vector<bool>(nRays, true);
 	flagRay           = std::vector<bool>(nRays, false);
 
-	visitedCellColumn = std::vector<std::vector<double>>(nRays);
-	visitedCells      = std::vector<std::vector<int>>(nRays);
+	visitedCellColumn       = std::vector<std::vector<double>>(nRays);
+	visitedCells            = std::vector<std::vector<int>>(nRays);
 
 }
 
@@ -448,27 +448,29 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 
 	} else {
 
+	    double NdotFinal   = source.getLuminosity(time) * rayWeight[iRay];
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
-
 		    int iCell        = visitedCells[iRay][i];
-		    double Ndot0     = source.getLuminosity(time) * rayWeight[iRay];
-
-		    double tauIn     = ionisationCrossSection_inInternalUnits * columnHI[iRay]; /* + dustAbsorptionOpacity_inInternalUnits * columnDust[iRay]; */
-		    double NdotIn    = Ndot0 * std::exp(-tauIn);
+	        double dtime_in_cgs = dtime * mesh.unitLength / mesh.unitVelocity;
 
 		    double neutral = 1.0 - mesh.getHIIFraction(iCell);
 		    neutral = std::max(neutral, 1e-20);
-		    double dColumnHI = visitedCellColumn[iRay][i] * neutral;
 
-		    double dtau      = ionisationCrossSection_inInternalUnits * dColumnHI
-		                     /*+ dustAbsorptionOpacity_inInternalUnits * dColDust*/;
+	        double dColumnHI = visitedCellColumn[iRay][i] * neutral;
+	        double dtau      = ionisationCrossSection_inInternalUnits * dColumnHI  /* + dustAbsorptionOpacity_inInternalUnits * columnDust[iRay]; */;
+	        double ftrans    = exp(-dtau);
+	        double fabs      = 1.0 - ftrans;
 
-		    double NdotOut   = NdotIn * std::exp(-dtau);
-		    double NdotAbs   = NdotIn - NdotOut;
+	        double NHI = mesh.getCellRemainingHI(iCell);
+		    if((NdotFinal * fabs * dtime_in_cgs > NHI) && (NdotFinal * fabs > 0)){
+		    	fabs = NHI/(NdotFinal * dtime_in_cgs);
+		    	ftrans	= 1.0 - fabs;
+		    }
 
-		    mesh.cellIncomingPhotonRate[iCell] += NdotIn;
-		    mesh.cellAbsorbedPhotonRate[iCell] += NdotAbs;
+	        mesh.cellAbsorbedPhotonRate[iCell] += fabs * NdotFinal;
+	        mesh.setCellRemainingHI(iCell, NHI - fabs * NdotFinal * dtime_in_cgs);
 
+	        NdotFinal      *= ftrans;
 		    columnHI[iRay] += dColumnHI;
 
 		}
@@ -490,6 +492,7 @@ void Rays::doRadiativeTransfer(double time, double dtime){
 	for(int iRay = 0; iRay < nRays; iRay++){
 		columnHI[iRay]   = 0.;
 		columnDust[iRay] = 0.;
+
 		updateColumnAndFlux(iRay, time, dtime);
 	}
 }
