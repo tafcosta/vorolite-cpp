@@ -9,25 +9,16 @@
 
 
 Photochemistry::Photochemistry(Mesh& mesh, Rays& rays,
-                               double HIcross, double HIrecomb,
-                               double HeIcross, double HeIrecomb,
-                               double HeIIcross, double HeIIrecomb)
+                               double HIcross, double HeIcross, double HeIIcross)
 	: mesh(mesh),
       HIionisationCrossSection(HIcross),
-      HIrecombinationCoefficient(HIrecomb),
       HeIionisationCrossSection(HeIcross),
-      HeIrecombinationCoefficient(HeIrecomb),
-      HeIIionisationCrossSection(HeIIcross),
-      HeIIrecombinationCoefficient(HeIIrecomb)
+      HeIIionisationCrossSection(HeIIcross)
 {
 	// TODO Auto-generated constructor stub
 }
 
 void Photochemistry::evolveIonisation(double dtime) {
-
-    const double sigma_HI   = HIionisationCrossSection;
-    const double sigma_HeI  = HeIionisationCrossSection;
-    const double sigma_HeII = HeIIionisationCrossSection;
 
     for (int iCell = 0; iCell < mesh.numCells; ++iCell) {
 
@@ -41,15 +32,11 @@ void Photochemistry::evolveIonisation(double dtime) {
 
         const double nH  = mesh.getHNumberDensity_in_cgs(iCell);   // [cm^-3]
         const double nHe = mesh.getHeNumberDensity_in_cgs(iCell);  // [cm^-3]
+        const double temp = mesh.getTemperature_in_K(iCell);
 
         const double volume =
             mesh.getMass(iCell) / mesh.getDensity(iCell) *
             (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength) * mesh.HubbleParam * mesh.HubbleParam * mesh.HubbleParam;
-
-        /*
-        if(iCell == 8820){
-        	std::cout << "nAbsCand = " << NdotAbsorbed * dtime_in_cgs << ", nNeutrals = " << nH * volume * (1- xH) << std::endl;
-        }*/
 
 
         auto computeRateH = [&](double x) -> double {
@@ -60,13 +47,13 @@ void Photochemistry::evolveIonisation(double dtime) {
             if (x < 0.0)  x = 0.0;
 
             double ne = x * nH + (yHe + 2.0 * zHe) * nHe;
-            double ion_rate = 0.0;
 
             if (nH > 0.0 && volume > 0.0)
                 ion = NdotAbsorbed / (nH * volume);  // [1/s]
 
 
-            double rec = getRecombinationRate(Species::HI, x, ne);
+            double rec = getRecombinationRate(Species::HI, x, ne, temp);
+
             return ion-rec;
 
         };
@@ -101,22 +88,66 @@ double Photochemistry::getIonisationRate(double volume, double flux, double nH){
 }
 
 
-double Photochemistry::getRecombinationRate(Species species, double fraction, double electronDensity) {
+double Photochemistry::getRecombinationRate(Species species, double fraction, double electronDensity, double temp) {
     double alpha = 0.0;
 
     switch(species) {
         case Species::HI:
-            alpha = HIrecombinationCoefficient;
+            alpha = getHIIrecombinationCoefficient(temp);
             break;
         case Species::HeII:
-            alpha = HeIrecombinationCoefficient;
+            alpha = getHeIIrecombinationCoefficient(temp);
             break;
         case Species::HeIII:
-            alpha = HeIIrecombinationCoefficient;
+            alpha = getHeIIIrecombinationCoefficient(temp);
             break;
     }
 
     return fraction * electronDensity * alpha;
+}
+
+double Photochemistry::getHIIrecombinationCoefficient(double temp)
+{
+    // Returns alpha_B in cm^3 s^-1
+    assert(temp > 0.0);
+
+    temp = std::max(temp, 1e-20);
+
+    const double lambda = 315614.0 / temp;
+
+    return 2.753e-14
+         * lambda * std::sqrt(lambda)
+         * std::pow(1.0 + std::pow(lambda / 2.740, 0.407), -2.242);
+}
+
+double Photochemistry::getHeIIrecombinationCoefficient(double T)
+{
+    // He II -> He I (He+ + e -> He0), Case B
+    // Hui & Gnedin (1997): from Burgess & Seaton (1960)
+    // NOTE: quoted accuracy ~10% for ~5e3 K to 5e5 K (outside that, use with caution).
+    // Returns alpha_B in cm^3 s^-1
+
+    assert(T > 0.0);
+    T = std::max(T, 1e-20);
+
+    const double lambda_HeI = 570670.0 / T;
+    return 1.26e-14 * std::pow(lambda_HeI, 0.750);
+}
+
+double Photochemistry::getHeIIIrecombinationCoefficient(double T)
+{
+    // He III -> He II (He++ + e -> He+), Case B
+    // Hui & Gnedin (1997): fit to Ferland et al. (1992), quoted ~2% (wide T range).
+    // Returns alpha_B in cm^3 s^-1
+
+    assert(T > 0.0);
+    T = std::max(T, 1e-20);
+
+    const double lambda_HeII = 1263030.0 / T;
+
+    return (2.0 * 2.753e-14)
+         * lambda_HeII * std::sqrt(lambda_HeII)
+         * std::pow(1.0 + std::pow(lambda_HeII / 2.740, 0.407), -2.242);
 }
 
 Photochemistry::~Photochemistry() {

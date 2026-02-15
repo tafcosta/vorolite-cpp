@@ -49,25 +49,6 @@ void Rays::setNumRays(){
 	nRays = mesh.numCells;
 }
 
-void Rays::initializeHealpixDirections(int healpixNside) {
-	int64_t nPix = nside2npix(healpixNside);
-	const double omegaPix = 4.0 * M_PI / static_cast<double>(nPix);
-
-	for (int64_t iRay = 0; iRay < nPix; ++iRay) {
-		double th, ph;
-		pix2ang_ring(healpixNside, iRay, &th, &ph);
-
-		theta[iRay] = th;
-		phi[iRay]   = ph;
-
-		rayDirection[iRay][0] = std::sin(th) * std::cos(ph);
-		rayDirection[iRay][1] = std::sin(th) * std::sin(ph);
-		rayDirection[iRay][2] = std::cos(th);
-
-		rayWeight[iRay] = omegaPix / (4.0 * M_PI);
-	}
-}
-
 
 void Rays::initializeDirections() {
 	std::vector<float> cellPos;
@@ -467,6 +448,7 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 		    	ftrans	= 1.0 - fabs;
 		    }
 
+	        mesh.cellIncomingPhotonRate[iCell] += NdotFinal;
 	        mesh.cellAbsorbedPhotonRate[iCell] += fabs * NdotFinal;
 	        mesh.setCellRemainingHI(iCell, NHI - fabs * NdotFinal * dtime_in_cgs);
 

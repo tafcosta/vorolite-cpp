@@ -48,6 +48,10 @@ double Mesh::getDensity(int iCell){
 	return cellDensity[iCell];
 }
 
+double Mesh::getSpecificInternalEnergy(int iCell){
+	return cellSpecificInternalEnergy[iCell];
+}
+
 double Mesh::getHNumberDensity_in_cgs(int iCell){
 	return xHydrogen * cellDensity[iCell] / protonMass * (unitMass / (scaleFactor * unitLength * scaleFactor * unitLength * scaleFactor * unitLength)) * HubbleParam * HubbleParam;
 }
@@ -70,16 +74,18 @@ double Mesh::getMeanMolecularWeight(int iCell){
     return 1.0 / muInv;
 }
 
+double Mesh::getTemperature_in_K(int iCell){
+	/*return getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
+			(adiabaticIndex - 1.0) * getMeanMolecularWeight(iCell) * protonMass / boltzmannConstant;*/
+	return 1.e4;
+}
+
 double Mesh::getMetallicityInSolar(int iCell){
 	return cellMetallicity[iCell]/0.0127;
 }
 
 double Mesh::getCellRemainingHI(int iCell){
 	return cellRemainingHI[iCell];
-}
-
-void Mesh::setCellRemainingHI(int iCell, double newValue){
-	cellRemainingHI[iCell] = newValue;
 }
 
 double Mesh::getSelfShieldingCorrection(int iCell) {
@@ -117,6 +123,30 @@ double Mesh::getFluxOfRayInCell(int iRay, int iCell){
 	return fluxOfRayInCell[iRay][iCell];
 }
 
+double Mesh::getIncomingPhotonRate(int iCell){
+	return cellIncomingPhotonRate[iCell];
+}
+
+double Mesh::getAbsorbedPhotonRate(int iCell){
+	return cellAbsorbedPhotonRate[iCell];
+}
+
+double Mesh::getHIIFraction(int iCell){
+	return cellHIIFraction[iCell];
+}
+
+double Mesh::getHeIIFraction(int iCell){
+	return cellHeIIFraction[iCell];
+}
+
+double Mesh::getHeIIIFraction(int iCell){
+	return cellHeIIIFraction[iCell];
+}
+
+int Mesh::getIndex(int iCell){
+	return cellIndices[iCell];
+}
+
 void Mesh::setFluxOfRayInCell(int iRay, int iCell, double newValue){
 	fluxOfRayInCell[iRay][iCell] = newValue;
 }
@@ -151,38 +181,15 @@ void Mesh::setHeIIIFraction(int iCell, double newValue){
 		cellHeIIIFraction[iCell] = 1.e-5;
 }
 
-double Mesh::getFlux(int iCell){
-	return cellPhotonRate[iCell];
-}
-
-double Mesh::getIncomingPhotonRate(int iCell){
-	return cellIncomingPhotonRate[iCell];
-}
-
-double Mesh::getAbsorbedPhotonRate(int iCell){
-	return cellAbsorbedPhotonRate[iCell];
-}
-
-double Mesh::getHIIFraction(int iCell){
-	return cellHIIFraction[iCell];
-}
-
-double Mesh::getHeIIFraction(int iCell){
-	return cellHeIIFraction[iCell];
-}
-
-double Mesh::getHeIIIFraction(int iCell){
-	return cellHeIIIFraction[iCell];
-}
-
-int Mesh::getIndex(int iCell){
-	return cellIndices[iCell];
+void Mesh::setCellRemainingHI(int iCell, double newValue){
+	cellRemainingHI[iCell] = std::max(0.0, newValue);
 }
 
 void Mesh::getNumCellsInRegion(){
     std::vector<std::vector<float>> filteredCoordinates;
     std::vector<std::vector<float>> filteredVelocities;
     std::vector<double> filteredDensity;
+    std::vector<double> filteredSpecificInternalEnergy;
     std::vector<double> filteredMasses;
     std::vector<int> filteredIDs;
     std::vector<int> filteredCellIndices;
@@ -202,6 +209,7 @@ void Mesh::getNumCellsInRegion(){
             filteredCoordinates.push_back(cellCoordinates[iCell]);
             filteredVelocities.push_back(cellVelocities[iCell]);
             filteredDensity.push_back(cellDensity[iCell]);
+            filteredSpecificInternalEnergy.push_back(cellSpecificInternalEnergy[iCell]);
             filteredMasses.push_back(cellMass[iCell]);
             filteredIDs.push_back(cellIDs[iCell]);
             filteredCellIndices.push_back(cellIndices[iCell]);
@@ -209,11 +217,12 @@ void Mesh::getNumCellsInRegion(){
 	}
 
     cellCoordinates = std::move(filteredCoordinates);
-    cellVelocities  = std::move(filteredVelocities);
-    cellDensity     = std::move(filteredDensity);
-    cellIDs         = std::move(filteredIDs);
-    cellIndices     = std::move(filteredCellIndices);
-    cellMass        = std::move(filteredMasses);
+    cellVelocities = std::move(filteredVelocities);
+    cellDensity = std::move(filteredDensity);
+    cellSpecificInternalEnergy = std::move(filteredSpecificInternalEnergy);
+    cellIDs = std::move(filteredIDs);
+    cellIndices = std::move(filteredCellIndices);
+    cellMass = std::move(filteredMasses);
 
     numCells = cellDensity.size();
 
@@ -290,6 +299,7 @@ void Mesh::readSnapshot(const std::string& snapshotBase) {
         }
 
         appendDensity(file);
+        appendSpecificInternalEnergy(file);
         appendMass(file);
         appendIDs(file);
         appendCoordinates(file);
@@ -504,6 +514,18 @@ void Mesh::appendDensity(H5::H5File& file) {
     std::vector<double> buffer(numElements);
     dataset.read(buffer.data(), H5::PredType::NATIVE_DOUBLE);
     cellDensity.insert(cellDensity.end(), buffer.begin(), buffer.end());
+}
+
+void Mesh::appendSpecificInternalEnergy(H5::H5File& file) {
+    H5::DataSet dataset = file.openDataSet("/PartType0/InternalEnergy");
+    H5::DataSpace space = dataset.getSpace();
+
+    hsize_t numElements;
+    space.getSimpleExtentDims(&numElements);
+
+    std::vector<double> buffer(numElements);
+    dataset.read(buffer.data(), H5::PredType::NATIVE_DOUBLE);
+    cellSpecificInternalEnergy.insert(cellSpecificInternalEnergy.end(), buffer.begin(), buffer.end());
 }
 
 void Mesh::appendMass(H5::H5File& file) {

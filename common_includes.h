@@ -9,6 +9,7 @@
 #define COMMON_INCLUDES_H_
 
 #include <algorithm>
+#include <cassert>
 #include <random>
 #include <cmath>
 #include <chrono>

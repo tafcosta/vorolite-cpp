@@ -15,7 +15,9 @@ public:
 	Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition);
 	virtual ~Mesh();
 
+	const double boltzmannConstant = 1.380649e-16;
 	const double protonMass = 1.673e-24;
+	const double adiabaticIndex = 5./3;
 
 	int numCells;
 	double boxSize;
@@ -48,6 +50,7 @@ public:
 
 	std::vector<double> cellElectronFraction;
 	std::vector<double> cellXH;
+	std::vector<double> cellSpecificInternalEnergy;
 	std::vector<double> cellMetallicity;
     std::vector<std::vector<float>> cellCoordinates;
     std::vector<std::vector<float>> cellVelocities;
@@ -75,7 +78,8 @@ public:
 	double getMeanMolecularWeight(int iCell);
 	double getMetallicityInSolar(int iCell);
 	double getSelfShieldingCorrection(int iCell);
-    double getFlux(int iCell);
+	double getSpecificInternalEnergy(int iCell);
+	double getTemperature_in_K(int iCell);
     double getIncomingPhotonRate(int iCell);
     double getAbsorbedPhotonRate(int iCell);
     double getCellRemainingHI(int iCell);
@@ -100,6 +104,7 @@ private:
     std::vector<std::vector<double>> fluxOfRayInCell;
 
     void appendDensity(H5::H5File& file);
+    void appendSpecificInternalEnergy(H5::H5File& file);
     void appendMass(H5::H5File& file);
     void appendIDs(H5::H5File& file);
     void appendCoordinates(H5::H5File& file);
