@@ -2,7 +2,7 @@
  * Photochemistry.cpp
  *
  *  Created on: 17 May 2025
- *      Author: ntc132
+ *      Author: Tiago Costa
  */
 
 #include "Photochemistry.h"
@@ -30,8 +30,8 @@ void Photochemistry::evolveIonisation(double dtime) {
 
         const double NdotAbsorbed = mesh.cellAbsorbedPhotonRate[iCell];
 
-        const double nH  = mesh.getHNumberDensity_in_cgs(iCell);   // [cm^-3]
-        const double nHe = mesh.getHeNumberDensity_in_cgs(iCell);  // [cm^-3]
+        const double nH   = mesh.getHNumberDensity_in_cgs(iCell);
+        const double nHe  = mesh.getHeNumberDensity_in_cgs(iCell);
         const double temp = mesh.getTemperature_in_K(iCell);
 
         const double volume =
@@ -41,9 +41,10 @@ void Photochemistry::evolveIonisation(double dtime) {
 
         auto computeRateH = [&](double x) -> double {
 
-        	double ion = 0.;
-        	const double xMax = 1.0 - 1.e-20;
-        	if (x > xMax) x = xMax;
+            double ion = 0.0;
+
+            const double xMax = 1.0 - 1.e-20;
+            if (x > xMax) x = xMax;
             if (x < 0.0)  x = 0.0;
 
             double ne = x * nH + (yHe + 2.0 * zHe) * nHe;
@@ -51,11 +52,12 @@ void Photochemistry::evolveIonisation(double dtime) {
             if (nH > 0.0 && volume > 0.0)
                 ion = NdotAbsorbed / (nH * volume);  // [1/s]
 
+            const double rec = getRecombinationRate(Species::HI, x, ne, temp);
 
-            double rec = getRecombinationRate(Species::HI, x, ne, temp);
+            const double C_HI = getHIcollisionalIonisationCoefficient(temp);
+            const double coll = (1.0 - x) * ne * C_HI;
 
-            return ion-rec;
-
+            return ion + coll - rec;
         };
 
         double kx1 = computeRateH(xH);
@@ -106,48 +108,61 @@ double Photochemistry::getRecombinationRate(Species species, double fraction, do
     return fraction * electronDensity * alpha;
 }
 
-double Photochemistry::getHIIrecombinationCoefficient(double temp)
+double Photochemistry::getHIIrecombinationCoefficient(double temperature)
 {
+    // Hui & Gnedin (1997)
     // Returns alpha_B in cm^3 s^-1
-    assert(temp > 0.0);
+    assert(temperature > 0.0);
 
-    temp = std::max(temp, 1e-20);
+    temperature = std::max(temperature, 1e-20);
 
-    const double lambda = 315614.0 / temp;
+    const double lambda = 315614.0 / temperature;
 
     return 2.753e-14
          * lambda * std::sqrt(lambda)
          * std::pow(1.0 + std::pow(lambda / 2.740, 0.407), -2.242);
 }
 
-double Photochemistry::getHeIIrecombinationCoefficient(double T)
+double Photochemistry::getHeIIrecombinationCoefficient(double temperature)
 {
-    // He II -> He I (He+ + e -> He0), Case B
-    // Hui & Gnedin (1997): from Burgess & Seaton (1960)
-    // NOTE: quoted accuracy ~10% for ~5e3 K to 5e5 K (outside that, use with caution).
+    // Hui & Gnedin (1997)
     // Returns alpha_B in cm^3 s^-1
 
-    assert(T > 0.0);
-    T = std::max(T, 1e-20);
+    assert(temperature > 0.0);
+    temperature = std::max(temperature, 1e-20);
 
-    const double lambda_HeI = 570670.0 / T;
+    const double lambda_HeI = 570670.0 / temperature;
     return 1.26e-14 * std::pow(lambda_HeI, 0.750);
 }
 
-double Photochemistry::getHeIIIrecombinationCoefficient(double T)
+double Photochemistry::getHeIIIrecombinationCoefficient(double temperature)
 {
-    // He III -> He II (He++ + e -> He+), Case B
-    // Hui & Gnedin (1997): fit to Ferland et al. (1992), quoted ~2% (wide T range).
+    // Hui & Gnedin (1997)
     // Returns alpha_B in cm^3 s^-1
 
-    assert(T > 0.0);
-    T = std::max(T, 1e-20);
+    assert(temperature > 0.0);
+    temperature = std::max(temperature, 1e-20);
 
-    const double lambda_HeII = 1263030.0 / T;
+    const double lambda_HeII = 1263030.0 / temperature;
 
     return (2.0 * 2.753e-14)
          * lambda_HeII * std::sqrt(lambda_HeII)
          * std::pow(1.0 + std::pow(lambda_HeII / 2.740, 0.407), -2.242);
+}
+
+
+double Photochemistry::getHIcollisionalIonisationCoefficient(double temperature)
+{
+    // Returns C_HI(temperature) in cm^3 s^-1
+
+    assert(temperature > 0.0);
+    temperature = std::max(temperature, 1e-20);
+
+    const double T5 = temperature * 1e-5;
+    const double sqrtT = std::sqrt(temperature);
+
+    return 5.85e-11 * sqrtT / (1.0 + std::sqrt(T5))
+         * std::exp(-157809.1 / temperature);
 }
 
 Photochemistry::~Photochemistry() {

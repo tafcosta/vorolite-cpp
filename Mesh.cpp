@@ -75,9 +75,8 @@ double Mesh::getMeanMolecularWeight(int iCell){
 }
 
 double Mesh::getTemperature_in_K(int iCell){
-	/*return getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
+	return 10000.;/*getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
 			(adiabaticIndex - 1.0) * getMeanMolecularWeight(iCell) * protonMass / boltzmannConstant;*/
-	return 1.e4;
 }
 
 double Mesh::getMetallicityInSolar(int iCell){
