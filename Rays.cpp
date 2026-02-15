@@ -436,8 +436,15 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 
 		    double neutral = 1.0 - mesh.getHIIFraction(iCell);
 		    neutral = std::max(neutral, 1e-20);
+		    double yHe      = mesh.getHeIIFraction(iCell);
+		    double zHe      = mesh.getHeIIIFraction(iCell);
+		    double neutralHe = 1.0 - yHe - zHe;  // HeI fraction
+		    neutralHe = std::max(neutralHe, 1e-20);
 
-	        double dColumnHI = visitedCellColumn[iRay][i] * neutral;
+	        double dColumnHI   = visitedCellColumn[iRay][i] * mesh.xHydrogen* neutral;
+	        double dColumnHeI  = visitedCellColumn[iRay][i] * neutralHe;
+	        double dColumnHeII = visitedCellColumn[iRay][i] * yHe;
+
 	        double dtau      = ionisationCrossSection_inInternalUnits * dColumnHI  /* + dustAbsorptionOpacity_inInternalUnits * columnDust[iRay]; */;
 	        double ftrans    = exp(-dtau);
 	        double fabs      = 1.0 - ftrans;

@@ -58,7 +58,7 @@ double Mesh::getHNumberDensity_in_cgs(int iCell){
 
 double Mesh::getHeNumberDensity_in_cgs(int iCell) {
     double heliumMass = 4.0 * protonMass;
-    return xHelium * cellDensity[iCell] / heliumMass * (unitMass / (scaleFactor * unitLength * scaleFactor * unitLength * scaleFactor * unitLength)) * HubbleParam * HubbleParam;
+    return yHelium * cellDensity[iCell] / heliumMass * (unitMass / (scaleFactor * unitLength * scaleFactor * unitLength * scaleFactor * unitLength)) * HubbleParam * HubbleParam;
 }
 
 double Mesh::getElectronNumberDensity_in_cgs(int iCell){
@@ -70,7 +70,7 @@ double Mesh::getMeanMolecularWeight(int iCell){
     double yHeII  = getHeIIFraction(iCell);
     double zHeIII = getHeIIIFraction(iCell);
 
-    double muInv = xHydrogen * (1.0 + xHII) + (xHelium / 4.0) * (1.0 + yHeII + 2.0 * zHeIII);
+    double muInv = xHydrogen * (1.0 + xHII) + (yHelium / 4.0) * (1.0 + yHeII + 2.0 * zHeIII);
     return 1.0 / muInv;
 }
 

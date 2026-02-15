@@ -31,7 +31,7 @@ public:
 	double scaleFactor;
 
 	double xHydrogen = 0.76;
-	double xHelium   = 0.24;
+	double yHelium   = 0.24;
 
     std::vector<int> cellVisitsByRay;
 
