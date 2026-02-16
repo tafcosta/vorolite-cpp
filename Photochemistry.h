@@ -20,22 +20,19 @@ public:
 
     enum class Species { HI, HeII, HeIII };
 
+    double HIionisationCrossSection;
+    double HeIionisationCrossSection;
+    double HeIIionisationCrossSection;
+
     double getHIIrecombinationCoefficient(double temp);
     double getHeIIrecombinationCoefficient(double temp);
     double getHeIIIrecombinationCoefficient(double temp);
     double getHIcollisionalIonisationCoefficient(double temp);
     double getHeIcollisionalIonisationCoefficient(double temp);
     double getHeIIcollisionalIonisationCoefficient(double temp);
-
-    double HIionisationCrossSection;
-    double HeIionisationCrossSection;
-    double HeIIionisationCrossSection;
+    double getRecombinationRate(Species species, double fraction, double electronDensity, double temperature);
 
     void evolveIonisation(double dtime);
-    void evolveIonisationWithAbsorption(double dtime, const std::vector<double>& absorbedRate);
-
-    double getIonisationRate(double volume, double flux, double nH);
-    double getRecombinationRate(Species species, double fraction, double electronDensity, double temperature);
 };
 
 #endif /* PHOTOCHEMISTRY_H_ */

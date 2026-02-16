@@ -77,16 +77,6 @@ void Photochemistry::evolveIonisation(double dtime) {
             const double recHeII = getRecombinationRate(Species::HeII,  y, ne, temp);
             const double recHeIII= getRecombinationRate(Species::HeIII, z, ne, temp);
 
-            double alphaH = getHIIrecombinationCoefficient(temp);
-            double trecH  = 1.0 / (ne * alphaH);
-
-            if(iCell == 19864){
-            std::cout << "trecH = " << trecH
-                      << " dt_cgs = " << dtime_in_cgs
-                      << " dt/trecH = " << dtime_in_cgs / trecH
-                      << std::endl;
-            }
-
             const double C_HI    = getHIcollisionalIonisationCoefficient(temp);
             const double C_HeI   = getHeIcollisionalIonisationCoefficient(temp);
             const double C_HeII  = getHeIIcollisionalIonisationCoefficient(temp);
@@ -128,13 +118,6 @@ void Photochemistry::evolveIonisation(double dtime) {
         mesh.setHeIIIFraction(iCell, zHe);
     }
 }
-
-
-
-double Photochemistry::getIonisationRate(double volume, double flux, double nH){
-    return flux / (nH * volume);
-}
-
 
 double Photochemistry::getRecombinationRate(Species species, double fraction, double electronDensity, double temp) {
     double alpha = 0.0;
