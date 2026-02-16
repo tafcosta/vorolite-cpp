@@ -1,10 +1,11 @@
-HIionisationCrossSection = 6.3e-18
-HeIionisationCrossSection = 0.0
+HIionisationCrossSection = 5.83e-19
+HeIionisationCrossSection = 7.83e-18
 HeIIionisationCrossSection = 0.0
 maxRadius = 0.12
 sourceLocation = 0.5, 0.5, 0.5
 lumTotal = 1.e54
 timeMax  = 1e-6
+dtime    = 1.e-9
 meshFile = /Users/ntc132/eclipse-workspace/VoroLite++/output/tess_005_indices.dat
 snapFile = /Users/ntc132/eclipse-workspace/VoroLite++/output/snap_005.hdf5
 outputDirectory = /Users/ntc132/eclipse-workspace/VoroLite++/output/

@@ -17,16 +17,20 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 	cellVisitsByRay.resize(numCells, 0);
     cellPhotonRate.resize(numCells, 0.0);
     cellIncomingPhotonRate.resize(numCells, 0.0);
-    cellAbsorbedPhotonRate.resize(numCells, 0.0);
+
+    cellAbsorbedPhotonRateHI.resize(numCells, 0.0);
+    cellAbsorbedPhotonRateHeI.resize(numCells, 0.0);
+    cellAbsorbedPhotonRateHeII.resize(numCells, 0.0);
+
     cellNetIonisationRate.resize(numCells, 0.0);
 
 	cellHIIFraction.resize(numCells, 0.0);
-	cellHIFraction.resize(numCells, 0.0);
-
 	cellHeIIFraction.resize(numCells, 0.0);
 	cellHeIIIFraction.resize(numCells, 0.0);
 
 	cellRemainingHI.resize(numCells, 0.0);
+	cellRemainingHeI.resize(numCells, 0.0);
+	cellRemainingHeII.resize(numCells, 0.0);
 
 	fluxOfRayInCell.resize(numCells);       //The first dimension should be number of rays
 
@@ -83,8 +87,16 @@ double Mesh::getMetallicityInSolar(int iCell){
 	return cellMetallicity[iCell]/0.0127;
 }
 
-double Mesh::getCellRemainingHI(int iCell){
+double Mesh::getRemainingHI(int iCell){
 	return cellRemainingHI[iCell];
+}
+
+double Mesh::getRemainingHeI(int iCell){
+	return cellRemainingHeI[iCell];
+}
+
+double Mesh::getRemainingHeII(int iCell){
+	return cellRemainingHeII[iCell];
 }
 
 double Mesh::getSelfShieldingCorrection(int iCell) {
@@ -93,7 +105,7 @@ double Mesh::getSelfShieldingCorrection(int iCell) {
     const double p     = 2.68;
 
     double nH   = cellXH[iCell] * getHNumberDensity_in_cgs(iCell);
-    double f_hi = cellHIFraction[iCell];
+    double f_hi = 1 - cellHIIFraction[iCell];
 
     double new_f_hi = f_hi;
 
@@ -113,7 +125,6 @@ double Mesh::getSelfShieldingCorrection(int iCell) {
 void Mesh::doSelfShieldingCorrection() {
     for (int iCell = 0; iCell < numCells; ++iCell) {
         double newcellHIFraction = getSelfShieldingCorrection(iCell);
-        cellHIFraction[iCell]  = newcellHIFraction;
         cellHIIFraction[iCell] = 1.0 - newcellHIFraction;
     }
 }
@@ -126,8 +137,8 @@ double Mesh::getIncomingPhotonRate(int iCell){
 	return cellIncomingPhotonRate[iCell];
 }
 
-double Mesh::getAbsorbedPhotonRate(int iCell){
-	return cellAbsorbedPhotonRate[iCell];
+double Mesh::getAbsorbedPhotonRateHI(int iCell){
+	return cellAbsorbedPhotonRateHI[iCell];
 }
 
 double Mesh::getHIIFraction(int iCell){
@@ -180,8 +191,16 @@ void Mesh::setHeIIIFraction(int iCell, double newValue){
 		cellHeIIIFraction[iCell] = 1.e-5;
 }
 
-void Mesh::setCellRemainingHI(int iCell, double newValue){
+void Mesh::setRemainingHI(int iCell, double newValue){
 	cellRemainingHI[iCell] = std::max(0.0, newValue);
+}
+
+void Mesh::setRemainingHeI(int iCell, double newValue){
+	cellRemainingHeI[iCell] = std::max(0.0, newValue);
+}
+
+void Mesh::setRemainingHeII(int iCell, double newValue){
+	cellRemainingHeII[iCell] = std::max(0.0, newValue);
 }
 
 void Mesh::getNumCellsInRegion(){
@@ -229,29 +248,50 @@ void Mesh::getNumCellsInRegion(){
 }
 
 void Mesh::resetPhotons(){
-	for(int iCell = 0; iCell < numCells; iCell++){
-		cellPhotonRate[iCell] = 0.;
-		cellAbsorbedPhotonRate[iCell] = 0.;
-		cellIncomingPhotonRate[iCell] = 0.;
-		cellNetIonisationRate[iCell] = 0.;
+    for(int iCell = 0; iCell < numCells; iCell++){
+        cellPhotonRate[iCell] = 0.;
 
-		double neutral = 1.0 - getHIIFraction(iCell);
-	    neutral = std::max(neutral, 1e-20);
+        cellAbsorbedPhotonRateHI[iCell]   = 0.;
+        cellAbsorbedPhotonRateHeI[iCell]  = 0.;
+        cellAbsorbedPhotonRateHeII[iCell] = 0.;
+
+        cellIncomingPhotonRate[iCell] = 0.;
+        cellNetIonisationRate[iCell]  = 0.;
+
+        const double xMax = 1.0 - 1e-20;
+
+        double xHII = getHIIFraction(iCell);
+        if (xHII < 0.0) xHII = 0.0;
+        if (xHII > xMax) xHII = xMax;
+
+        double yHeII = getHeIIFraction(iCell);
+        double zHeIII = getHeIIIFraction(iCell);
+        if (yHeII < 0.0) yHeII = 0.0;
+        if (zHeIII < 0.0) zHeIII = 0.0;
+        if (yHeII + zHeIII > xMax) {
+            const double s = yHeII + zHeIII;
+            yHeII = yHeII * xMax / s;
+            zHeIII = zHeIII * xMax / s;
+        }
+
+        const double neutralH = std::max(1.0 - xHII, 1e-20);
+        const double neutralHe = std::max(1.0 - yHeII - zHeIII, 1e-20);
 
         double volume = getMass(iCell) / getDensity(iCell) *
              scaleFactor * unitLength  *
              scaleFactor * unitLength  *
-		     scaleFactor * unitLength  *
-			 HubbleParam * HubbleParam * HubbleParam;
+             scaleFactor * unitLength  *
+             HubbleParam * HubbleParam * HubbleParam;
 
-        double nH = getHNumberDensity_in_cgs(iCell);
-	    double NH  = nH * volume;
+        double nH  = getHNumberDensity_in_cgs(iCell);
+        double nHe = getHeNumberDensity_in_cgs(iCell);
 
-		cellRemainingHI[iCell] = neutral * NH;
-
-;
-	}
+        cellRemainingHI[iCell]  = neutralH * (nH * volume);
+        cellRemainingHeI[iCell] = neutralHe * (nHe * volume);
+        cellRemainingHeII[iCell]= yHeII * (nHe * volume);
+    }
 }
+
 
 
 void Mesh::readSnapshot(const std::string& snapshotBase) {
@@ -304,7 +344,6 @@ void Mesh::readSnapshot(const std::string& snapshotBase) {
         appendCoordinates(file);
         appendVelocities(file);
         //appendMetallicity(file);
-        //appendHIFraction(file);
         //appendElectronFraction(file);
         //appendXH(file);
 
@@ -605,18 +644,6 @@ void Mesh::appendVelocities(H5::H5File& file) {
 }
 
 /*
-void Mesh::appendHIFraction(H5::H5File& file) {
-    H5::DataSet dataset = file.openDataSet("/PartType0/NeutralHydrogenAbundance");
-    H5::DataSpace space = dataset.getSpace();
-
-    hsize_t numElements;
-    space.getSimpleExtentDims(&numElements);
-
-    std::vector<double> buffer(numElements);
-    dataset.read(buffer.data(), H5::PredType::NATIVE_DOUBLE);
-    cellHIFraction.insert(cellHIFraction.end(), buffer.begin(), buffer.end());
-}
-
 void Mesh::appendElectronFraction(H5::H5File& file) {
     H5::DataSet dataset = file.openDataSet("/PartType0/ElectronAbundance");
     H5::DataSpace space = dataset.getSpace();

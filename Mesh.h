@@ -38,15 +38,18 @@ public:
     std::vector<double> cellPhotonRate;
     std::vector<double> cellIncomingPhotonRate;
     std::vector<double> cellNetIonisationRate;
-    std::vector<double> cellAbsorbedPhotonRate;
-    
-    std::vector<double> cellHIIFraction;
-	std::vector<double> cellHIFraction;
 
+    std::vector<double> cellAbsorbedPhotonRateHI;
+    std::vector<double> cellAbsorbedPhotonRateHeI;
+    std::vector<double> cellAbsorbedPhotonRateHeII;
+
+    std::vector<double> cellHIIFraction;
     std::vector<double> cellHeIIFraction;
     std::vector<double> cellHeIIIFraction;
 
 	std::vector<double> cellRemainingHI;
+	std::vector<double> cellRemainingHeI;
+	std::vector<double> cellRemainingHeII;
 
 	std::vector<double> cellElectronFraction;
 	std::vector<double> cellXH;
@@ -81,15 +84,23 @@ public:
 	double getSpecificInternalEnergy(int iCell);
 	double getTemperature_in_K(int iCell);
     double getIncomingPhotonRate(int iCell);
-    double getAbsorbedPhotonRate(int iCell);
-    double getCellRemainingHI(int iCell);
+
+    double getAbsorbedPhotonRateHI(int iCell);
+    double getAbsorbedPhotonRateHeI(int iCell);
+    double getAbsorbedPhotonRateHeII(int iCell);
+
+    double getRemainingHI(int iCell);
+    double getRemainingHeI(int iCell);
+    double getRemainingHeII(int iCell);
 
 	int getIndex(int iCell);
 
 	void setHIIFraction(int iCell, double newValue);
 	void setHeIIFraction(int iCell, double newValue);
 	void setHeIIIFraction(int iCell, double newValue);
-	void setCellRemainingHI(int iCell, double newValue);
+	void setRemainingHI(int iCell, double newValue);
+	void setRemainingHeI(int iCell, double newValue);
+	void setRemainingHeII(int iCell, double newValue);
 
     void resetPhotons();
     void resizeFluxOfRayInCell(int iRay, int numVisitedCells);
@@ -109,7 +120,6 @@ private:
     void appendIDs(H5::H5File& file);
     void appendCoordinates(H5::H5File& file);
     void appendVelocities(H5::H5File& file);
-	void appendHIFraction(H5::H5File& file);
 	void appendElectronFraction(H5::H5File& file);
 	void appendXH(H5::H5File& file);
     void appendMetallicity(H5::H5File& file);

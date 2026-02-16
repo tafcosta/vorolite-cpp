@@ -4,11 +4,12 @@
 #include "Rays.h"
 #include "Source.h"
 
-void parseRayParamFile(const std::string& fileName, double& HIionisationXsection,
+void parseRayParamFile(const std::string& fileName,
+		double& HIionisationXsection,
 		double& HeIionisationXsection,
 		double& HeIIionisationXsection,
 		double& dustAbsorptionOpacity,  double& maxRadius,
-        std::vector<double>& sourcePosition, double& lumTotal, double& timeMax, int64_t& Nside, std::string& meshFile,
+        std::vector<double>& sourcePosition, double& lumTotal, double& timeMax, double& dtime, int64_t& Nside, std::string& meshFile,
         std::string& snapFile, std::string& oDirectory);
 
 int main(int argc, char* argv[]) {
@@ -21,28 +22,30 @@ int main(int argc, char* argv[]) {
     std::string paramFile = argv[1];
     std::cout << "We are getting our parameters from \'" << paramFile << "\'" <<  std::endl;
 
-    double HIionisationCrossSection     = 0.0;
-    double HeIionisationCrossSection    = 0.0;
-    double HeIIionisationCrossSection   = 0.0;
-
-    double dustAbsorptionOpacity = 0.0;
+    double HIionisationCrossSection   = 0.0;
+    double HeIionisationCrossSection  = 0.0;
+    double HeIIionisationCrossSection = 0.0;
+    double dustAbsorptionOpacity      = 0.0;
 
     double maxRadius = 0.0;
     double lumTotal  = 0.0;
     double timeMax   = 0.0;
+    double dtime     = 1.e-9;
+
     int64_t Nside = 4;
     std::vector<double> sourcePosition(3, 0.5);
     std::string meshFile, snapFile, oDirectory;
     std::filesystem::path lightcurvefile = "data/Lion_basic_ref.txt";
 
-    parseRayParamFile(paramFile, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, dustAbsorptionOpacity, maxRadius, sourcePosition, lumTotal, timeMax, Nside, meshFile, snapFile, oDirectory);
+    parseRayParamFile(paramFile, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, dustAbsorptionOpacity,
+    		maxRadius, sourcePosition, lumTotal, timeMax, dtime, Nside, meshFile, snapFile, oDirectory);
 
     if (maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
         std::cerr << "Error: Missing or invalid parameters in rayParam.txt" << std::endl;
         return 1;
     }
 
-	std::cout << "Starting VoroLite++ RT (Version 0.1)!" << std::endl;
+	std::cout << "Starting VoroLite++ RT (Version 1.0)!" << std::endl;
 
     std::cout << "Mesh initialisation starting..." << std::endl;
     Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, sourcePosition);
@@ -53,7 +56,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Source initialisation OK." << std::endl;
 
     std::cout << "Rays initialisation starting..." << std::endl;
-    Rays *rays = new Rays(HIionisationCrossSection, maxRadius, sourcePosition, lumTotal, Nside, *mesh, *source);
+    Rays *rays = new Rays(HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, maxRadius, sourcePosition, lumTotal, Nside, *mesh, *source);
     std::cout << "Rays initialisation OK." << std::endl;
 
     std::cout << "Photochemistry initialisation starting..." << std::endl;
@@ -78,7 +81,6 @@ int main(int argc, char* argv[]) {
     }
 
     double time = 0;
-    double dtime  = 5e-10;
 
     double printInterval = timeMax/100;
     double TimeNextOutput = printInterval;
@@ -140,9 +142,10 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-void parseRayParamFile(const std::string& fileName, double& HIionisationCrossSection, double& HeIionisationCrossSection, double& HeIIionisationCrossSection,
+void parseRayParamFile(const std::string& fileName,
+		double& HIionisationCrossSection, double& HeIionisationCrossSection, double& HeIIionisationCrossSection,
 		double& dustAbsorptionOpacity, double& maxRadius,
-        std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, int64_t& Nside, std::string& meshFile,
+        std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, double& dtime, int64_t& Nside, std::string& meshFile,
         std::string& snapFile, std::string& oDirectory) {
 
     std::ifstream inputFile(fileName);
@@ -195,6 +198,9 @@ void parseRayParamFile(const std::string& fileName, double& HIionisationCrossSec
         }
         else if (key == "timeMax") {
             timeMax = std::stod(value);
+        }
+        else if (key == "dtime") {
+        	dtime = std::stod(value);
         }
         else if (key == "meshFile") {
             meshFile = value;

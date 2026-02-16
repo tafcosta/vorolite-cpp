@@ -28,7 +28,9 @@ void Photochemistry::evolveIonisation(double dtime) {
         double yHe = mesh.getHeIIFraction(iCell);
         double zHe = mesh.getHeIIIFraction(iCell);
 
-        const double NdotAbsorbed = mesh.cellAbsorbedPhotonRate[iCell];
+        const double NdotAbsorbedHI   = mesh.cellAbsorbedPhotonRateHI[iCell];
+        const double NdotAbsorbedHeI  = mesh.cellAbsorbedPhotonRateHeI[iCell];
+        const double NdotAbsorbedHeII = mesh.cellAbsorbedPhotonRateHeII[iCell];
 
         const double nH   = mesh.getHNumberDensity_in_cgs(iCell);
         const double nHe  = mesh.getHeNumberDensity_in_cgs(iCell);
@@ -36,53 +38,83 @@ void Photochemistry::evolveIonisation(double dtime) {
 
         const double volume =
             mesh.getMass(iCell) / mesh.getDensity(iCell) *
-            (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength) * mesh.HubbleParam * mesh.HubbleParam * mesh.HubbleParam;
+            (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength) *
+            mesh.HubbleParam * mesh.HubbleParam * mesh.HubbleParam;
 
+        auto clampState = [&](double &x, double &y, double &z) {
+            const double oneMinusTiny = 1.0 - 1e-20;
 
-        auto computeRateH = [&](double x) -> double {
+            if (x < 0.0) x = 0.0;
+            if (x > oneMinusTiny) x = oneMinusTiny;
 
-            double ion = 0.0;
+            if (y < 0.0) y = 0.0;
+            if (z < 0.0) z = 0.0;
 
-            const double xMax = 1.0 - 1.e-20;
-            if (x > xMax) x = xMax;
-            if (x < 0.0)  x = 0.0;
-
-            double ne = x * nH + (yHe + 2.0 * zHe) * nHe;
-
-            if (nH > 0.0 && volume > 0.0)
-                ion = NdotAbsorbed / (nH * volume);  // [1/s]
-
-            const double rec = getRecombinationRate(Species::HI, x, ne, temp);
-
-            const double C_HI = getHIcollisionalIonisationCoefficient(temp);
-            const double coll = (1.0 - x) * ne * C_HI;
-
-            return ion + coll - rec;
+            const double yz = y + z;
+            if (yz > oneMinusTiny) {
+                const double inv = oneMinusTiny / yz;
+                y *= inv;
+                z *= inv;
+            }
         };
 
-        double kx1 = computeRateH(xH);
-        double x2  = xH + 0.5 * kx1 * dtime_in_cgs;
-        double kx2 = computeRateH(x2);
-        double x3  = xH + 0.5 * kx2 * dtime_in_cgs;
-        double kx3 = computeRateH(x3);
-        double x4  = xH + kx3 * dtime_in_cgs;
-        double kx4 = computeRateH(x4);
-        double delta_x = (dtime_in_cgs / 6.0) * (kx1 + 2.0*kx2 + 2.0*kx3 + kx4);
+        struct Rates { double dx, dy, dz; };
 
-        mesh.cellNetIonisationRate[iCell] = delta_x * nH * volume / dtime_in_cgs;
+        auto computeRates = [&](double x, double y, double z) -> Rates {
 
-        xH  += delta_x;
+            clampState(x, y, z);
 
-        if (xH < 0.0)  xH = 0.0;
-    	const double xMax = 1.0 - 1.e-20;
-    	if (xH > xMax) xH = xMax;
+            double ne = x * nH + (y + 2.0 * z) * nHe;
+            double ionH = 0.0, ionHeI = 0.0, ionHeII = 0.0;
+
+            if (volume > 0.0) {
+                if (nH  > 0.0) ionH   = NdotAbsorbedHI   / (nH  * volume);
+                if (nHe > 0.0) ionHeI = NdotAbsorbedHeI  / (nHe * volume);
+                if (nHe > 0.0) ionHeII= NdotAbsorbedHeII / (nHe * volume);
+            }
+
+            const double recH    = getRecombinationRate(Species::HI,    x, ne, temp);
+            const double recHeII = getRecombinationRate(Species::HeII,  y, ne, temp);
+            const double recHeIII= getRecombinationRate(Species::HeIII, z, ne, temp);
+
+            const double C_HI    = getHIcollisionalIonisationCoefficient(temp);
+            const double C_HeI   = getHeIcollisionalIonisationCoefficient(temp);
+            const double C_HeII  = getHeIIcollisionalIonisationCoefficient(temp);
+
+            const double collH   = (1.0 - x) * ne * C_HI;
+            const double collHeI = (1.0 - y - z) * ne * C_HeI;
+            const double collHeII= y * ne * C_HeII;
+
+            const double dx = ionH + collH - recH;
+            const double dy = ionHeI + collHeI - ionHeII - recHeII + recHeIII - collHeII;
+            const double dz = ionHeII + collHeII - recHeIII;
+
+            return {dx, dy, dz};
+        };
+
+        Rates k1 = computeRates(xH, yHe, zHe);
+        Rates k2 = computeRates(xH + 0.5 * k1.dx * dtime_in_cgs,
+                                yHe + 0.5 * k1.dy * dtime_in_cgs,
+                                zHe + 0.5 * k1.dz * dtime_in_cgs);
+        Rates k3 = computeRates(xH + 0.5 * k2.dx * dtime_in_cgs,
+                                yHe + 0.5 * k2.dy * dtime_in_cgs,
+                                zHe + 0.5 * k2.dz * dtime_in_cgs);
+        Rates k4 = computeRates(xH + k3.dx * dtime_in_cgs,
+                                yHe + k3.dy * dtime_in_cgs,
+                                zHe + k3.dz * dtime_in_cgs);
+
+        xH  += (dtime_in_cgs / 6.0) * (k1.dx + 2.0*k2.dx + 2.0*k3.dx + k4.dx);
+        yHe += (dtime_in_cgs / 6.0) * (k1.dy + 2.0*k2.dy + 2.0*k3.dy + k4.dy);
+        zHe += (dtime_in_cgs / 6.0) * (k1.dz + 2.0*k2.dz + 2.0*k3.dz + k4.dz);
+
+        clampState(xH, yHe, zHe);
 
         mesh.setHIIFraction(iCell,   xH);
         mesh.setHeIIFraction(iCell,  yHe);
         mesh.setHeIIIFraction(iCell, zHe);
     }
-
 }
+
 
 
 double Photochemistry::getIonisationRate(double volume, double flux, double nH){
@@ -153,7 +185,8 @@ double Photochemistry::getHeIIIrecombinationCoefficient(double temperature)
 
 double Photochemistry::getHIcollisionalIonisationCoefficient(double temperature)
 {
-    // Returns C_HI(temperature) in cm^3 s^-1
+    // Hui & Gnedin (1997)
+    // Returns C_HI in cm^3 s^-1
 
     assert(temperature > 0.0);
     temperature = std::max(temperature, 1e-20);
@@ -164,6 +197,36 @@ double Photochemistry::getHIcollisionalIonisationCoefficient(double temperature)
     return 5.85e-11 * sqrtT / (1.0 + std::sqrt(T5))
          * std::exp(-157809.1 / temperature);
 }
+
+double Photochemistry::getHeIcollisionalIonisationCoefficient(double T)
+{
+    // Hui & Gnedin (1997)
+    // Returns C_HeI in cm^3 s^-1
+    assert(T > 0.0);
+    T = std::max(T, 1e-20);
+
+    const double T5 = T * 1e-5;
+    const double sqrtT = std::sqrt(T);
+
+    return 2.38e-11 * sqrtT / (1.0 + std::sqrt(T5))
+         * std::exp(-285335.4 / T);
+}
+
+double Photochemistry::getHeIIcollisionalIonisationCoefficient(double T)
+{
+    // Hui & Gnedin (1997)
+    // Returns C_HeI in cm^3 s^-1
+    assert(T > 0.0);
+    T = std::max(T, 1e-20);
+
+    const double T5 = T * 1e-5;
+    const double sqrtT = std::sqrt(T);
+
+    return 5.68e-12 * sqrtT / (1.0 + std::sqrt(T5))
+         * std::exp(-631515.0 / T);
+}
+
+
 
 Photochemistry::~Photochemistry() {
 	// TODO Auto-generated destructor stub

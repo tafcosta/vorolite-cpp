@@ -24,6 +24,8 @@ public:
     double getHeIIrecombinationCoefficient(double temp);
     double getHeIIIrecombinationCoefficient(double temp);
     double getHIcollisionalIonisationCoefficient(double temp);
+    double getHeIcollisionalIonisationCoefficient(double temp);
+    double getHeIIcollisionalIonisationCoefficient(double temp);
 
     double HIionisationCrossSection;
     double HeIionisationCrossSection;

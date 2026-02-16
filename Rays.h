@@ -13,13 +13,19 @@
 
 class Rays {
 public:
-	Rays(double ionisationCrossSection, double maxRadius, std::vector<double> sourcePosition, double lumTotal, int64_t Nside, Mesh& mesh, Source& source);
+	Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, double ionisationCrossSectionHeII, double maxRadius, std::vector<double> sourcePosition, double lumTotal, int64_t Nside, Mesh& mesh, Source& source);
 	virtual ~Rays();
 
 	bool timeDependent = false;
 
-	double ionisationCrossSection;
-	double ionisationCrossSection_inInternalUnits;
+	double ionisationCrossSectionHI;
+	double ionisationCrossSectionHeI;
+	double ionisationCrossSectionHeII;
+
+	double ionisationCrossSectionHI_inInternalUnits;
+	double ionisationCrossSectionHeI_inInternalUnits;
+	double ionisationCrossSectionHeII_inInternalUnits;
+
 	double dustAbsorptionOpacity;
 	double dustAbsorptionOpacity_inInternalUnits;
 	double maxRadius;
