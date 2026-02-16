@@ -13,7 +13,7 @@
 
 class Rays {
 public:
-	Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, double ionisationCrossSectionHeII, double maxRadius, std::vector<double> sourcePosition, double lumTotal, int64_t Nside, Mesh& mesh, Source& source);
+	Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, double ionisationCrossSectionHeII, double maxRadius, int64_t Nside, Mesh& mesh, Source& source);
 	virtual ~Rays();
 
 	bool timeDependent = false;
@@ -29,7 +29,6 @@ public:
 	double dustAbsorptionOpacity;
 	double dustAbsorptionOpacity_inInternalUnits;
 	double maxRadius;
-	double lumTotal;
 	int64_t Nside;
 
 	std::vector<double> sourcePosition;
@@ -43,6 +42,8 @@ public:
 
 	std::vector<double> rayWeight;
 	std::vector<double> distanceTravelled;
+	std::vector<double> finalLuminosity;
+
 
 	std::vector<std::vector<double>> visitedCellColumn;
 	std::vector<std::vector<int>> visitedCells;

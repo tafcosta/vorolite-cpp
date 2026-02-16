@@ -68,14 +68,24 @@ void Photochemistry::evolveIonisation(double dtime) {
             double ionH = 0.0, ionHeI = 0.0, ionHeII = 0.0;
 
             if (volume > 0.0) {
-                if (nH  > 0.0) ionH   = NdotAbsorbedHI   / (nH  * volume);
-                if (nHe > 0.0) ionHeI = NdotAbsorbedHeI  / (nHe * volume);
-                if (nHe > 0.0) ionHeII= NdotAbsorbedHeII / (nHe * volume);
+                if (nH  > 0.0) ionH    = NdotAbsorbedHI   / (nH  * volume);
+                if (nHe > 0.0) ionHeI  = NdotAbsorbedHeI  / (nHe * volume);
+                if (nHe > 0.0) ionHeII = NdotAbsorbedHeII / (nHe * volume);
             }
 
             const double recH    = getRecombinationRate(Species::HI,    x, ne, temp);
             const double recHeII = getRecombinationRate(Species::HeII,  y, ne, temp);
             const double recHeIII= getRecombinationRate(Species::HeIII, z, ne, temp);
+
+            double alphaH = getHIIrecombinationCoefficient(temp);
+            double trecH  = 1.0 / (ne * alphaH);
+
+            if(iCell == 19864){
+            std::cout << "trecH = " << trecH
+                      << " dt_cgs = " << dtime_in_cgs
+                      << " dt/trecH = " << dtime_in_cgs / trecH
+                      << std::endl;
+            }
 
             const double C_HI    = getHIcollisionalIonisationCoefficient(temp);
             const double C_HeI   = getHeIcollisionalIonisationCoefficient(temp);
@@ -85,8 +95,8 @@ void Photochemistry::evolveIonisation(double dtime) {
             const double collHeI = (1.0 - y - z) * ne * C_HeI;
             const double collHeII= y * ne * C_HeII;
 
-            const double dx = ionH + collH - recH;
-            const double dy = ionHeI + collHeI - ionHeII - recHeII + recHeIII - collHeII;
+            const double dx = ionH    + collH - recH;
+            const double dy = ionHeI  + collHeI  - ionHeII - recHeII + recHeIII - collHeII;
             const double dz = ionHeII + collHeII - recHeIII;
 
             return {dx, dy, dz};
@@ -108,6 +118,10 @@ void Photochemistry::evolveIonisation(double dtime) {
         zHe += (dtime_in_cgs / 6.0) * (k1.dz + 2.0*k2.dz + 2.0*k3.dz + k4.dz);
 
         clampState(xH, yHe, zHe);
+
+        if(iCell == 19864){
+        	std::cout << "HI fraction = " << 1 - xH << " HeI fraction = " << 1 - yHe - zHe << std::endl;
+        }
 
         mesh.setHIIFraction(iCell,   xH);
         mesh.setHeIIFraction(iCell,  yHe);
@@ -225,7 +239,6 @@ double Photochemistry::getHeIIcollisionalIonisationCoefficient(double T)
     return 5.68e-12 * sqrtT / (1.0 + std::sqrt(T5))
          * std::exp(-631515.0 / T);
 }
-
 
 
 Photochemistry::~Photochemistry() {

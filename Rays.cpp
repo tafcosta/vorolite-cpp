@@ -10,8 +10,8 @@
 #include "Mesh.h"
 
 Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, double ionisationCrossSectionHeII,
-		double maxRadius, std::vector<double> sourcePosition, double lumTotal, int64_t Nside, Mesh& mesh, Source& source) :
-		ionisationCrossSectionHI(ionisationCrossSectionHI), ionisationCrossSectionHeI(ionisationCrossSectionHeI), ionisationCrossSectionHeII(ionisationCrossSectionHeII), maxRadius(maxRadius), sourcePosition(sourcePosition), lumTotal(lumTotal), Nside(Nside), mesh(mesh), source(source) {
+		double maxRadius, int64_t Nside, Mesh& mesh, Source& source) :
+		ionisationCrossSectionHI(ionisationCrossSectionHI), ionisationCrossSectionHeI(ionisationCrossSectionHeI), ionisationCrossSectionHeII(ionisationCrossSectionHeII), maxRadius(maxRadius), Nside(Nside), mesh(mesh), source(source) {
 
 	ionisationCrossSectionHI_inInternalUnits = ionisationCrossSectionHI / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 	ionisationCrossSectionHeI_inInternalUnits = ionisationCrossSectionHeI / 4.0/ mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
@@ -19,6 +19,8 @@ Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, do
 
 	dustAbsorptionOpacity_inInternalUnits  = dustAbsorptionOpacity  * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 
+
+	sourcePosition = source.getPosition();
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
 	std::cout << "Source host cell ID = " << startCell << std::endl;
 
@@ -31,6 +33,7 @@ Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, do
 	theta        = std::vector<double>(nRays, 0.0);
 	phi          = std::vector<double>(nRays, 0.0);
 	rayWeight    = std::vector<double>(nRays, 0.0);
+
 	initializeDirections();
 	assignToHealpix(Nside);
 
@@ -40,6 +43,7 @@ Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, do
 	columnHI          = std::vector<double>(nRays, 0.0);
 	columnDust        = std::vector<double>(nRays, 0.0);
 	distanceTravelled = std::vector<double>(nRays, 0.0);
+	finalLuminosity   = std::vector<double>(nRays, 0.0);
 	insideDomain      = std::vector<bool>(nRays, true);
 	flagRay           = std::vector<bool>(nRays, false);
 
@@ -447,12 +451,12 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 	        double dColumnHI     = visitedCellColumn[iRay][i] * mesh.xHydrogen * neutral;
 	        double dColumnHeI    = visitedCellColumn[iRay][i] * mesh.yHelium   * neutralHe;
 	        double dColumnHeII   = visitedCellColumn[iRay][i] * mesh.yHelium   * yHe;
-	        double dColumnDust   = visitedCellColumn[iRay][i]; //update
+	        double dColumnDust   = visitedCellColumn[iRay][i]; //todo
 
 	        const double tauHI   = ionisationCrossSectionHI_inInternalUnits    * dColumnHI;
 	        const double tauHeI  = ionisationCrossSectionHeI_inInternalUnits   * dColumnHeI;
 	        const double tauHeII = ionisationCrossSectionHeII_inInternalUnits  * dColumnHeII;
-	        const double tauDust = dustAbsorptionOpacity_inInternalUnits       * columnDust[iRay];
+	        const double tauDust = dustAbsorptionOpacity_inInternalUnits       * dColumnDust;
 
 	        const double dtau = tauHI + tauHeI + tauHeII + tauDust;
 
@@ -483,13 +487,21 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 	        mesh.cellAbsorbedPhotonRateHeII[iCell] += NabsHeII;
 
 	        const double NabsCapped = NabsHI + NabsHeI + NabsHeII + NabsDust;
-	        const double fabsCapped = (NdotFinal > 0.0) ? (NabsCapped / NdotFinal) : 0.0;
+
+
+	        double fabsCapped = (NdotFinal > 0.0) ? (NabsCapped / NdotFinal) : 0.0;
+	        if (fabsCapped < 0.0) fabsCapped = 0.0;
+	        if (fabsCapped > 1.0) fabsCapped = 1.0;
+
 	        const double ftrans = 1.0 - fabsCapped;
+
 	        NdotFinal *= ftrans;
 
 		    columnHI[iRay] += dColumnHI;
 		    columnDust[iRay] += dColumnDust;
 		}
+
+		finalLuminosity[iRay] = NdotFinal;
 	}
 
 }

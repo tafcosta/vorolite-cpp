@@ -24,9 +24,9 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 
     cellNetIonisationRate.resize(numCells, 0.0);
 
-	cellHIIFraction.resize(numCells, 0.0);
+	cellHIIFraction.resize(numCells, 1.0);
 	cellHeIIFraction.resize(numCells, 0.0);
-	cellHeIIIFraction.resize(numCells, 0.0);
+	cellHeIIIFraction.resize(numCells, 1.0);
 
 	cellRemainingHI.resize(numCells, 0.0);
 	cellRemainingHeI.resize(numCells, 0.0);
@@ -164,31 +164,31 @@ void Mesh::setFluxOfRayInCell(int iRay, int iCell, double newValue){
 void Mesh::setHIIFraction(int iCell, double newValue){
 	cellHIIFraction[iCell] = newValue;
 
-	if(newValue > 1)
-		cellHIIFraction[iCell] = 1;
+	if(newValue > 1.0)
+		cellHIIFraction[iCell] = 1.0;
 
-	if(newValue < 1e-5)
-		cellHIIFraction[iCell] = 1.e-5;
+	if(newValue < 0.0)
+		cellHIIFraction[iCell] = 0.0;
 }
 
 void Mesh::setHeIIFraction(int iCell, double newValue){
 	cellHeIIFraction[iCell] = newValue;
 
-	if(newValue > 1)
-		cellHeIIFraction[iCell] = 1;
+	if(newValue > 1.0)
+		cellHeIIFraction[iCell] = 1.0;
 
-	if(newValue < 1e-5)
-		cellHeIIFraction[iCell] = 1.e-5;
+	if(newValue < 0.0)
+		cellHeIIFraction[iCell] = 0.0;
 }
 
 void Mesh::setHeIIIFraction(int iCell, double newValue){
 	cellHeIIIFraction[iCell] = newValue;
 
-	if(newValue > 1)
-		cellHeIIIFraction[iCell] = 1;
+	if(newValue > 1.0)
+		cellHeIIIFraction[iCell] = 1.0;
 
-	if(newValue < 1e-5)
-		cellHeIIIFraction[iCell] = 1.e-5;
+	if(newValue < 0.0)
+		cellHeIIIFraction[iCell] = 0.0;
 }
 
 void Mesh::setRemainingHI(int iCell, double newValue){

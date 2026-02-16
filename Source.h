@@ -16,6 +16,7 @@ public:
 	virtual ~Source();
 
 	double getLuminosity(double time);
+	std::vector<double> getPosition();
 
 	std::vector<double> sourcePosition;
 	double sourceLuminosity;

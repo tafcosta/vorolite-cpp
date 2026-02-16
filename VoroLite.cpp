@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Source initialisation OK." << std::endl;
 
     std::cout << "Rays initialisation starting..." << std::endl;
-    Rays *rays = new Rays(HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, maxRadius, sourcePosition, lumTotal, Nside, *mesh, *source);
+    Rays *rays = new Rays(HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, maxRadius, Nside, *mesh, *source);
     std::cout << "Rays initialisation OK." << std::endl;
 
     std::cout << "Photochemistry initialisation starting..." << std::endl;
@@ -91,15 +91,12 @@ int main(int argc, char* argv[]) {
     rays->calculateRays();
     std::cout << "Setting up rays OK." << std::endl;
 
-
     std::ostringstream ofName;
     ofName << oDirectory << "rays_output_" << snapshotIndex << ".txt";
     std::string ofileName = ofName.str();
     rays->outputResults(ofileName);
 
     std::cout << "Starting radiative transfer" << std::endl;
-
-
     while (time < timeMax) {
 
         mesh->resetPhotons();

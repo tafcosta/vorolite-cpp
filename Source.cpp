@@ -12,8 +12,11 @@ Source::Source(std::vector<double> sourcePosition, double lumTotal): sourcePosit
 }
 
 double Source::getLuminosity(double time) {
+	return sourceLuminosity;
+}
 
-return sourceLuminosity;
+std::vector<double> Source::getPosition() {
+	return sourcePosition;
 }
 
 Source::~Source() {
