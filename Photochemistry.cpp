@@ -109,10 +109,6 @@ void Photochemistry::evolveIonisation(double dtime) {
 
         clampState(xH, yHe, zHe);
 
-        if(iCell == 19864){
-        	std::cout << "HI fraction = " << 1 - xH << " HeI fraction = " << 1 - yHe - zHe << std::endl;
-        }
-
         mesh.setHIIFraction(iCell,   xH);
         mesh.setHeIIFraction(iCell,  yHe);
         mesh.setHeIIIFraction(iCell, zHe);

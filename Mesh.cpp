@@ -24,9 +24,9 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 
     cellNetIonisationRate.resize(numCells, 0.0);
 
-	cellHIIFraction.resize(numCells, 1.0);
+	cellHIIFraction.resize(numCells, 0.0);
 	cellHeIIFraction.resize(numCells, 0.0);
-	cellHeIIIFraction.resize(numCells, 1.0);
+	cellHeIIIFraction.resize(numCells, 0.0);
 
 	cellRemainingHI.resize(numCells, 0.0);
 	cellRemainingHeI.resize(numCells, 0.0);
