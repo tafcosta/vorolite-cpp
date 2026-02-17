@@ -13,8 +13,8 @@ Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, do
 		double maxRadius, int64_t Nside, Mesh& mesh, Source& source) :
 		ionisationCrossSectionHI(ionisationCrossSectionHI), ionisationCrossSectionHeI(ionisationCrossSectionHeI), ionisationCrossSectionHeII(ionisationCrossSectionHeII), maxRadius(maxRadius), Nside(Nside), mesh(mesh), source(source) {
 
-	ionisationCrossSectionHI_inInternalUnits = ionisationCrossSectionHI / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
-	ionisationCrossSectionHeI_inInternalUnits = ionisationCrossSectionHeI / 4.0/ mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
+	ionisationCrossSectionHI_inInternalUnits   = ionisationCrossSectionHI / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
+	ionisationCrossSectionHeI_inInternalUnits  = ionisationCrossSectionHeI / 4.0 / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 	ionisationCrossSectionHeII_inInternalUnits = ionisationCrossSectionHeII / 4.0/ mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 
 	dustAbsorptionOpacity_inInternalUnits  = dustAbsorptionOpacity  * mesh.unitMass / mesh.unitLength / mesh.unitLength;

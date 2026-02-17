@@ -2,11 +2,34 @@
  * SourceVariable.cpp
  *
  *  Created on: 13 Nov 2025
- *      Author: ntc132
+ *      Author: Tiago Costa
  */
 
 #include "SourceVariable.h"
 
+SourceVariable::SourceVariable(std::vector<double> sourcePosition,
+                               double lumTotal, std::string lightcurveFile)
+    : Source(sourcePosition, lumTotal),
+      lightcurveFile_(lightcurveFile)
+{
+    loadLightcurve_();
+}
+
+
+void SourceVariable::loadLightcurve_()
+{
+    std::ifstream in(lightcurveFile_);
+
+    if (!in) {
+        throw std::runtime_error("Cannot open light-curve file: " + lightcurveFile_);
+    }
+
+    double t, L;
+    while (in >> t >> L) {
+        times_.push_back(t);
+        luminosities_.push_back(L);
+    }
+}
 
 double SourceVariable::getLuminosity(double time) {
 

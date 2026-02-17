@@ -3,8 +3,9 @@
 #include "Photochemistry.h"
 #include "Rays.h"
 #include "Source.h"
+#include "SourceVariable.h"
 
-void parseRayParamFile(const std::string& fileName,
+void parseRayParamFile(const std::string& fileName, int& nOutputs,
 		double& HIionisationXsection,
 		double& HeIionisationXsection,
 		double& HeIIionisationXsection,
@@ -22,6 +23,8 @@ int main(int argc, char* argv[]) {
     std::string paramFile = argv[1];
     std::cout << "We are getting our parameters from \'" << paramFile << "\'" <<  std::endl;
 
+    int nOutputs = 100;
+
     double HIionisationCrossSection   = 0.0;
     double HeIionisationCrossSection  = 0.0;
     double HeIIionisationCrossSection = 0.0;
@@ -37,7 +40,7 @@ int main(int argc, char* argv[]) {
     std::string meshFile, snapFile, oDirectory;
     std::filesystem::path lightcurvefile = "data/Lion_basic_ref.txt";
 
-    parseRayParamFile(paramFile, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, dustAbsorptionOpacity,
+    parseRayParamFile(paramFile, nOutputs, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, dustAbsorptionOpacity,
     		maxRadius, sourcePosition, lumTotal, timeMax, dtime, Nside, meshFile, snapFile, oDirectory);
 
     if (maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
@@ -53,6 +56,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Source initialisation starting..." << std::endl;
     Source *source = new Source(sourcePosition, lumTotal);
+    //Source* source = new SourceVariable(sourcePosition,lumTotal, lightcurvefile.string());
     std::cout << "Source initialisation OK." << std::endl;
 
     std::cout << "Rays initialisation starting..." << std::endl;
@@ -82,7 +86,7 @@ int main(int argc, char* argv[]) {
 
     double time = 0;
 
-    double printInterval = timeMax/100;
+    double printInterval = timeMax/nOutputs;
     double TimeNextOutput = printInterval;
 
     int snapshotIndex = 0;
@@ -103,6 +107,7 @@ int main(int argc, char* argv[]) {
     	rays->doRadiativeTransfer(time, dtime);
     	photochemistry->evolveIonisation(dtime);
 
+        time += dtime;
 
         if (time >= TimeNextOutput) {
             std::cout << "time = " << time << std::endl;
@@ -127,8 +132,6 @@ int main(int argc, char* argv[]) {
             ++snapshotIndex;
             TimeNextOutput += printInterval;
         }
-
-        time += dtime;
     }
   
 	delete mesh;
@@ -139,7 +142,7 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-void parseRayParamFile(const std::string& fileName,
+void parseRayParamFile(const std::string& fileName, int& nOutputs,
 		double& HIionisationCrossSection, double& HeIionisationCrossSection, double& HeIIionisationCrossSection,
 		double& dustAbsorptionOpacity, double& maxRadius,
         std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, double& dtime, int64_t& Nside, std::string& meshFile,
@@ -168,7 +171,10 @@ void parseRayParamFile(const std::string& fileName,
         value.erase(0, value.find_first_not_of(" \t"));
         value.erase(value.find_last_not_of(" \t") + 1);
 
-        if (key == "HIionisationCrossSection") {
+        if (key == "nOutputs") {
+        	nOutputs = std::stoi(value);
+        }
+        else if (key == "HIionisationCrossSection") {
         	HIionisationCrossSection = std::stod(value);
         }
         else if (key == "HeIionisationCrossSection") {

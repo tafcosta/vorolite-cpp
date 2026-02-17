@@ -32,7 +32,7 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 	cellRemainingHeI.resize(numCells, 0.0);
 	cellRemainingHeII.resize(numCells, 0.0);
 
-	fluxOfRayInCell.resize(numCells);       //The first dimension should be number of rays
+	fluxOfRayInCell.resize(numCells);
 
     //doSelfShieldingCorrection();
 
