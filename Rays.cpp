@@ -23,6 +23,7 @@ Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, do
 	sourcePosition = source.getPosition();
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
 	std::cout << "Source host cell ID = " << startCell << std::endl;
+	//mesh.setHIIFraction(startCell, 1.);
 
 	setNumRays();
 	rayTargetCell = std::vector<int> (nRays);
@@ -39,6 +40,7 @@ Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, do
 
 	rayPosition = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
 	initializePositions();
+	mesh.calculateSolidAngles(mesh.cellCoordinates[startCell]);
 
 	columnHI          = std::vector<double>(nRays, 0.0);
 	columnDust        = std::vector<double>(nRays, 0.0);
@@ -115,7 +117,9 @@ void Rays::assignToHealpix(int64_t healpixNside) {
 	for (int i = 0; i < nRays; ++i) {
 		rayWeightTotal += rayWeight[i];
 	}
-	std::cout << "Total ray weights add up to " << rayWeightTotal << std::endl;
+
+	if (rayWeightTotal > 1 + 1.e-10 || rayWeightTotal < 1 - 1.e-10)
+		std::cout << "Total ray weights do not add up to " << rayWeightTotal << "! There is a problem with the source." << std::endl;
 }
 
 void Rays::initializePositions() {
@@ -437,16 +441,16 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 	} else {
 
 	    double NdotFinal   = source.getLuminosity(time) * rayWeight[iRay];
+        double dtime_in_cgs = dtime * mesh.unitLength / mesh.unitVelocity;
+
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
+
 		    int iCell        = visitedCells[iRay][i];
-	        double dtime_in_cgs = dtime * mesh.unitLength / mesh.unitVelocity;
 
 		    double neutral   = 1.0 - mesh.getHIIFraction(iCell);
-		    neutral          = std::max(neutral, 1e-20);
 		    double yHe       = mesh.getHeIIFraction(iCell);
 		    double zHe       = mesh.getHeIIIFraction(iCell);
 		    double neutralHe = 1.0 - yHe - zHe;
-		    neutralHe = std::max(neutralHe, 1e-20);
 
 	        double dColumnHI     = visitedCellColumn[iRay][i] * mesh.xHydrogen * neutral;
 	        double dColumnHeI    = visitedCellColumn[iRay][i] * mesh.yHelium   * neutralHe;
@@ -461,6 +465,8 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 	        const double dtau = tauHI + tauHeI + tauHeII + tauDust;
 
 	        const double fabs = 1.0 - std::exp(-dtau);
+	        mesh.cellFlux[iCell] = dtau;
+
 	        const double Nabs = fabs * NdotFinal;
 
 	        const double invTau = 1.0 / (dtau + 1e-99);
@@ -469,9 +475,33 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 	        double NabsHeII = Nabs * tauHeII * invTau;
 	        double NabsDust = Nabs * tauDust * invTau;
 
+
+	        /*
+	        double alpha = 2.59e-13;
+	        double xHII  = mesh.getHIIFraction(iCell);
+	        double nH    = mesh.getHNumberDensity_in_cgs(iCell);
+	        double nHe   = mesh.getHeNumberDensity_in_cgs(iCell);
+	        double ne    = xHII * nH + (yHe + 2.0*zHe) * nHe;
+
+	        double volume =
+	            mesh.getMass(iCell) / mesh.getDensity(iCell) *
+	            (mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength * mesh.scaleFactor * mesh.unitLength) *
+	            mesh.HubbleParam * mesh.HubbleParam * mesh.HubbleParam;
+
+	        double recRateVolume = alpha * ne * (xHII * nH);   // cm^-3 s^-1
+	        double recRateTotal  = recRateVolume * volume / (nH  * volume);     // s^-1
+	        */
+
+
+
+	        /*
 	        double NHI = mesh.getRemainingHI(iCell);
-	        if (NabsHI * dtime_in_cgs > NHI) NabsHI = NHI / dtime_in_cgs;
-	        mesh.setRemainingHI(iCell, NHI - NabsHI * dtime_in_cgs);
+	        if(NHI < 0) NHI = 0.;
+	        double NabsNet = NabsHI - recRateTotal;
+	        if (NabsNet * dtime_in_cgs > NHI) NabsNet = NHI / dtime_in_cgs;
+	        if(Nabs * dtime_in_cgs > NHI) Nabs = NHI / dtime_in_cgs;
+	        mesh.setRemainingHI(iCell, NHI * dtime_in_cgs);
+	        mesh.setRemainingHI(iCell, (NHI - NabsNet) * dtime_in_cgs);
 
 	        double NHeI = mesh.getRemainingHeI(iCell);
 	        if (NabsHeI * dtime_in_cgs > NHeI) NabsHeI = NHeI / dtime_in_cgs;
@@ -480,6 +510,7 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 	        double NHeII = mesh.getRemainingHeII(iCell);
 	        if (NabsHeII * dtime_in_cgs > NHeII) NabsHeII = NHeII / dtime_in_cgs;
 	        mesh.setRemainingHeII(iCell, NHeII - NabsHeII * dtime_in_cgs);
+*/
 
 	        mesh.cellIncomingPhotonRate[iCell]     += NdotFinal;
 	        mesh.cellAbsorbedPhotonRateHI[iCell]   += NabsHI;
@@ -488,13 +519,11 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 
 	        const double NabsCapped = NabsHI + NabsHeI + NabsHeII + NabsDust;
 
-
 	        double fabsCapped = (NdotFinal > 0.0) ? (NabsCapped / NdotFinal) : 0.0;
 	        if (fabsCapped < 0.0) fabsCapped = 0.0;
 	        if (fabsCapped > 1.0) fabsCapped = 1.0;
 
 	        const double ftrans = 1.0 - fabsCapped;
-
 	        NdotFinal *= ftrans;
 
 		    columnHI[iRay] += dColumnHI;
@@ -523,6 +552,33 @@ void Rays::doRadiativeTransfer(double time, double dtime){
 
 		updateColumnAndFlux(iRay, time, dtime);
 	}
+}
+
+double Rays::getRecombinationRate(Species species, double fraction, double electronDensity, double temp) {
+    double alpha = 0.0;
+
+    switch(species) {
+        case Species::HI:
+            alpha = getHIIrecombinationCoefficient(temp);
+            break;
+    }
+
+    return fraction * electronDensity * alpha;
+}
+
+double Rays::getHIIrecombinationCoefficient(double temperature)
+{
+    // Hui & Gnedin (1997)
+    // Returns alpha_B in cm^3 s^-1
+    assert(temperature > 0.0);
+
+    temperature = std::max(temperature, 1e-20);
+
+    const double lambda = 315614.0 / temperature;
+
+    return 2.753e-14
+         * lambda * std::sqrt(lambda)
+         * std::pow(1.0 + std::pow(lambda / 2.740, 0.407), -2.242);
 }
 
 

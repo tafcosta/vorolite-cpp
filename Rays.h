@@ -44,6 +44,11 @@ public:
 	std::vector<double> distanceTravelled;
 	std::vector<double> finalLuminosity;
 
+    double getHIIrecombinationCoefficient(double temp);
+    enum class Species { HI, HeII, HeIII };
+    double getRecombinationRate(Species species, double fraction, double electronDensity, double temperature);
+
+
 
 	std::vector<std::vector<double>> visitedCellColumn;
 	std::vector<std::vector<int>> visitedCells;

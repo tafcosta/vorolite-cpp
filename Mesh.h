@@ -37,7 +37,9 @@ public:
 
     std::vector<double> cellPhotonRate;
     std::vector<double> cellIncomingPhotonRate;
-    std::vector<double> cellNetIonisationRate;
+    std::vector<double> cellFlux;
+    std::vector<double> cellSolidAngle;
+
 
     std::vector<double> cellAbsorbedPhotonRateHI;
     std::vector<double> cellAbsorbedPhotonRateHeI;
@@ -55,8 +57,8 @@ public:
 	std::vector<double> cellXH;
 	std::vector<double> cellSpecificInternalEnergy;
 	std::vector<double> cellMetallicity;
-    std::vector<std::vector<float>> cellCoordinates;
     std::vector<std::vector<float>> cellVelocities;
+    std::vector<std::vector<float>> cellCoordinates;
 
 	std::vector<std::vector<int>> neighbourList;
 	std::vector<int> findHostCellID(const std::vector<double>& target, int cellGuess);
@@ -76,6 +78,9 @@ public:
 	double getDensity(int iCell);
 	double getHNumberDensity_in_cgs(int iCell);
 	double getHeNumberDensity_in_cgs(int iCell);
+	std::vector<float> getCoordinates(int iCell);
+
+	double getEffectiveArea(int iCell);
 
 	double getElectronNumberDensity_in_cgs(int iCell);
 	double getMeanMolecularWeight(int iCell);
@@ -101,6 +106,8 @@ public:
 	void setRemainingHI(int iCell, double newValue);
 	void setRemainingHeI(int iCell, double newValue);
 	void setRemainingHeII(int iCell, double newValue);
+
+	void calculateSolidAngles(std::vector<float>& SourcePosition);
 
     void resetPhotons();
     void resizeFluxOfRayInCell(int iRay, int numVisitedCells);

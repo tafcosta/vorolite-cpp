@@ -18,13 +18,14 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     cellPhotonRate.resize(numCells, 0.0);
     cellIncomingPhotonRate.resize(numCells, 0.0);
 
+    cellFlux.resize(numCells, 0.0);
+    cellSolidAngle.resize(numCells, 0.0);
+
     cellAbsorbedPhotonRateHI.resize(numCells, 0.0);
     cellAbsorbedPhotonRateHeI.resize(numCells, 0.0);
     cellAbsorbedPhotonRateHeII.resize(numCells, 0.0);
 
-    cellNetIonisationRate.resize(numCells, 0.0);
-
-	cellHIIFraction.resize(numCells, 0.0);
+	cellHIIFraction.resize(numCells, 1.e-3);
 	cellHeIIFraction.resize(numCells, 0.0);
 	cellHeIIIFraction.resize(numCells, 0.0);
 
@@ -50,6 +51,26 @@ double Mesh::getMass(int iCell){
 
 double Mesh::getDensity(int iCell){
 	return cellDensity[iCell];
+}
+
+double Mesh::getEffectiveArea(int iCell){
+	double volume = getMass(iCell)/getDensity(iCell);
+	double radius = 3.0/4.0 * std::pow(volume, 1./3);
+
+	return radius * radius;
+}
+
+void Mesh::calculateSolidAngles(std::vector<float>& SourcePosition){
+
+	std::vector<float> pos;
+	for (int iCell = 0; iCell < numCells; iCell++){
+		double dx = getCoordinates(iCell)[0] - SourcePosition[0];
+		double dy = getCoordinates(iCell)[1] - SourcePosition[1];
+		double dz = getCoordinates(iCell)[2] - SourcePosition[2];
+
+		double radiusSquared = dx*dx + dy*dy + dz*dz;
+		cellSolidAngle[iCell] = getEffectiveArea(iCell)/(4 * M_PI * radiusSquared);
+	}
 }
 
 double Mesh::getSpecificInternalEnergy(int iCell){
@@ -79,7 +100,7 @@ double Mesh::getMeanMolecularWeight(int iCell){
 }
 
 double Mesh::getTemperature_in_K(int iCell){
-	return getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
+	return 1.e4;/*getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
 			(adiabaticIndex - 1.0) * getMeanMolecularWeight(iCell) * protonMass / boltzmannConstant;*/
 }
 
@@ -153,6 +174,10 @@ double Mesh::getHeIIIFraction(int iCell){
 	return cellHeIIIFraction[iCell];
 }
 
+std::vector<float> Mesh::getCoordinates(int iCell){
+	return cellCoordinates[iCell];
+}
+
 int Mesh::getIndex(int iCell){
 	return cellIndices[iCell];
 }
@@ -163,12 +188,6 @@ void Mesh::setFluxOfRayInCell(int iRay, int iCell, double newValue){
 
 void Mesh::setHIIFraction(int iCell, double newValue){
 	cellHIIFraction[iCell] = newValue;
-
-	if(newValue > 1.0)
-		cellHIIFraction[iCell] = 1.0;
-
-	if(newValue < 0.0)
-		cellHIIFraction[iCell] = 0.0;
 }
 
 void Mesh::setHeIIFraction(int iCell, double newValue){
@@ -251,17 +270,18 @@ void Mesh::resetPhotons(){
     for(int iCell = 0; iCell < numCells; iCell++){
         cellPhotonRate[iCell] = 0.;
 
+        cellFlux[iCell] = 0.0;
         cellAbsorbedPhotonRateHI[iCell]   = 0.;
         cellAbsorbedPhotonRateHeI[iCell]  = 0.;
         cellAbsorbedPhotonRateHeII[iCell] = 0.;
 
         cellIncomingPhotonRate[iCell] = 0.;
-        cellNetIonisationRate[iCell]  = 0.;
 
-        const double xMax = 1.0 - 1e-20;
+
+        const double xMax = 1.0 - 1e-10;
 
         double xHII = getHIIFraction(iCell);
-        if (xHII < 0.0) xHII = 0.0;
+        if (xHII < 0.0) xHII = 1.e-10;
         if (xHII > xMax) xHII = xMax;
 
         double yHeII = getHeIIFraction(iCell);
@@ -274,7 +294,7 @@ void Mesh::resetPhotons(){
             zHeIII = zHeIII * xMax / s;
         }
 
-        const double neutralH = std::max(1.0 - xHII, 1e-20);
+        const double neutralH = std::max(1.0 - xHII, 0.0);
         const double neutralHe = std::max(1.0 - yHeII - zHeIII, 1e-20);
 
         double volume = getMass(iCell) / getDensity(iCell) *

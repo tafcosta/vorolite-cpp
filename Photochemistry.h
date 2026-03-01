@@ -33,6 +33,10 @@ public:
     double getRecombinationRate(Species species, double fraction, double electronDensity, double temperature);
 
     void evolveIonisation(double dtime);
+
+private:
+    double solveQuadratic(double a, double b, double c, double sign);
+    double solveQuadratic(double p, double q, double sign);
 };
 
 #endif /* PHOTOCHEMISTRY_H_ */
