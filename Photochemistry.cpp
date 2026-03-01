@@ -30,55 +30,23 @@ void Photochemistry::evolveIonisation(double dtime) {
         double yHe = mesh.getHeIIFraction(iCell);
         double zHe = mesh.getHeIIIFraction(iCell);
 
-        const double x0 = xH;
-        const double NdotAbsorbedHI   = mesh.cellAbsorbedPhotonRateHI[iCell];
-        const double NdotAbsorbedHeI  = mesh.cellAbsorbedPhotonRateHeI[iCell];
-        const double NdotAbsorbedHeII = mesh.cellAbsorbedPhotonRateHeII[iCell];
-
-        const double nH   = mesh.getHNumberDensity_in_cgs(iCell);
-        const double nHe  = mesh.getHeNumberDensity_in_cgs(iCell);
-        const double temp = mesh.getTemperature_in_K(iCell);
-
-        const double volume =
-            mesh.getMass(iCell) / mesh.getDensity(iCell) *
-            std::pow(mesh.scaleFactor * mesh.unitLength, 3) *
-            std::pow(mesh.HubbleParam, 3);
-
-        auto clampState = [&](double &x, double &y, double &z) {
-            const double tiny = 1.e-20;
-            const double oneMinusTiny = 1.0 - tiny;
-
-            x = std::min(std::max(x, tiny), oneMinusTiny);
-            x = std::min(std::max(x, tiny), 0.99999);
-
-            y = std::max(y, tiny);
-            z = std::max(z, tiny);
-
-            const double yz = y + z;
-            if (yz > oneMinusTiny) {
-                const double inv = oneMinusTiny / yz;
-                y *= inv;
-                z *= inv;
-            }
-        };
+        const double flux_in_cgs = mesh.getFlux(iCell) / mesh.unitLength / mesh.unitLength;
+        const double nH     = mesh.getHNumberDensity_in_cgs(iCell);
+        const double nHe    = mesh.getHeNumberDensity_in_cgs(iCell);
+        const double temp   = mesh.getTemperature_in_K(iCell);
+        const double volume = mesh.getMass(iCell) / mesh.getDensity(iCell) *
+            std::pow(mesh.scaleFactor * mesh.unitLength, 3) * std::pow(mesh.HubbleParam, 3);
 
         struct Rates { double dx, dy, dz; };
 
         auto computeRates = [&](double x, double y, double z) -> Rates {
-            //clampState(x, y, z);
-
             const double ne = x * nH + (y + 2.0 * z) * nHe;
-            double updatedTau = mesh.cellFlux[iCell] * (1 - x) / std::max((1 - xH), 1.e-10);
-            double tmpNdotAbsorbedHI = mesh.cellIncomingPhotonRate[iCell] * (1 - std::exp(-updatedTau));
-
-            if(iCell == 956)
-            	std::cout << "TEST " << updatedTau << " " << x << std::endl;
 
             double ionH = 0.0, ionHeI = 0.0, ionHeII = 0.0;
             if (volume > 0.0) {
-                if (nH  > 0.0) ionH    = tmpNdotAbsorbedHI   / (nH  * volume);
-                if (nHe > 0.0) ionHeI  = NdotAbsorbedHeI  / (nHe * volume);
-                if (nHe > 0.0) ionHeII = NdotAbsorbedHeII / (nHe * volume);
+                if (nH  > 0.0) ionH    = (1.0 - x) * flux_in_cgs * 6.3e-18;
+                if (nHe > 0.0) ionHeI  = (1.0 - y) * flux_in_cgs * 0.;
+                if (nHe > 0.0) ionHeII = (1.0 - z) * flux_in_cgs * 0.;
             }
 
             const double recH     = getRecombinationRate(Species::HI,    x, ne, temp);
@@ -102,15 +70,10 @@ void Photochemistry::evolveIonisation(double dtime) {
 
         for (int iSub = 0; iSub < nSub; ++iSub) {
 
-            if (iCell == 956) {
+            if (iCell == 952) {
                 const double ne0 = xH * nH + (yHe + 2.0 * zHe) * nHe;
 
-                double ionH0 = 0.0;
-                if (volume > 0.0 && nH > 0.0)
-                    ionH0 = NdotAbsorbedHI / (nH * volume);
-
-                const double neutral0 = std::max(1.0 - xH, 1e-30);
-                const double GammaHI0 = ionH0 / neutral0; // s^-1
+                const double GammaHI0 = flux_in_cgs * 6.3e-18; // s^-1
 
                 const double tIon0 = (GammaHI0 > 0.0)
                     ? (1.0 / GammaHI0)
@@ -126,15 +89,14 @@ void Photochemistry::evolveIonisation(double dtime) {
                     : std::numeric_limits<double>::infinity();
 
 
-                std::cout << "FIRST SUBSTEP: "
-                          << "NAbs=" << NdotAbsorbedHI
+                /*std::cout << "FIRST SUBSTEP: "
                           << " neutral=" << std::setprecision(14) << 1-xH
                           << std::setprecision(3)   // reset to default precision
                           << " tRec=" << tRec0
                           << " tIon=" << tIon0
                           << " tEq=" << tEq0
                           << " dtSub=" << dtSub
-                          << std::endl;
+                          << std::endl;*/
             }
 
 
@@ -153,22 +115,18 @@ void Photochemistry::evolveIonisation(double dtime) {
             yHe += (dtSub / 6.0) * (k1.dy + 2.0*k2.dy + 2.0*k3.dy + k4.dy);
             zHe += (dtSub / 6.0) * (k1.dz + 2.0*k2.dz + 2.0*k3.dz + k4.dz);
 
-            if(xH > 1 || xH < 0 || std::isnan(xH)){
-            	double Gamma = NdotAbsorbedHI / ((1 - x0) * nH * volume);
-            	double term1 = getHIIrecombinationCoefficient(temp) * nH;
-            	double term2 = 0.0;//getHIIrecombinationCoefficient(temp) * (yHe + 2*zHe) * nHe; //getHIIrecombinationCoefficient(temp) * (yHe + 2*zHe) * nHe + Gamma;
-            	double term3 = -NdotAbsorbedHI / (nH * volume);// -Gamma;
 
-            	double xExpected = sqrt(NdotAbsorbedHI/(nH * nH * getHIIrecombinationCoefficient(temp) * volume));
-				xH = solveQuadratic(term1, term2, term3, 1.0);
+            double Gamma = flux_in_cgs * 6.3e-18;
+            double term1 = getHIIrecombinationCoefficient(temp) * nH;
+            double term2 = getHIIrecombinationCoefficient(temp) * (yHe + 2*zHe) * nHe + Gamma;
+            double term3 = -Gamma;
+            double xEq   = solveQuadratic(term1, term2, term3, 1.0);
 
-	            if(iCell == 956)
-	            	std::cout << "xH (after Quadratic) = " << std::setprecision(14) << xH << " " << std::setprecision(14) << xExpected
-					<< ", term1 = " << term1 << ", term2 = " <<  term2 << ", term3 = " << term3 << std::endl;
+            /*	std::cout << "flux = " << flux_in_cgs << ", neutral (after Quadratic) = " << std::setprecision(14) << 1 - xEq << " "
+				<< ", term1 = " << term1 << ", term2 = " <<  term2 << ", term3 = " << term3 << std::endl;*/
 
-            }
-
-            //clampState(xH, yHe, zHe);
+            if(xH > 1 || xH < 0 || isnan(xH) || fabs(xH - xEq) < 10 * xEq)
+            	xH = xEq;
         }
 
         mesh.setHIIFraction(iCell,   xH);
@@ -284,7 +242,7 @@ double Photochemistry::getHeIIcollisionalIonisationCoefficient(double T)
 double Photochemistry::solveQuadratic(double a, double b, double c, double sign)
 {
 // zeros of a x**2 + b x + c
-	if (fabs(a) <= 1e-10){
+	if (fabs(a) <= 1e-20){
 		return -c / b;
 	}
 	else {

@@ -49,10 +49,6 @@ public:
     std::vector<double> cellHeIIFraction;
     std::vector<double> cellHeIIIFraction;
 
-	std::vector<double> cellRemainingHI;
-	std::vector<double> cellRemainingHeI;
-	std::vector<double> cellRemainingHeII;
-
 	std::vector<double> cellElectronFraction;
 	std::vector<double> cellXH;
 	std::vector<double> cellSpecificInternalEnergy;
@@ -76,6 +72,7 @@ public:
 
 	double getMass(int iCell);
 	double getDensity(int iCell);
+	double getFlux(int iCell);
 	double getHNumberDensity_in_cgs(int iCell);
 	double getHeNumberDensity_in_cgs(int iCell);
 	std::vector<float> getCoordinates(int iCell);
@@ -103,9 +100,6 @@ public:
 	void setHIIFraction(int iCell, double newValue);
 	void setHeIIFraction(int iCell, double newValue);
 	void setHeIIIFraction(int iCell, double newValue);
-	void setRemainingHI(int iCell, double newValue);
-	void setRemainingHeI(int iCell, double newValue);
-	void setRemainingHeII(int iCell, double newValue);
 
 	void calculateSolidAngles(std::vector<float>& SourcePosition);
 

@@ -29,10 +29,6 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 	cellHeIIFraction.resize(numCells, 0.0);
 	cellHeIIIFraction.resize(numCells, 0.0);
 
-	cellRemainingHI.resize(numCells, 0.0);
-	cellRemainingHeI.resize(numCells, 0.0);
-	cellRemainingHeII.resize(numCells, 0.0);
-
 	fluxOfRayInCell.resize(numCells);
 
     //doSelfShieldingCorrection();
@@ -61,7 +57,6 @@ double Mesh::getEffectiveArea(int iCell){
 }
 
 void Mesh::calculateSolidAngles(std::vector<float>& SourcePosition){
-
 	std::vector<float> pos;
 	for (int iCell = 0; iCell < numCells; iCell++){
 		double dx = getCoordinates(iCell)[0] - SourcePosition[0];
@@ -69,7 +64,7 @@ void Mesh::calculateSolidAngles(std::vector<float>& SourcePosition){
 		double dz = getCoordinates(iCell)[2] - SourcePosition[2];
 
 		double radiusSquared = dx*dx + dy*dy + dz*dz;
-		cellSolidAngle[iCell] = getEffectiveArea(iCell)/(4 * M_PI * radiusSquared);
+		cellSolidAngle[iCell] = getEffectiveArea(iCell)/(4 * M_PI * std::max(radiusSquared, 1.e-10));
 	}
 }
 
@@ -108,18 +103,6 @@ double Mesh::getMetallicityInSolar(int iCell){
 	return cellMetallicity[iCell]/0.0127;
 }
 
-double Mesh::getRemainingHI(int iCell){
-	return cellRemainingHI[iCell];
-}
-
-double Mesh::getRemainingHeI(int iCell){
-	return cellRemainingHeI[iCell];
-}
-
-double Mesh::getRemainingHeII(int iCell){
-	return cellRemainingHeII[iCell];
-}
-
 double Mesh::getSelfShieldingCorrection(int iCell) {
     const double rho_s = 1.52e-2;
     const double rho_u = 4.53e-3;
@@ -152,6 +135,10 @@ void Mesh::doSelfShieldingCorrection() {
 
 double Mesh::getFluxOfRayInCell(int iRay, int iCell){
 	return fluxOfRayInCell[iRay][iCell];
+}
+
+double Mesh::getFlux(int iCell){
+	return cellFlux[iCell];
 }
 
 double Mesh::getIncomingPhotonRate(int iCell){
@@ -192,34 +179,10 @@ void Mesh::setHIIFraction(int iCell, double newValue){
 
 void Mesh::setHeIIFraction(int iCell, double newValue){
 	cellHeIIFraction[iCell] = newValue;
-
-	if(newValue > 1.0)
-		cellHeIIFraction[iCell] = 1.0;
-
-	if(newValue < 0.0)
-		cellHeIIFraction[iCell] = 0.0;
 }
 
 void Mesh::setHeIIIFraction(int iCell, double newValue){
 	cellHeIIIFraction[iCell] = newValue;
-
-	if(newValue > 1.0)
-		cellHeIIIFraction[iCell] = 1.0;
-
-	if(newValue < 0.0)
-		cellHeIIIFraction[iCell] = 0.0;
-}
-
-void Mesh::setRemainingHI(int iCell, double newValue){
-	cellRemainingHI[iCell] = std::max(0.0, newValue);
-}
-
-void Mesh::setRemainingHeI(int iCell, double newValue){
-	cellRemainingHeI[iCell] = std::max(0.0, newValue);
-}
-
-void Mesh::setRemainingHeII(int iCell, double newValue){
-	cellRemainingHeII[iCell] = std::max(0.0, newValue);
 }
 
 void Mesh::getNumCellsInRegion(){
@@ -268,47 +231,13 @@ void Mesh::getNumCellsInRegion(){
 
 void Mesh::resetPhotons(){
     for(int iCell = 0; iCell < numCells; iCell++){
+        cellIncomingPhotonRate[iCell] = 0.;
         cellPhotonRate[iCell] = 0.;
+        cellFlux[iCell] = 0.;
 
-        cellFlux[iCell] = 0.0;
         cellAbsorbedPhotonRateHI[iCell]   = 0.;
         cellAbsorbedPhotonRateHeI[iCell]  = 0.;
         cellAbsorbedPhotonRateHeII[iCell] = 0.;
-
-        cellIncomingPhotonRate[iCell] = 0.;
-
-
-        const double xMax = 1.0 - 1e-10;
-
-        double xHII = getHIIFraction(iCell);
-        if (xHII < 0.0) xHII = 1.e-10;
-        if (xHII > xMax) xHII = xMax;
-
-        double yHeII = getHeIIFraction(iCell);
-        double zHeIII = getHeIIIFraction(iCell);
-        if (yHeII < 0.0) yHeII = 0.0;
-        if (zHeIII < 0.0) zHeIII = 0.0;
-        if (yHeII + zHeIII > xMax) {
-            const double s = yHeII + zHeIII;
-            yHeII = yHeII * xMax / s;
-            zHeIII = zHeIII * xMax / s;
-        }
-
-        const double neutralH = std::max(1.0 - xHII, 0.0);
-        const double neutralHe = std::max(1.0 - yHeII - zHeIII, 1e-20);
-
-        double volume = getMass(iCell) / getDensity(iCell) *
-             scaleFactor * unitLength  *
-             scaleFactor * unitLength  *
-             scaleFactor * unitLength  *
-             HubbleParam * HubbleParam * HubbleParam;
-
-        double nH  = getHNumberDensity_in_cgs(iCell);
-        double nHe = getHeNumberDensity_in_cgs(iCell);
-
-        cellRemainingHI[iCell]  = neutralH * (nH * volume);
-        cellRemainingHeI[iCell] = neutralHe * (nHe * volume);
-        cellRemainingHeII[iCell]= yHeII * (nHe * volume);
     }
 }
 
