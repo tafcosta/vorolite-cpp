@@ -58,7 +58,7 @@ public:
 	double speedOfLightInternal = speedOfLight/mesh.unitVelocity;
 
 	void calculateRays();
-	void doRadiativeTransfer(double time, double dtime);
+	void doRadiativeTransfer(double time, double dtime, bool useAverageHI = false);
 	void outputResults(std::string& ofileName);
 
 protected:
@@ -68,7 +68,7 @@ protected:
 
 	void assignToHealpix(int64_t healpixNside);
 	void updateRayPosition(int iRay, double distance);
-	void updateColumnAndFlux(int iRay, double time, double dtime);
+	void updateColumnAndFlux(int iRay, double time, double dtime, bool useAverageHI);
 	int findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose);
 	int modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double distanceToExit, bool verbose);
 	bool updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit);

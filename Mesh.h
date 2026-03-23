@@ -30,24 +30,23 @@ public:
 	double HubbleParam;
 	double scaleFactor;
 
-	double xHydrogen = 0.76;
-	double yHelium   = 0.24;
+	double xHydrogen = 1.;//0.76;
+	double yHelium   = 0.;//0.24;
 
     std::vector<int> cellVisitsByRay;
 
-    std::vector<double> cellPhotonRate;
     std::vector<double> cellIncomingPhotonRate;
     std::vector<double> cellFlux;
     std::vector<double> cellSolidAngle;
 
-
-    std::vector<double> cellAbsorbedPhotonRateHI;
-    std::vector<double> cellAbsorbedPhotonRateHeI;
-    std::vector<double> cellAbsorbedPhotonRateHeII;
+    std::vector<double> cellPhotonAbsorptionRateHI;
+    std::vector<double> cellPhotonAbsorptionRateHeI;
+    std::vector<double> cellPhotonAbsorptionRateHeII;
 
     std::vector<double> cellHIIFraction;
     std::vector<double> cellHeIIFraction;
     std::vector<double> cellHeIIIFraction;
+    std::vector<double> cellRemainingHI;
 
 	std::vector<double> cellElectronFraction;
 	std::vector<double> cellXH;
@@ -55,6 +54,10 @@ public:
 	std::vector<double> cellMetallicity;
     std::vector<std::vector<float>> cellVelocities;
     std::vector<std::vector<float>> cellCoordinates;
+
+    std::vector<double> xH_old;
+    std::vector<double> xH_pred;
+    std::vector<double> xH_avg;
 
 	std::vector<std::vector<int>> neighbourList;
 	std::vector<int> findHostCellID(const std::vector<double>& target, int cellGuess);
@@ -87,13 +90,11 @@ public:
 	double getTemperature_in_K(int iCell);
     double getIncomingPhotonRate(int iCell);
 
-    double getAbsorbedPhotonRateHI(int iCell);
+    double getPhotonAbsorptionRateHI(int iCell);
     double getAbsorbedPhotonRateHeI(int iCell);
     double getAbsorbedPhotonRateHeII(int iCell);
 
-    double getRemainingHI(int iCell);
-    double getRemainingHeI(int iCell);
-    double getRemainingHeII(int iCell);
+    double getAverageHIState(int iCell);
 
 	int getIndex(int iCell);
 

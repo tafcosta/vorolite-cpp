@@ -103,8 +103,14 @@ int main(int argc, char* argv[]) {
     std::cout << "Starting radiative transfer" << std::endl;
     while (time < timeMax) {
 
+    	photochemistry->storeOldIonisation();
+
         mesh->resetPhotons();
-    	rays->doRadiativeTransfer(time, dtime);
+    	rays->doRadiativeTransfer(time, dtime, false);
+    	photochemistry->predictIonisation(dtime);
+
+        mesh->resetPhotons();
+    	rays->doRadiativeTransfer(time, dtime, true);
     	photochemistry->evolveIonisation(dtime);
 
         time += dtime;
@@ -122,8 +128,12 @@ int main(int argc, char* argv[]) {
                     for (float coord : mesh->cellCoordinates[iCell]) {
                         outFile << coord << " ";
                     }
-                    outFile << mesh->getHIIFraction(iCell) << " " << mesh->getHeIIFraction(iCell) << " " << mesh->getHeIIIFraction(iCell) << " " << mesh->cellIncomingPhotonRate[iCell] << std::endl;
-                }
+                    outFile << mesh->getHIIFraction(iCell) << " "
+                            << mesh->getHeIIFraction(iCell) << " "
+                            << mesh->getHeIIIFraction(iCell) << " "
+                            << mesh->cellFlux[iCell] << " "
+                            << mesh->cellIncomingPhotonRate[iCell]
+                            << std::endl;                }
                 outFile.close();
             } else {
                 std::cerr << "Unable to open file " << filename.str() << " for writing." << std::endl;

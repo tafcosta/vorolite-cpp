@@ -172,9 +172,7 @@ int Rays::travelToNextCell(int iCell, int iRay, bool verbose){
 			 visitedCellColumn[iRay].back() += overshoot * mesh.getDensity(exitCell);
 	 }
 
-
 	 updateRayPosition(iRay, distanceToExit + overshoot);
-
 
     if(verbose){
     	double distanceToCell = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
@@ -405,7 +403,7 @@ double Rays::distanceSquared(std::vector<float>& a, std::vector<float>& b){
 	return (a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]);
 }
 
-void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
+void Rays::updateColumnAndFlux(int iRay, double time, double dtime, bool useAverageHI){
 
 	if(timeDependent){
 
@@ -431,7 +429,7 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 			}
 
 			fluxOfRay[i] = (j == 0? source.getLuminosity(time - dtime/2.0) * rayWeight[iRay]: mesh.getFluxOfRayInCell(iRay, j)) * std::exp(-ionisationCrossSectionHI_inInternalUnits * columnHIIindTime);
-			mesh.cellPhotonRate[visitedCells[iRay][i]] += fluxOfRay[i];
+			mesh.cellIncomingPhotonRate[visitedCells[iRay][i]] += fluxOfRay[i];
 		}
 
 		for (int i = 0; i < visitedCells[iRay].size(); i++)
@@ -439,14 +437,18 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 
 	} else {
 
-	    double NdotFinal   = source.getLuminosity(time) * rayWeight[iRay];
+	    double NdotFinal    = source.getLuminosity(time) * rayWeight[iRay];
         double dtime_in_cgs = dtime * mesh.unitLength / mesh.unitVelocity;
 
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
-
 		    int iCell        = visitedCells[iRay][i];
 
-		    double neutral   = 1.0 - mesh.getHIIFraction(iCell);
+		    double xHII = useAverageHI ? mesh.xH_avg[iCell]
+		                               : mesh.getHIIFraction(iCell);
+
+		    xHII = std::max(0.0, std::min(1.0, xHII));
+		    double neutral = 1.0 - xHII;
+
 		    double yHe       = mesh.getHeIIFraction(iCell);
 		    double zHe       = mesh.getHeIIIFraction(iCell);
 		    double neutralHe = 1.0 - yHe - zHe;
@@ -472,20 +474,14 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime){
 	        double NabsHeII     = Nabs * tauHeII * invTau;
 	        double NabsDust     = Nabs * tauDust * invTau;
 
-	        mesh.cellPhotonRate[iCell]             += NdotFinal;
-	        mesh.cellFlux[iCell]                   += NdotFinal/mesh.getEffectiveArea(iCell);
-	        mesh.cellAbsorbedPhotonRateHI[iCell]   += NabsHI;
-	        mesh.cellAbsorbedPhotonRateHeI[iCell]  += NabsHeI;
-	        mesh.cellAbsorbedPhotonRateHeII[iCell] += NabsHeII;
+	        mesh.cellPhotonAbsorptionRateHI[iCell]   += NabsHI;
+	        mesh.cellPhotonAbsorptionRateHeI[iCell]  += NabsHeI;
+	        mesh.cellPhotonAbsorptionRateHeII[iCell] += NabsHeII;
 
-	        const double NabsCapped = NabsHI + NabsHeI + NabsHeII + NabsDust;
+	        //mesh.cellIncomingPhotonRate[iCell]     += NdotFinal;
+	        //mesh.cellFlux[iCell]                   += NdotFinal/mesh.getEffectiveArea(iCell)/ mesh.unitLength / mesh.unitLength;
 
-	        double fabsCapped = (NdotFinal > 0.0) ? (NabsCapped / NdotFinal) : 0.0;
-	        if (fabsCapped < 0.0) fabsCapped = 0.0;
-	        if (fabsCapped > 1.0) fabsCapped = 1.0;
-
-	        const double ftrans = 1.0 - fabsCapped;
-	        NdotFinal *= ftrans;
+	        NdotFinal *= 1.0 - fabs;
 
 		    columnHI[iRay]   += dColumnHI;
 		    columnDust[iRay] += dColumnDust;
@@ -506,15 +502,22 @@ void Rays::calculateRays(){
 		}
 }
 
-void Rays::doRadiativeTransfer(double time, double dtime){
+void Rays::doRadiativeTransfer(double time, double dtime, bool useAverageHI){
 
 	mesh.setHIIFraction(startCell, 1.);
 	for(int iRay = 0; iRay < nRays; iRay++){
+
 		columnHI[iRay]   = 0.;
 		columnDust[iRay] = 0.;
 
-		updateColumnAndFlux(iRay, time, dtime);
+		updateColumnAndFlux(iRay, time, dtime, useAverageHI);
 	}
+
+    /*for (int iCell = 0; iCell < mesh.numCells; iCell++){
+    	double analytic_flux = source.getLuminosity(time) * mesh.cellSolidAngle[iCell] / mesh.getEffectiveArea(iCell)/ (mesh.unitLength * mesh.unitLength);
+    	mesh.cellFlux[iCell] = std::min(mesh.cellFlux[iCell], analytic_flux);
+    }*/
+
 }
 
 Rays::~Rays() {

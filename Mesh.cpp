@@ -15,19 +15,22 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 	getNumCellsInRegion();
 
 	cellVisitsByRay.resize(numCells, 0);
-    cellPhotonRate.resize(numCells, 0.0);
     cellIncomingPhotonRate.resize(numCells, 0.0);
 
     cellFlux.resize(numCells, 0.0);
     cellSolidAngle.resize(numCells, 0.0);
 
-    cellAbsorbedPhotonRateHI.resize(numCells, 0.0);
-    cellAbsorbedPhotonRateHeI.resize(numCells, 0.0);
-    cellAbsorbedPhotonRateHeII.resize(numCells, 0.0);
+    cellPhotonAbsorptionRateHI.resize(numCells, 0.0);
+    cellPhotonAbsorptionRateHeI.resize(numCells, 0.0);
+    cellPhotonAbsorptionRateHeII.resize(numCells, 0.0);
 
-	cellHIIFraction.resize(numCells, 1.e-3);
+	cellHIIFraction.resize(numCells, 0.0);
 	cellHeIIFraction.resize(numCells, 0.0);
 	cellHeIIIFraction.resize(numCells, 0.0);
+
+    xH_old.resize(numCells, 0.0);
+    xH_pred.resize(numCells, 0.0);
+    xH_avg.resize(numCells, 0.0);
 
 	fluxOfRayInCell.resize(numCells);
 
@@ -51,9 +54,9 @@ double Mesh::getDensity(int iCell){
 
 double Mesh::getEffectiveArea(int iCell){
 	double volume = getMass(iCell)/getDensity(iCell);
-	double radius = 3.0/4.0 * std::pow(volume, 1./3);
+	double radius = std::pow(3.0 * volume / (4.0 * M_PI), 1.0/3.0);
 
-	return radius * radius;
+	return M_PI * radius * radius;
 }
 
 void Mesh::calculateSolidAngles(std::vector<float>& SourcePosition){
@@ -145,8 +148,8 @@ double Mesh::getIncomingPhotonRate(int iCell){
 	return cellIncomingPhotonRate[iCell];
 }
 
-double Mesh::getAbsorbedPhotonRateHI(int iCell){
-	return cellAbsorbedPhotonRateHI[iCell];
+double Mesh::getPhotonAbsorptionRateHI(int iCell){
+	return cellPhotonAbsorptionRateHI[iCell];
 }
 
 double Mesh::getHIIFraction(int iCell){
@@ -163,6 +166,11 @@ double Mesh::getHeIIIFraction(int iCell){
 
 std::vector<float> Mesh::getCoordinates(int iCell){
 	return cellCoordinates[iCell];
+}
+
+double Mesh::getAverageHIState(int iCell)
+{
+    return xH_avg[iCell];
 }
 
 int Mesh::getIndex(int iCell){
@@ -232,12 +240,11 @@ void Mesh::getNumCellsInRegion(){
 void Mesh::resetPhotons(){
     for(int iCell = 0; iCell < numCells; iCell++){
         cellIncomingPhotonRate[iCell] = 0.;
-        cellPhotonRate[iCell] = 0.;
         cellFlux[iCell] = 0.;
 
-        cellAbsorbedPhotonRateHI[iCell]   = 0.;
-        cellAbsorbedPhotonRateHeI[iCell]  = 0.;
-        cellAbsorbedPhotonRateHeII[iCell] = 0.;
+        cellPhotonAbsorptionRateHI[iCell]   = 0.;
+        cellPhotonAbsorptionRateHeI[iCell]  = 0.;
+        cellPhotonAbsorptionRateHeII[iCell] = 0.;
     }
 }
 

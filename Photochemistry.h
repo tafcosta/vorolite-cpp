@@ -33,6 +33,8 @@ public:
     double getRecombinationRate(Species species, double fraction, double electronDensity, double temperature);
 
     void evolveIonisation(double dtime);
+    void predictIonisation(double dtime);
+    void storeOldIonisation();
 
 private:
     double solveQuadratic(double a, double b, double c, double sign);
