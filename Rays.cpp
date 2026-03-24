@@ -403,7 +403,7 @@ double Rays::distanceSquared(std::vector<float>& a, std::vector<float>& b){
 	return (a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]);
 }
 
-void Rays::updateColumnAndFlux(int iRay, double time, double dtime, bool useAverageHI){
+void Rays::updateColumnAndFlux(int iRay, double time, double dtime, bool useAverageXH){
 
 	if(timeDependent){
 
@@ -443,8 +443,9 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime, bool useAver
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
 		    int iCell        = visitedCells[iRay][i];
 
-		    double xHII = useAverageHI ? mesh.xH_avg[iCell]
-		                               : mesh.getHIIFraction(iCell);
+		    double xHII = mesh.xH_old[iCell];
+		    if(useAverageXH)
+		    	xHII = mesh.xH_pred[iCell];
 
 		    xHII = std::max(0.0, std::min(1.0, xHII));
 		    double neutral = 1.0 - xHII;
@@ -478,8 +479,7 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime, bool useAver
 	        mesh.cellPhotonAbsorptionRateHeI[iCell]  += NabsHeI;
 	        mesh.cellPhotonAbsorptionRateHeII[iCell] += NabsHeII;
 
-	        //mesh.cellIncomingPhotonRate[iCell]     += NdotFinal;
-	        //mesh.cellFlux[iCell]                   += NdotFinal/mesh.getEffectiveArea(iCell)/ mesh.unitLength / mesh.unitLength;
+	        mesh.cellIncomingPhotonRate[iCell]       += NdotFinal;
 
 	        NdotFinal *= 1.0 - fabs;
 
@@ -502,22 +502,14 @@ void Rays::calculateRays(){
 		}
 }
 
-void Rays::doRadiativeTransfer(double time, double dtime, bool useAverageHI){
-
-	mesh.setHIIFraction(startCell, 1.);
+void Rays::doRadiativeTransfer(double time, double dtime, bool useAverageXH){
 	for(int iRay = 0; iRay < nRays; iRay++){
 
 		columnHI[iRay]   = 0.;
 		columnDust[iRay] = 0.;
 
-		updateColumnAndFlux(iRay, time, dtime, useAverageHI);
+		updateColumnAndFlux(iRay, time, dtime, useAverageXH);
 	}
-
-    /*for (int iCell = 0; iCell < mesh.numCells; iCell++){
-    	double analytic_flux = source.getLuminosity(time) * mesh.cellSolidAngle[iCell] / mesh.getEffectiveArea(iCell)/ (mesh.unitLength * mesh.unitLength);
-    	mesh.cellFlux[iCell] = std::min(mesh.cellFlux[iCell], analytic_flux);
-    }*/
-
 }
 
 Rays::~Rays() {

@@ -19,11 +19,59 @@ Photochemistry::Photochemistry(Mesh& mesh, Rays& rays,
 }
 
 void Photochemistry::evolveIonisation(double dtime) {
+    const double dtime_in_cgs = dtime * mesh.unitLength / mesh.unitVelocity;
+    for (int iCell = 0; iCell < mesh.numCells; ++iCell) {
+
+    	const double x0   = mesh.xH_old[iCell];
+    	const double xAvg = mesh.xH_pred[iCell];
+
+    	const double yHe  = mesh.getHeIIFraction(iCell);
+    	const double zHe  = mesh.getHeIIIFraction(iCell);
+
+    	const double nH   = mesh.getHNumberDensity_in_cgs(iCell);
+    	const double nHe  = mesh.getHeNumberDensity_in_cgs(iCell);
+
+    	const double temp = mesh.getTemperature_in_K(iCell);
+    	const double ne   = xAvg * nH + (yHe + 2.0 * zHe) * nHe;
+
+        const double volume =
+            mesh.getMass(iCell) / mesh.getDensity(iCell) *
+            std::pow(mesh.scaleFactor * mesh.unitLength, 3) *
+            std::pow(mesh.HubbleParam, 3);
+
+        double neutral = std::max(1.0 - xAvg, 1e-8);
+        double Gamma = 1.e-20;
+        if (nH > 0.0 && volume > 0.0)
+            Gamma = std::max(mesh.cellPhotonAbsorptionRateHI[iCell] / (neutral * nH * volume), 1.e-20);
+
+    	const double alpha = getHIIrecombinationCoefficient(temp);
+    	const double equilibriumTime = 1.0 / (Gamma + alpha * ne);
+    	const double equilibriumXH   = Gamma / (Gamma + alpha * ne);
+
+    	double xHnew = equilibriumXH + (x0 - equilibriumXH) * std::exp(-dtime_in_cgs / equilibriumTime);
+
+    	mesh.setHIIFraction(iCell, xHnew);
+
+    	/*
+    	if(iCell == 16685){
+
+        	std::cout << nH << " " << mesh.xH_old[iCell] << " " << mesh.xH_pred[iCell] << " " << xHnew << " " << Gamma << std::endl;
+
+        }*/
+
+        mesh.setHIIFraction(iCell,  xHnew);
+
+    }
+}
+
+
+/*
+void Photochemistry::evolveIonisation(double dtime) {
 
     const double dtime_in_cgs = dtime * mesh.unitLength / mesh.unitVelocity;
 
     for (int iCell = 0; iCell < mesh.numCells; ++iCell) {
-        double xH  = mesh.getHIIFraction(iCell);
+        double xH  = mesh.xH_pred[iCell];
         double yHe = mesh.getHeIIFraction(iCell);
         double zHe = mesh.getHeIIIFraction(iCell);
 
@@ -84,61 +132,49 @@ void Photochemistry::evolveIonisation(double dtime) {
 				zHe + k3.dz * dtime_in_cgs);
 
 
-        /*
         xH  += (dtime_in_cgs / 6.0) * (k1.dx + 2.0*k2.dx + 2.0*k3.dx + k4.dx);
         yHe += (dtime_in_cgs / 6.0) * (k1.dy + 2.0*k2.dy + 2.0*k3.dy + k4.dy);
         zHe += (dtime_in_cgs / 6.0) * (k1.dz + 2.0*k2.dz + 2.0*k3.dz + k4.dz);
-        */
 
-        xH  += dtime_in_cgs * k1.dx;
-        yHe += dtime_in_cgs * k1.dy;
-        zHe += dtime_in_cgs * k1.dz;
-
-        /*if(xH > 1)
-        	std::cout << std::setprecision(10) << xH << std::endl;*/
         xH = std::clamp(xH, 0.0, 1.0);
 
         mesh.setHIIFraction(iCell,   xH);
         mesh.setHeIIFraction(iCell,  yHe);
         mesh.setHeIIIFraction(iCell, zHe);
     }
-}
+}*/
+
 
 void Photochemistry::predictIonisation(double dtime)
 {
     const double dtime_in_cgs = dtime * mesh.unitLength / mesh.unitVelocity;
     for (int iCell = 0; iCell < mesh.numCells; ++iCell) {
 
-        double xH = mesh.xH_old[iCell];
+    	const double xH   = mesh.xH_old[iCell];
+    	const double yHe  = mesh.getHeIIFraction(iCell);
+    	const double zHe  = mesh.getHeIIIFraction(iCell);
+
         const double nH   = mesh.getHNumberDensity_in_cgs(iCell);
+        const double nHe  = mesh.getHeNumberDensity_in_cgs(iCell);
+
         const double temp = mesh.getTemperature_in_K(iCell);
+        const double ne   = xH * nH + (yHe + 2.0 * zHe) * nHe;
 
         const double volume =
             mesh.getMass(iCell) / mesh.getDensity(iCell) *
             std::pow(mesh.scaleFactor * mesh.unitLength, 3) *
             std::pow(mesh.HubbleParam, 3);
 
-        auto rhs = [&](double x) -> double {
-            if (nH <= 0.0 || volume <= 0.0) return 0.0;
+        double neutral = std::max(1.0 - xH, 1e-8);
+        double Gamma = 1.e-20;
+        if (nH > 0.0 && volume > 0.0)
+            Gamma = std::max(mesh.cellPhotonAbsorptionRateHI[iCell] / (neutral * nH * volume), 1.e-20);
 
-            const double S =
-                mesh.cellPhotonAbsorptionRateHI[iCell] / (nH * volume);
+        double equilibriumTime = 1./(Gamma + getHIIrecombinationCoefficient(temp) * ne);
+        double equilibriumXH   = Gamma / (Gamma + getHIIrecombinationCoefficient(temp) * ne);
 
-            const double alpha = getHIIrecombinationCoefficient(temp);
+        mesh.xH_pred[iCell] = equilibriumXH + (xH - equilibriumXH) * (1 - std::exp(-dtime_in_cgs/equilibriumTime)) * equilibriumTime/dtime_in_cgs;
 
-            return S - alpha * nH * x * x;
-        };
-
-        const double k1 = rhs(xH);
-        const double k2 = rhs(xH + 0.5 * dtime_in_cgs * k1);
-        const double k3 = rhs(xH + 0.5 * dtime_in_cgs * k2);
-        const double k4 = rhs(xH +       dtime_in_cgs * k3);
-
-        xH += dtime_in_cgs * k1;
-
-        mesh.xH_pred[iCell] = std::max(0.0, std::min(1.0, xH));
-        mesh.xH_avg[iCell]  = 0.5 * (mesh.xH_old[iCell] + mesh.xH_pred[iCell]);
-        mesh.xH_avg[iCell]  = std::max(0.0, std::min(1.0, mesh.xH_avg[iCell]));
     }
 }
 
