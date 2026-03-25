@@ -15,134 +15,43 @@ Photochemistry::Photochemistry(Mesh& mesh, Rays& rays,
       HeIionisationCrossSection(HeIcross),
       HeIIionisationCrossSection(HeIIcross)
 {
-
 }
 
 void Photochemistry::evolveIonisation(double dtime) {
     const double dtime_in_cgs = dtime * mesh.unitLength / mesh.unitVelocity;
     for (int iCell = 0; iCell < mesh.numCells; ++iCell) {
 
-    	const double x0   = mesh.xH_old[iCell];
-    	const double xAvg = mesh.xH_pred[iCell];
+    	const double oldxH = mesh.xH_old[iCell];
+    	const double avgxH = mesh.xH_pred[iCell];
+    	const double yHe   = mesh.getHeIIFraction(iCell);
+    	const double zHe   = mesh.getHeIIIFraction(iCell);
 
-    	const double yHe  = mesh.getHeIIFraction(iCell);
-    	const double zHe  = mesh.getHeIIIFraction(iCell);
+    	const double numberDensityH  = mesh.getHNumberDensity_in_cgs(iCell);
+    	const double numberDensityHe = mesh.getHeNumberDensity_in_cgs(iCell);
 
-    	const double nH   = mesh.getHNumberDensity_in_cgs(iCell);
-    	const double nHe  = mesh.getHeNumberDensity_in_cgs(iCell);
-
-    	const double temp = mesh.getTemperature_in_K(iCell);
-    	const double ne   = xAvg * nH + (yHe + 2.0 * zHe) * nHe;
+    	const double temperature = mesh.getTemperature_in_K(iCell);
+    	const double electronDensity = avgxH * numberDensityH + (yHe + 2.0 * zHe) * numberDensityHe;
 
         const double volume =
             mesh.getMass(iCell) / mesh.getDensity(iCell) *
             std::pow(mesh.scaleFactor * mesh.unitLength, 3) *
             std::pow(mesh.HubbleParam, 3);
 
-        double neutral = std::max(1.0 - xAvg, 1e-8);
+        double HydrogenNeutralFraction = std::max(1.0 - avgxH, 1e-8);
         double Gamma = 1.e-20;
-        if (nH > 0.0 && volume > 0.0)
-            Gamma = std::max(mesh.cellPhotonAbsorptionRateHI[iCell] / (neutral * nH * volume), 1.e-20);
+        if (numberDensityH > 0.0 && volume > 0.0)
+            Gamma = std::max(mesh.cellPhotonAbsorptionRateHI[iCell] / (HydrogenNeutralFraction * numberDensityH * volume), 1.e-20);
 
-    	const double alpha = getHIIrecombinationCoefficient(temp);
-    	const double equilibriumTime = 1.0 / (Gamma + alpha * ne);
-    	const double equilibriumXH   = Gamma / (Gamma + alpha * ne);
+    	const double alpha = getHIIrecombinationCoefficient(temperature);
+    	const double equilibriumTime = 1.0 / (Gamma + alpha * electronDensity);
+    	const double equilibriumXH   = Gamma / (Gamma + alpha * electronDensity);
 
-    	double xHnew = equilibriumXH + (x0 - equilibriumXH) * std::exp(-dtime_in_cgs / equilibriumTime);
+    	double xHnew = equilibriumXH + (oldxH - equilibriumXH) * std::exp(-dtime_in_cgs / equilibriumTime);
 
     	mesh.setHIIFraction(iCell, xHnew);
 
-    	/*
-    	if(iCell == 16685){
-
-        	std::cout << nH << " " << mesh.xH_old[iCell] << " " << mesh.xH_pred[iCell] << " " << xHnew << " " << Gamma << std::endl;
-
-        }*/
-
-        mesh.setHIIFraction(iCell,  xHnew);
-
     }
 }
-
-
-/*
-void Photochemistry::evolveIonisation(double dtime) {
-
-    const double dtime_in_cgs = dtime * mesh.unitLength / mesh.unitVelocity;
-
-    for (int iCell = 0; iCell < mesh.numCells; ++iCell) {
-        double xH  = mesh.xH_pred[iCell];
-        double yHe = mesh.getHeIIFraction(iCell);
-        double zHe = mesh.getHeIIIFraction(iCell);
-
-        const double flux_in_cgs = mesh.cellFlux[iCell];
-        const double nH     = mesh.getHNumberDensity_in_cgs(iCell);
-        const double nHe    = mesh.getHeNumberDensity_in_cgs(iCell);
-        const double temp   = mesh.getTemperature_in_K(iCell);
-        const double volume = mesh.getMass(iCell) / mesh.getDensity(iCell) *
-            std::pow(mesh.scaleFactor * mesh.unitLength, 3) * std::pow(mesh.HubbleParam, 3);
-
-        struct Rates { double dx, dy, dz; };
-
-        auto computeRates = [&](double x, double y, double z) -> Rates {
-            const double ne = x * nH + (y + 2.0 * z) * nHe;
-
-            double ionH = 0.0, ionHeI = 0.0, ionHeII = 0.0;
-            if (volume > 0.0) {
-
-            	if (nH > 0.0) {
-            		ionH = mesh.cellPhotonAbsorptionRateHI[iCell] / (nH * volume);
-            	}
-
-                if (nHe > 0.0) ionHeI  = (1.0 - y) * flux_in_cgs * 0.;
-                if (nHe > 0.0) ionHeII = (1.0 - z) * flux_in_cgs * 0.;
-            }
-
-            const double recH     = getRecombinationRate(Species::HI,    x, ne, temp);
-            const double recHeII  = getRecombinationRate(Species::HeII,  y, ne, temp);
-            const double recHeIII = getRecombinationRate(Species::HeIII, z, ne, temp);
-
-            const double C_HI     = 0.0;//getHIcollisionalIonisationCoefficient(temp);
-            const double C_HeI    = 0.0;//getHeIcollisionalIonisationCoefficient(temp);
-            const double C_HeII   = 0.0;//getHeIIcollisionalIonisationCoefficient(temp);
-
-            const double collH    = (1.0 - x) * ne * C_HI;
-            const double collHeI  = (1.0 - y - z) * ne * C_HeI;
-            const double collHeII = y * ne * C_HeII;
-
-            const double dx = ionH    + collH    - recH;
-            const double dy = ionHeI  + collHeI  - ionHeII - recHeII + recHeIII - collHeII;
-            const double dz = ionHeII + collHeII - recHeIII;
-
-            return {dx, dy, dz};
-        };
-
-        Rates k1 = computeRates(xH, yHe, zHe);
-
-        Rates k2 = computeRates(xH  + 0.5 * k1.dx * dtime_in_cgs,
-        		yHe + 0.5 * k1.dy * dtime_in_cgs,
-				zHe + 0.5 * k1.dz * dtime_in_cgs);
-
-        Rates k3 = computeRates(xH  + 0.5 * k2.dx * dtime_in_cgs,
-        		yHe + 0.5 * k2.dy * dtime_in_cgs,
-				zHe + 0.5 * k2.dz * dtime_in_cgs);
-
-        Rates k4 = computeRates(xH + k3.dx * dtime_in_cgs,
-        		yHe + k3.dy * dtime_in_cgs,
-				zHe + k3.dz * dtime_in_cgs);
-
-
-        xH  += (dtime_in_cgs / 6.0) * (k1.dx + 2.0*k2.dx + 2.0*k3.dx + k4.dx);
-        yHe += (dtime_in_cgs / 6.0) * (k1.dy + 2.0*k2.dy + 2.0*k3.dy + k4.dy);
-        zHe += (dtime_in_cgs / 6.0) * (k1.dz + 2.0*k2.dz + 2.0*k3.dz + k4.dz);
-
-        xH = std::clamp(xH, 0.0, 1.0);
-
-        mesh.setHIIFraction(iCell,   xH);
-        mesh.setHeIIFraction(iCell,  yHe);
-        mesh.setHeIIIFraction(iCell, zHe);
-    }
-}*/
 
 
 void Photochemistry::predictIonisation(double dtime)

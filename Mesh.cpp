@@ -17,9 +17,6 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 	cellVisitsByRay.resize(numCells, 0);
     cellIncomingPhotonRate.resize(numCells, 0.0);
 
-    cellFlux.resize(numCells, 0.0);
-    cellSolidAngle.resize(numCells, 0.0);
-
     cellPhotonAbsorptionRateHI.resize(numCells, 0.0);
     cellPhotonAbsorptionRateHeI.resize(numCells, 0.0);
     cellPhotonAbsorptionRateHeII.resize(numCells, 0.0);
@@ -52,25 +49,6 @@ double Mesh::getDensity(int iCell){
 	return cellDensity[iCell];
 }
 
-double Mesh::getEffectiveArea(int iCell){
-	double volume = getMass(iCell)/getDensity(iCell);
-	double radius = std::pow(3.0 * volume / (4.0 * M_PI), 1.0/3.0);
-
-	return M_PI * radius * radius;
-}
-
-void Mesh::calculateSolidAngles(std::vector<float>& SourcePosition){
-	std::vector<float> pos;
-	for (int iCell = 0; iCell < numCells; iCell++){
-		double dx = getCoordinates(iCell)[0] - SourcePosition[0];
-		double dy = getCoordinates(iCell)[1] - SourcePosition[1];
-		double dz = getCoordinates(iCell)[2] - SourcePosition[2];
-
-		double radiusSquared = dx*dx + dy*dy + dz*dz;
-		cellSolidAngle[iCell] = getEffectiveArea(iCell)/(4 * M_PI * std::max(radiusSquared, 1.e-10));
-	}
-}
-
 double Mesh::getSpecificInternalEnergy(int iCell){
 	return cellSpecificInternalEnergy[iCell];
 }
@@ -98,8 +76,8 @@ double Mesh::getMeanMolecularWeight(int iCell){
 }
 
 double Mesh::getTemperature_in_K(int iCell){
-	return 1.e4;/*getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
-			(adiabaticIndex - 1.0) * getMeanMolecularWeight(iCell) * protonMass / boltzmannConstant;*/
+	return getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
+			(adiabaticIndex - 1.0) * getMeanMolecularWeight(iCell) * protonMass / boltzmannConstant;
 }
 
 double Mesh::getMetallicityInSolar(int iCell){
@@ -138,10 +116,6 @@ void Mesh::doSelfShieldingCorrection() {
 
 double Mesh::getFluxOfRayInCell(int iRay, int iCell){
 	return fluxOfRayInCell[iRay][iCell];
-}
-
-double Mesh::getFlux(int iCell){
-	return cellFlux[iCell];
 }
 
 double Mesh::getIncomingPhotonRate(int iCell){
@@ -240,7 +214,6 @@ void Mesh::getNumCellsInRegion(){
 void Mesh::resetPhotons(){
     for(int iCell = 0; iCell < numCells; iCell++){
         cellIncomingPhotonRate[iCell] = 0.;
-        cellFlux[iCell] = 0.;
 
         cellPhotonAbsorptionRateHI[iCell]   = 0.;
         cellPhotonAbsorptionRateHeI[iCell]  = 0.;

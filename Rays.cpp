@@ -39,7 +39,6 @@ Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, do
 
 	rayPosition = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
 	initializePositions();
-	mesh.calculateSolidAngles(mesh.cellCoordinates[startCell]);
 
 	columnHI          = std::vector<double>(nRays, 0.0);
 	columnDust        = std::vector<double>(nRays, 0.0);

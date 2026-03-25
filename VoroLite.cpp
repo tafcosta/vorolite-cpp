@@ -123,18 +123,20 @@ int main(int argc, char* argv[]) {
 
             std::ofstream outFile(filename.str());
             if (outFile.is_open()) {
+
+                outFile << std::setprecision(15) << std::scientific;
+
                 for (int iCell = 0; iCell < mesh->numCells; ++iCell) {
-                	outFile << mesh->getIndex(iCell) << " ";
+                    outFile << mesh->getIndex(iCell) << " ";
                     for (float coord : mesh->cellCoordinates[iCell]) {
                         outFile << coord << " ";
                     }
                     outFile << mesh->getHIIFraction(iCell) << " "
                             << mesh->getHeIIFraction(iCell) << " "
                             << mesh->getHeIIIFraction(iCell) << " "
-                            << mesh->cellFlux[iCell] << " "
                             << mesh->cellIncomingPhotonRate[iCell]
-                            << std::endl;                }
-                outFile.close();
+                            << std::endl;
+                }
             } else {
                 std::cerr << "Unable to open file " << filename.str() << " for writing." << std::endl;
             }
