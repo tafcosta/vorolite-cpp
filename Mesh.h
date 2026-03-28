@@ -30,19 +30,12 @@ public:
 	double HubbleParam;
 	double scaleFactor;
 
-	double xHydrogen = 1.;//0.76;
-	double yHelium   = 0.;//0.24;
+	double xHydrogen = 0.76;
+	double yHelium   = 0.24;
 
     std::vector<int> cellVisitsByRay;
 
     std::vector<double> cellIncomingPhotonRate;
-    std::vector<double> cellPhotonAbsorptionRateHI;
-    std::vector<double> cellPhotonAbsorptionRateHeI;
-    std::vector<double> cellPhotonAbsorptionRateHeII;
-
-    std::vector<double> cellHIIFraction;
-    std::vector<double> cellHeIIFraction;
-    std::vector<double> cellHeIIIFraction;
 
 	std::vector<double> cellElectronFraction;
 	std::vector<double> cellXH;
@@ -53,7 +46,6 @@ public:
 
     std::vector<double> xH_old;
     std::vector<double> xH_pred;
-    std::vector<double> xH_avg;
 
 	std::vector<std::vector<int>> neighbourList;
 	std::vector<int> findHostCellID(const std::vector<double>& target, int cellGuess);
@@ -84,10 +76,12 @@ public:
     double getIncomingPhotonRate(int iCell);
 
     double getPhotonAbsorptionRateHI(int iCell);
-    double getAbsorbedPhotonRateHeI(int iCell);
-    double getAbsorbedPhotonRateHeII(int iCell);
+    double getPhotonAbsorptionRateHeI(int iCell);
+    double getPhotonAbsorptionRateHeII(int iCell);
 
-    double getAverageHIState(int iCell);
+    void setPhotonAbsorptionRateHI(int iCell, double newValue);
+    void setPhotonAbsorptionRateHeI(int iCell, double newValue);
+    void setPhotonAbsorptionRateHeII(int iCell, double newValue);
 
 	int getIndex(int iCell);
 
@@ -104,6 +98,14 @@ private:
 	std::vector<int> cellIDs;
     std::vector<double> cellMass;
     std::vector<double> cellDensity;
+
+    std::vector<double> cellHIIFraction;
+    std::vector<double> cellHeIIFraction;
+    std::vector<double> cellHeIIIFraction;
+
+    std::vector<double> cellPhotonAbsorptionRateHI;
+    std::vector<double> cellPhotonAbsorptionRateHeI;
+    std::vector<double> cellPhotonAbsorptionRateHeII;
 
     std::vector<std::vector<double>> fluxOfRayInCell;
 

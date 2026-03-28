@@ -27,7 +27,6 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 
     xH_old.resize(numCells, 0.0);
     xH_pred.resize(numCells, 0.0);
-    xH_avg.resize(numCells, 0.0);
 
 	fluxOfRayInCell.resize(numCells);
 
@@ -76,8 +75,8 @@ double Mesh::getMeanMolecularWeight(int iCell){
 }
 
 double Mesh::getTemperature_in_K(int iCell){
-	return getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
-			(adiabaticIndex - 1.0) * getMeanMolecularWeight(iCell) * protonMass / boltzmannConstant;
+	return 1.e4;/*getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
+			(adiabaticIndex - 1.0) * getMeanMolecularWeight(iCell) * protonMass / boltzmannConstant;*/
 }
 
 double Mesh::getMetallicityInSolar(int iCell){
@@ -126,6 +125,14 @@ double Mesh::getPhotonAbsorptionRateHI(int iCell){
 	return cellPhotonAbsorptionRateHI[iCell];
 }
 
+double Mesh::getPhotonAbsorptionRateHeI(int iCell){
+	return cellPhotonAbsorptionRateHeI[iCell];
+}
+
+double Mesh::getPhotonAbsorptionRateHeII(int iCell){
+	return cellPhotonAbsorptionRateHeII[iCell];
+}
+
 double Mesh::getHIIFraction(int iCell){
 	return cellHIIFraction[iCell];
 }
@@ -142,17 +149,24 @@ std::vector<float> Mesh::getCoordinates(int iCell){
 	return cellCoordinates[iCell];
 }
 
-double Mesh::getAverageHIState(int iCell)
-{
-    return xH_avg[iCell];
-}
-
 int Mesh::getIndex(int iCell){
 	return cellIndices[iCell];
 }
 
 void Mesh::setFluxOfRayInCell(int iRay, int iCell, double newValue){
 	fluxOfRayInCell[iRay][iCell] = newValue;
+}
+
+void Mesh::setPhotonAbsorptionRateHI(int iCell, double newValue){
+	cellPhotonAbsorptionRateHI[iCell] = newValue;
+}
+
+void Mesh::setPhotonAbsorptionRateHeI(int iCell, double newValue){
+	cellPhotonAbsorptionRateHeI[iCell] = newValue;
+}
+
+void Mesh::setPhotonAbsorptionRateHeII(int iCell, double newValue){
+	cellPhotonAbsorptionRateHeII[iCell] = newValue;
 }
 
 void Mesh::setHIIFraction(int iCell, double newValue){

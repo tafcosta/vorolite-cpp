@@ -437,8 +437,6 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime, bool useAver
 	} else {
 
 	    double NdotFinal    = source.getLuminosity(time) * rayWeight[iRay];
-        double dtime_in_cgs = dtime * mesh.unitLength / mesh.unitVelocity;
-
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
 		    int iCell        = visitedCells[iRay][i];
 
@@ -474,18 +472,21 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime, bool useAver
 	        double NabsHeII     = Nabs * tauHeII * invTau;
 	        double NabsDust     = Nabs * tauDust * invTau;
 
-	        mesh.cellPhotonAbsorptionRateHI[iCell]   += NabsHI;
-	        mesh.cellPhotonAbsorptionRateHeI[iCell]  += NabsHeI;
-	        mesh.cellPhotonAbsorptionRateHeII[iCell] += NabsHeII;
+	        double NabsHIcurrent   = mesh.getPhotonAbsorptionRateHI(iCell);
+	        double NabsHeIcurrent  = mesh.getPhotonAbsorptionRateHeI(iCell);
+	        double NabsHeIIcurrent = mesh.getPhotonAbsorptionRateHeII(iCell);
 
-	        mesh.cellIncomingPhotonRate[iCell]       += NdotFinal;
+	        mesh.setPhotonAbsorptionRateHI(iCell,   NabsHIcurrent   + NabsHI);
+	        mesh.setPhotonAbsorptionRateHeI(iCell,  NabsHeIcurrent  + NabsHeI);
+	        mesh.setPhotonAbsorptionRateHeII(iCell, NabsHeIIcurrent + NabsHeII);
+
+	        mesh.cellIncomingPhotonRate[iCell] += NdotFinal;
 
 	        NdotFinal *= 1.0 - fabs;
 
 		    columnHI[iRay]   += dColumnHI;
 		    columnDust[iRay] += dColumnDust;
 		}
-
 		finalLuminosity[iRay] = NdotFinal;
 	}
 
