@@ -49,23 +49,10 @@ int main(int argc, char* argv[]) {
     }
 
 	std::cout << "Starting VoroLite++ RT (Version 1.0)!" << std::endl;
-
-    std::cout << "Mesh initialisation starting..." << std::endl;
     Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, sourcePosition);
-    std::cout << "Mesh initialisation OK." << std::endl;
-
-    std::cout << "Source initialisation starting..." << std::endl;
-    Source *source = new Source(sourcePosition, lumTotal);
-    //Source* source = new SourceVariable(sourcePosition,lumTotal, lightcurvefile.string());
-    std::cout << "Source initialisation OK." << std::endl;
-
-    std::cout << "Rays initialisation starting..." << std::endl;
+    Source *source = new Source(sourcePosition, lumTotal); //Source* source = new SourceVariable(sourcePosition,lumTotal, lightcurvefile.string());
     Rays *rays = new Rays(HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, maxRadius, Nside, *mesh, *source);
-    std::cout << "Rays initialisation OK." << std::endl;
-
-    std::cout << "Photochemistry initialisation starting..." << std::endl;
     Photochemistry *photochemistry = new Photochemistry(*mesh, *rays, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection);
-    std::cout << "Photochemistry initialisation OK" << std::endl;
 
     std::ostringstream filename;
     filename << oDirectory << "HIIfraction_init.txt";
@@ -85,12 +72,10 @@ int main(int argc, char* argv[]) {
     }
 
     double time = 0;
-
     double printInterval = timeMax/nOutputs;
     double TimeNextOutput = printInterval;
 
     int snapshotIndex = 0;
-
     std::cout << "Setting up rays..." << std::endl;
     rays->calculateRays();
     std::cout << "Setting up rays OK." << std::endl;

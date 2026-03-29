@@ -228,9 +228,8 @@ void Mesh::getNumCellsInRegion(){
 void Mesh::resetPhotons(){
     for(int iCell = 0; iCell < numCells; iCell++){
         cellIncomingPhotonRate[iCell] = 0.;
-
-        cellPhotonAbsorptionRateHI[iCell]   = 0.;
-        cellPhotonAbsorptionRateHeI[iCell]  = 0.;
+        cellPhotonAbsorptionRateHI[iCell] = 0.;
+        cellPhotonAbsorptionRateHeI[iCell] = 0.;
         cellPhotonAbsorptionRateHeII[iCell] = 0.;
     }
 }

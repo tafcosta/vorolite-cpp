@@ -45,6 +45,8 @@ public:
 	std::vector<double> finalLuminosity;
 
 	std::vector<std::vector<double>> visitedCellColumn;
+	std::vector<std::vector<double>> visitedCellDistance;
+
 	std::vector<std::vector<int>> visitedCells;
 
 	std::vector<bool> insideDomain;
@@ -74,6 +76,7 @@ protected:
 	bool updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit);
 	double getOvershootDistance(int exitCell, int iRay, double distanceToExit, bool verbose);
 	double distanceSquared(std::vector<float>& a, std::vector<float>& b);
+	int hasLightReachedThisCell(double totalDistance, double time);
 
 private:
     void initializeDirections();

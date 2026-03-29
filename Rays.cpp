@@ -16,9 +16,7 @@ Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, do
 	ionisationCrossSectionHI_inInternalUnits   = ionisationCrossSectionHI / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 	ionisationCrossSectionHeI_inInternalUnits  = ionisationCrossSectionHeI / 4.0 / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 	ionisationCrossSectionHeII_inInternalUnits = ionisationCrossSectionHeII / 4.0/ mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
-
-	dustAbsorptionOpacity_inInternalUnits  = dustAbsorptionOpacity  * mesh.unitMass / mesh.unitLength / mesh.unitLength;
-
+	dustAbsorptionOpacity_inInternalUnits      = dustAbsorptionOpacity  * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 
 	sourcePosition = source.getPosition();
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
@@ -47,8 +45,9 @@ Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, do
 	insideDomain      = std::vector<bool>(nRays, true);
 	flagRay           = std::vector<bool>(nRays, false);
 
-	visitedCellColumn = std::vector<std::vector<double>>(nRays);
-	visitedCells      = std::vector<std::vector<int>>(nRays);
+	visitedCellColumn   = std::vector<std::vector<double>>(nRays);
+	visitedCellDistance = std::vector<std::vector<double>>(nRays);
+	visitedCells        = std::vector<std::vector<int>>(nRays);
 
 }
 
@@ -167,8 +166,9 @@ int Rays::travelToNextCell(int iCell, int iRay, bool verbose){
 		 if(updateRayAndIsMaxReached(exitCell, iRay, overshoot))
 			 insideDomain[iRay] = false;
 
-		 if (!visitedCellColumn[iRay].empty())
+		 if (!visitedCellColumn[iRay].empty()){
 			 visitedCellColumn[iRay].back() += overshoot * mesh.getDensity(exitCell);
+		 }
 	 }
 
 	 updateRayPosition(iRay, distanceToExit + overshoot);
@@ -255,10 +255,14 @@ bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit)
 		distanceToExit *= fractionalDistance;
 
 		distanceTravelled[iRay] += distanceToExit;
+		visitedCellDistance[iRay].back() += distanceToExit;
+
 		return true;
 	}
 
 	distanceTravelled[iRay] = newDistanceTravelled;
+	visitedCellDistance[iRay].push_back(newDistanceTravelled);
+
 	return false;
 }
 
@@ -437,8 +441,11 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime, bool useAver
 	} else {
 
 	    double NdotFinal    = source.getLuminosity(time) * rayWeight[iRay];
+
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
 		    int iCell        = visitedCells[iRay][i];
+
+		    //NdotFinal *= hasLightReachedThisCell(visitedCellDistance[i][iCell], time);
 
 		    double xHII = mesh.xH_old[iCell];
 		    if(useAverageXH)
@@ -462,7 +469,6 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime, bool useAver
 	        const double tauDust = dustAbsorptionOpacity_inInternalUnits       * dColumnDust;
 
 	        const double dtau = tauHI + tauHeI + tauHeII + tauDust;
-
 	        const double fabs = 1.0 - std::exp(-dtau);
 	        const double Nabs = fabs * NdotFinal;
 
@@ -472,24 +478,30 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime, bool useAver
 	        double NabsHeII     = Nabs * tauHeII * invTau;
 	        double NabsDust     = Nabs * tauDust * invTau;
 
-	        double NabsHIcurrent   = mesh.getPhotonAbsorptionRateHI(iCell);
-	        double NabsHeIcurrent  = mesh.getPhotonAbsorptionRateHeI(iCell);
-	        double NabsHeIIcurrent = mesh.getPhotonAbsorptionRateHeII(iCell);
-
-	        mesh.setPhotonAbsorptionRateHI(iCell,   NabsHIcurrent   + NabsHI);
-	        mesh.setPhotonAbsorptionRateHeI(iCell,  NabsHeIcurrent  + NabsHeI);
-	        mesh.setPhotonAbsorptionRateHeII(iCell, NabsHeIIcurrent + NabsHeII);
-
+	        mesh.setPhotonAbsorptionRateHI(iCell,   mesh.getPhotonAbsorptionRateHI(iCell)   + NabsHI);
+	        mesh.setPhotonAbsorptionRateHeI(iCell,  mesh.getPhotonAbsorptionRateHeI(iCell)  + NabsHeI);
+	        mesh.setPhotonAbsorptionRateHeII(iCell, mesh.getPhotonAbsorptionRateHeII(iCell) + NabsHeII);
 	        mesh.cellIncomingPhotonRate[iCell] += NdotFinal;
-
-	        NdotFinal *= 1.0 - fabs;
 
 		    columnHI[iRay]   += dColumnHI;
 		    columnDust[iRay] += dColumnDust;
+
+	        NdotFinal *= 1.0 - fabs;
 		}
+
 		finalLuminosity[iRay] = NdotFinal;
 	}
 
+}
+
+int Rays::hasLightReachedThisCell(double totalDistance, double time){
+	double lightTravelDistance  = speedOfLight  * time * mesh.unitLength/mesh.unitVelocity;
+	double totalDistance_in_cgs = totalDistance * mesh.unitLength;
+
+	if(lightTravelDistance >= totalDistance_in_cgs)
+		return 1;
+	else
+		return 0;
 }
 
 void Rays::calculateRays(){
@@ -504,14 +516,11 @@ void Rays::calculateRays(){
 
 void Rays::doRadiativeTransfer(double time, double dtime, bool useAverageXH){
 	for(int iRay = 0; iRay < nRays; iRay++){
-
 		columnHI[iRay]   = 0.;
 		columnDust[iRay] = 0.;
-
 		updateColumnAndFlux(iRay, time, dtime, useAverageXH);
 	}
 }
 
 Rays::~Rays() {
-	// TODO Auto-generated destructor stub
 }
