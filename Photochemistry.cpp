@@ -43,7 +43,7 @@ void Photochemistry::evolveIonisation(double dtime) {
             Gamma = std::max(mesh.getPhotonAbsorptionRateHI(iCell) / (HydrogenNeutralFraction * nH * volume), 1.e-20);
 
     	const double equilibriumTime = 1.0 / (Gamma + getHIIrecombinationCoefficient(temperature) * electronDensity + getHIcollisionalIonisationCoefficient(temperature) * electronDensity);
-    	const double equilibriumXH   = Gamma / (Gamma + getHIIrecombinationCoefficient(temperature) * electronDensity + getHIcollisionalIonisationCoefficient(temperature) * electronDensity);
+    	const double equilibriumXH   = (Gamma + getHIcollisionalIonisationCoefficient(temperature) * electronDensity) / (Gamma + getHIIrecombinationCoefficient(temperature) * electronDensity + getHIcollisionalIonisationCoefficient(temperature) * electronDensity);
 
     	double xHnew = equilibriumXH + (oldxH - equilibriumXH) * std::exp(-dtime_in_cgs / equilibriumTime);
 
