@@ -76,7 +76,7 @@ void Photochemistry::predictIonisation(double dtime)
         	Gamma = std::max(mesh.getPhotonAbsorptionRateHI(iCell) / (HydrogenNeutralFraction * nH * volume), 1.e-20);
 
         double equilibriumTime = 1./(Gamma + getHIIrecombinationCoefficient(temperature) * electronDensity + getHIcollisionalIonisationCoefficient(temperature) * electronDensity);
-        double equilibriumXH   = Gamma / (Gamma + getHIIrecombinationCoefficient(temperature) * electronDensity + getHIcollisionalIonisationCoefficient(temperature) * electronDensity);
+        double equilibriumXH   = (Gamma + getHIcollisionalIonisationCoefficient(temperature) * electronDensity) / (Gamma + getHIIrecombinationCoefficient(temperature) * electronDensity + getHIcollisionalIonisationCoefficient(temperature) * electronDensity);
 
         mesh.xH_pred[iCell] = equilibriumXH + (xH - equilibriumXH) * (1 - std::exp(-dtime_in_cgs/equilibriumTime)) * equilibriumTime/dtime_in_cgs;
 
