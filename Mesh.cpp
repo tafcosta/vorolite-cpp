@@ -21,7 +21,7 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     cellPhotonAbsorptionRateHeI.resize(numCells, 0.0);
     cellPhotonAbsorptionRateHeII.resize(numCells, 0.0);
 
-	cellHIIFraction.resize(numCells, 0.0);
+	cellHIIFraction.resize(numCells, 1.e-10);
 	cellHeIIFraction.resize(numCells, 0.0);
 	cellHeIIIFraction.resize(numCells, 0.0);
 
@@ -66,8 +66,8 @@ double Mesh::getElectronNumberDensity_in_cgs(int iCell){
 }
 
 double Mesh::getMeanMolecularWeight(int iCell){
-    double xHII   = getHIIFraction(iCell);
-    double yHeII  = getHeIIFraction(iCell);
+    double xHII = getHIIFraction(iCell);
+    double yHeII = getHeIIFraction(iCell);
     double zHeIII = getHeIIIFraction(iCell);
 
     double muInv = xHydrogen * (1.0 + xHII) + (yHelium / 4.0) * (1.0 + yHeII + 2.0 * zHeIII);
@@ -75,7 +75,7 @@ double Mesh::getMeanMolecularWeight(int iCell){
 }
 
 double Mesh::getTemperature_in_K(int iCell){
-	return 1.e4;/*getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
+	return 2.e4;/*getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
 			(adiabaticIndex - 1.0) * getMeanMolecularWeight(iCell) * protonMass / boltzmannConstant;*/
 }
 
@@ -89,7 +89,7 @@ double Mesh::getSelfShieldingCorrection(int iCell) {
     const double p     = 2.68;
 
     double nH   = cellXH[iCell] * getHNumberDensity_in_cgs(iCell);
-    double f_hi = 1 - cellHIIFraction[iCell];
+    double f_hi = 1.0 - getHIIFraction(iCell);
 
     double new_f_hi = f_hi;
 

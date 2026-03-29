@@ -78,7 +78,10 @@ void Photochemistry::predictIonisation(double dtime)
         double equilibriumTime = 1./(Gamma + getHIIrecombinationCoefficient(temperature) * electronDensity + getHIcollisionalIonisationCoefficient(temperature) * electronDensity);
         double equilibriumXH   = (Gamma + getHIcollisionalIonisationCoefficient(temperature) * electronDensity) / (Gamma + getHIIrecombinationCoefficient(temperature) * electronDensity + getHIcollisionalIonisationCoefficient(temperature) * electronDensity);
 
-        mesh.xH_pred[iCell] = equilibriumXH + (xH - equilibriumXH) * (1 - std::exp(-dtime_in_cgs/equilibriumTime)) * equilibriumTime/dtime_in_cgs;
+        const double eps = dtime_in_cgs / equilibriumTime;
+        const double avgFactor = (std::abs(eps) < 1e-8) ? (1.0 - 0.5*eps + eps*eps/6.0) : (-std::expm1(-eps) / eps);
+
+        mesh.xH_pred[iCell] = equilibriumXH + (xH - equilibriumXH) * avgFactor;
 
     }
 }
