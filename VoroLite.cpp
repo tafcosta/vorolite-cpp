@@ -119,8 +119,8 @@ int main(int argc, char* argv[]) {
                     outFile << mesh->getHIIFraction(iCell) << " "
                             << mesh->getHeIIFraction(iCell) << " "
                             << mesh->getHeIIIFraction(iCell) << " "
-                            << mesh->cellIncomingPhotonRate[iCell]
-                            << std::endl;
+                            << mesh->cellIncomingPhotonRate[iCell] << " "
+							<< time << std::endl;
                 }
             } else {
                 std::cerr << "Unable to open file " << filename.str() << " for writing." << std::endl;

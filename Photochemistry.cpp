@@ -38,9 +38,9 @@ void Photochemistry::evolveIonisation(double dtime) {
             std::pow(mesh.HubbleParam, 3);
 
         double HydrogenNeutralFraction = std::max(1.0 - avgxH, 1e-10);
-        double Gamma = 1.e-20;
+        double Gamma = 0.0;
         if (HydrogenNeutralFraction > 0 && nH > 0.0 && volume > 0.0)
-            Gamma = std::max(mesh.getPhotonAbsorptionRateHI(iCell) / (HydrogenNeutralFraction * nH * volume), 1.e-20);
+            Gamma = std::max(mesh.getPhotonAbsorptionRateHI(iCell) / (HydrogenNeutralFraction * nH * volume), 0.0);
 
     	const double equilibriumTime = 1.0 / (Gamma + getHIIrecombinationCoefficient(temperature) * electronDensity + getHIcollisionalIonisationCoefficient(temperature) * electronDensity);
     	const double equilibriumXH   = (Gamma + getHIcollisionalIonisationCoefficient(temperature) * electronDensity) / (Gamma + getHIIrecombinationCoefficient(temperature) * electronDensity + getHIcollisionalIonisationCoefficient(temperature) * electronDensity);
@@ -71,9 +71,9 @@ void Photochemistry::predictIonisation(double dtime)
             std::pow(mesh.HubbleParam, 3);
 
         const double HydrogenNeutralFraction = std::max(1.0 - xH, 1e-10);
-        double Gamma = 1.e-20;
+        double Gamma = 0.0;
         if (HydrogenNeutralFraction > 0 && nH > 0.0 && volume > 0.0)
-        	Gamma = std::max(mesh.getPhotonAbsorptionRateHI(iCell) / (HydrogenNeutralFraction * nH * volume), 1.e-20);
+        	Gamma = std::max(mesh.getPhotonAbsorptionRateHI(iCell) / (HydrogenNeutralFraction * nH * volume), 0.0);
 
         double equilibriumTime = 1./(Gamma + getHIIrecombinationCoefficient(temperature) * electronDensity + getHIcollisionalIonisationCoefficient(temperature) * electronDensity);
         double equilibriumXH   = (Gamma + getHIcollisionalIonisationCoefficient(temperature) * electronDensity) / (Gamma + getHIIrecombinationCoefficient(temperature) * electronDensity + getHIcollisionalIonisationCoefficient(temperature) * electronDensity);
