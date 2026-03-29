@@ -12,13 +12,14 @@
 
 class Mesh {
 public:
-	Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition);
+	Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition, bool cosmo);
 	virtual ~Mesh();
 
 	const double boltzmannConstant = 1.380649e-16;
 	const double protonMass = 1.673e-24;
 	const double adiabaticIndex = 5./3;
 
+	bool cosmo;
 	int numCells;
 	double boxSize;
 	double maxRadius;
@@ -36,7 +37,6 @@ public:
     std::vector<int> cellVisitsByRay;
 
     std::vector<double> cellIncomingPhotonRate;
-
 	std::vector<double> cellElectronFraction;
 	std::vector<double> cellXH;
 	std::vector<double> cellSpecificInternalEnergy;

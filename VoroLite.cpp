@@ -5,7 +5,8 @@
 #include "Source.h"
 #include "SourceVariable.h"
 
-void parseRayParamFile(const std::string& fileName, int& nOutputs,
+void parseRayParamFile(const std::string& fileName, bool& cosmo,
+		int& nOutputs,
 		double& HIionisationXsection,
 		double& HeIionisationXsection,
 		double& HeIIionisationXsection,
@@ -36,11 +37,12 @@ int main(int argc, char* argv[]) {
     double dtime     = 1.e-9;
 
     int64_t Nside = 4;
+    bool cosmo = false;
     std::vector<double> sourcePosition(3, 0.5);
     std::string meshFile, snapFile, oDirectory;
     std::filesystem::path lightcurvefile = "data/Lion_basic_ref.txt";
 
-    parseRayParamFile(paramFile, nOutputs, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, dustAbsorptionOpacity,
+    parseRayParamFile(paramFile, cosmo, nOutputs, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, dustAbsorptionOpacity,
     		maxRadius, sourcePosition, lumTotal, timeMax, dtime, Nside, meshFile, snapFile, oDirectory);
 
     if (maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
@@ -49,7 +51,7 @@ int main(int argc, char* argv[]) {
     }
 
 	std::cout << "Starting VoroLite++ RT (Version 1.0)!" << std::endl;
-    Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, sourcePosition);
+    Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, sourcePosition, cosmo);
     Source *source = new Source(sourcePosition, lumTotal); //Source* source = new SourceVariable(sourcePosition,lumTotal, lightcurvefile.string());
     Rays *rays = new Rays(HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, maxRadius, Nside, *mesh, *source);
     Photochemistry *photochemistry = new Photochemistry(*mesh, *rays, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection);
@@ -139,7 +141,7 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-void parseRayParamFile(const std::string& fileName, int& nOutputs,
+void parseRayParamFile(const std::string& fileName, bool& cosmo, int& nOutputs,
 		double& HIionisationCrossSection, double& HeIionisationCrossSection, double& HeIIionisationCrossSection,
 		double& dustAbsorptionOpacity, double& maxRadius,
         std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, double& dtime, int64_t& Nside, std::string& meshFile,
@@ -168,7 +170,18 @@ void parseRayParamFile(const std::string& fileName, int& nOutputs,
         value.erase(0, value.find_first_not_of(" \t"));
         value.erase(value.find_last_not_of(" \t") + 1);
 
-        if (key == "nOutputs") {
+        if (key == "cosmo") {
+            if (value == "true" || value == "1") {
+                cosmo = true;
+            }
+            else if (value == "false" || value == "0") {
+                cosmo = false;
+            }
+            else {
+                throw std::runtime_error("Invalid value for cosmo: " + value);
+            }
+        }
+        else if (key == "nOutputs") {
         	nOutputs = std::stoi(value);
         }
         else if (key == "HIionisationCrossSection") {

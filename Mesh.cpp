@@ -9,7 +9,7 @@
 #include "Mesh.h"
 #include <filesystem>
 
-Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition) : fileMeshIndices(fileMeshIndices), snapshot(snapshot), maxRadius(maxRadius), sourcePosition(sourcePosition) {
+Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition, bool cosmo) : fileMeshIndices(fileMeshIndices), snapshot(snapshot), maxRadius(maxRadius), sourcePosition(sourcePosition), cosmo(cosmo) {
 
     readSnapshot(snapshot);
 	getNumCellsInRegion();
@@ -29,6 +29,15 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     xH_pred.resize(numCells, 0.0);
 
 	fluxOfRayInCell.resize(numCells);
+
+	for (int iCell = 0; iCell < numCells; iCell++) {
+		cellDensity[iCell] *= 1.0 / (scaleFactor * scaleFactor * scaleFactor) * HubbleParam * HubbleParam;
+		cellMass[iCell] *= 1.0 / HubbleParam;
+
+	    for (int dim = 0; dim < 3; dim++) {
+	        cellCoordinates[iCell][dim] *= scaleFactor / HubbleParam;
+	    }
+	}
 
     //doSelfShieldingCorrection();
 
@@ -53,12 +62,12 @@ double Mesh::getSpecificInternalEnergy(int iCell){
 }
 
 double Mesh::getHNumberDensity_in_cgs(int iCell){
-	return xHydrogen * cellDensity[iCell] / protonMass * (unitMass / (scaleFactor * unitLength * scaleFactor * unitLength * scaleFactor * unitLength)) * HubbleParam * HubbleParam;
+	return xHydrogen * cellDensity[iCell] / protonMass / std::pow(unitLength, 3.0);
 }
 
 double Mesh::getHeNumberDensity_in_cgs(int iCell) {
     double heliumMass = 4.0 * protonMass;
-    return yHelium * cellDensity[iCell] / heliumMass * (unitMass / (scaleFactor * unitLength * scaleFactor * unitLength * scaleFactor * unitLength)) * HubbleParam * HubbleParam;
+    return yHelium * cellDensity[iCell] / heliumMass / std::pow(unitLength, 3.0);
 }
 
 double Mesh::getElectronNumberDensity_in_cgs(int iCell){
@@ -189,7 +198,6 @@ void Mesh::getNumCellsInRegion(){
     std::vector<double> filteredMasses;
     std::vector<int> filteredIDs;
     std::vector<int> filteredCellIndices;
-
 	std::vector<float> cellPos;
 
 	int startCell = findHostCellID(sourcePosition, -1)[0];
@@ -266,7 +274,6 @@ void Mesh::readSnapshot(const std::string& snapshotBase) {
         // }
 
         bool headerRead = false;
-        bool cosmo = false;
 
         H5::H5File file(snapshotBase, H5F_ACC_RDONLY);
         if (!headerRead) {

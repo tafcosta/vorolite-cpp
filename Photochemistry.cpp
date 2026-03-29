@@ -32,10 +32,7 @@ void Photochemistry::evolveIonisation(double dtime) {
     	const double temperature = mesh.getTemperature_in_K(iCell);
     	const double electronDensity = avgxH * nH + (yHe + 2.0 * zHe) * nHe;
 
-        const double volume =
-            mesh.getMass(iCell) / mesh.getDensity(iCell) *
-            std::pow(mesh.scaleFactor * mesh.unitLength, 3) *
-            std::pow(mesh.HubbleParam, 3);
+        const double volume = mesh.getMass(iCell) / mesh.getDensity(iCell) * std::pow(mesh.unitLength, 3);
 
         double HydrogenNeutralFraction = std::max(1.0 - avgxH, 1e-10);
         double Gamma = 0.0;
@@ -66,9 +63,7 @@ void Photochemistry::predictIonisation(double dtime)
         const double temperature = mesh.getTemperature_in_K(iCell);
 
         const double electronDensity = xH * nH + (yHe + 2.0 * zHe) * nHe;
-        const double volume = mesh.getMass(iCell) / mesh.getDensity(iCell) *
-            std::pow(mesh.scaleFactor * mesh.unitLength, 3) *
-            std::pow(mesh.HubbleParam, 3);
+        const double volume = mesh.getMass(iCell) / mesh.getDensity(iCell) * std::pow(mesh.unitLength, 3);
 
         const double HydrogenNeutralFraction = std::max(1.0 - xH, 1e-10);
         double Gamma = 0.0;
