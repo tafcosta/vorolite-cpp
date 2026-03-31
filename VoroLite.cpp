@@ -56,8 +56,16 @@ int main(int argc, char* argv[]) {
     Rays *rays = new Rays(HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, maxRadius, Nside, *mesh, *source);
     Photochemistry *photochemistry = new Photochemistry(*mesh, *rays, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection);
 
+    std::cout << "Printing initial conditions..." << std::endl;
+
+    auto formatSnapshotIndex = [](int index) {
+        std::ostringstream ss;
+        ss << std::setw(3) << std::setfill('0') << index;
+        return ss.str();
+    };
+
     std::ostringstream filename;
-    filename << oDirectory << "HIIfraction_init.txt";
+    filename << oDirectory << "HIIfraction_" << formatSnapshotIndex(0) << ".txt";
 
     std::ofstream outFile(filename.str());
     if (outFile.is_open()) {
@@ -73,6 +81,8 @@ int main(int argc, char* argv[]) {
         std::cerr << "Unable to open file " << filename.str() << " for writing." << std::endl;
     }
 
+    std::cout << "Initial conditions printed." << std::endl;
+
     double time = 0;
     double printInterval = timeMax/nOutputs;
     double TimeNextOutput = printInterval;
@@ -83,7 +93,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Setting up rays OK." << std::endl;
 
     std::ostringstream ofName;
-    ofName << oDirectory << "rays_output_" << snapshotIndex << ".txt";
+    ofName << oDirectory << "rays_output_" << formatSnapshotIndex(0) << ".txt";
     std::string ofileName = ofName.str();
     rays->outputResults(ofileName);
 
@@ -105,8 +115,9 @@ int main(int argc, char* argv[]) {
         if (time >= TimeNextOutput) {
             std::cout << "time = " << time << std::endl;
 
+            const int outputIndex = snapshotIndex + 1;
             std::ostringstream filename;
-            filename << oDirectory << "HIIfraction_" << snapshotIndex << ".txt";
+            filename << oDirectory << "HIIfraction_" << formatSnapshotIndex(outputIndex) << ".txt";
 
             std::ofstream outFile(filename.str());
             if (outFile.is_open()) {

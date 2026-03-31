@@ -12,6 +12,12 @@
 Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition, bool cosmo) : fileMeshIndices(fileMeshIndices), snapshot(snapshot), maxRadius(maxRadius), sourcePosition(sourcePosition), cosmo(cosmo) {
 
     readSnapshot(snapshot);
+
+    for (int dim = 0; dim < 3; ++dim) {
+        sourcePosition[dim] *= scaleFactor / HubbleParam;
+    }
+    maxRadius *= scaleFactor / HubbleParam;
+
 	getNumCellsInRegion();
 
 	cellVisitsByRay.resize(numCells, 0);
@@ -285,6 +291,8 @@ void Mesh::readSnapshot(const std::string& snapshotBase) {
         	scaleFactor = 1.0;
         	HubbleParam = 1.0;
         }
+
+        std::cout << "Using cosmology: scaleFactor: " << scaleFactor << "; HubbleParam: " << HubbleParam << std::endl;
 
         appendDensity(file);
         appendSpecificInternalEnergy(file);
