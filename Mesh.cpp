@@ -62,12 +62,12 @@ double Mesh::getSpecificInternalEnergy(int iCell){
 }
 
 double Mesh::getHNumberDensity_in_cgs(int iCell){
-	return xHydrogen * cellDensity[iCell] / protonMass / std::pow(unitLength, 3.0);
+	return xHydrogen * cellDensity[iCell] / protonMass * unitMass / std::pow(unitLength, 3.0);
 }
 
 double Mesh::getHeNumberDensity_in_cgs(int iCell) {
     double heliumMass = 4.0 * protonMass;
-    return yHelium * cellDensity[iCell] / heliumMass / std::pow(unitLength, 3.0);
+    return yHelium * cellDensity[iCell] / heliumMass * unitMass / std::pow(unitLength, 3.0);
 }
 
 double Mesh::getElectronNumberDensity_in_cgs(int iCell){

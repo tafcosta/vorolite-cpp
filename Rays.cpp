@@ -440,12 +440,12 @@ void Rays::updateColumnAndFlux(int iRay, double time, double dtime, bool useAver
 
 	} else {
 
-	    double NdotFinal    = source.getLuminosity(time) * rayWeight[iRay];
+	    double NdotFinal  = source.getLuminosity(time) * rayWeight[iRay];
 
 		for (int i = 0; i < visitedCells[iRay].size(); i++){
 		    int iCell        = visitedCells[iRay][i];
 
-		    //NdotFinal *= hasLightReachedThisCell(visitedCellDistance[i][iCell], time);
+		    NdotFinal *= hasLightReachedThisCell(visitedCellDistance[i][iCell], time);
 
 		    double xHII = mesh.xH_old[iCell];
 		    if(useAverageXH)

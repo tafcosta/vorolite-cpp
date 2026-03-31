@@ -25,13 +25,11 @@ void Photochemistry::evolveIonisation(double dtime) {
     	const double avgxH = mesh.xH_pred[iCell];
     	const double yHe   = mesh.getHeIIFraction(iCell);
     	const double zHe   = mesh.getHeIIIFraction(iCell);
-
-    	const double nH  = mesh.getHNumberDensity_in_cgs(iCell);
-    	const double nHe = mesh.getHeNumberDensity_in_cgs(iCell);
-
+    	const double nH    = mesh.getHNumberDensity_in_cgs(iCell);
+    	const double nHe   = mesh.getHeNumberDensity_in_cgs(iCell);
     	const double temperature = mesh.getTemperature_in_K(iCell);
-    	const double electronDensity = avgxH * nH + (yHe + 2.0 * zHe) * nHe;
 
+    	const double electronDensity = avgxH * nH + (yHe + 2.0 * zHe) * nHe;
         const double volume = mesh.getMass(iCell) / mesh.getDensity(iCell) * std::pow(mesh.unitLength, 3);
 
         double HydrogenNeutralFraction = std::max(1.0 - avgxH, 1e-10);
