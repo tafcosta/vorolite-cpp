@@ -33,27 +33,37 @@ To compile and run VoroLite++, follow these steps:
 
 ## Usage
 
-1. **Create a `rays_param.txt` file**: This file contains the parameters required for ray tracing. It should look like the following:
+1. **Create a `rayParam.txt` file**: This file contains the parameters required for ray tracing. It should look like the following:
 
 ```txt
-numRays = 10000
-maxRadius = 0.5
+cosmo = false
+nOutputs = 100
+HIionisationCrossSection = 6.3e-18
+HeIionisationCrossSection = 0.0
+HeIIionisationCrossSection = 0.0
+maxRadius = 0.12
 sourceLocation = 0.5, 0.5, 0.5
-flowFilter = 1
-maxColumn = 100
-meshFile = ./output/tess_001_indices.dat
-snapFile = ./output/snap_001.hdf5
-outputFile = ./output/rays_output_001.txt
+lumTotal = 1.e54
+timeMax  = 2e-6
+dtime    = 5.e-10
+meshFile = /Users/ntc132/eclipse-workspace/VoroLite++/output/tess_005_indices.dat
+snapFile = /Users/ntc132/eclipse-workspace/VoroLite++/output/snap_005.hdf5
+outputDirectory = /Users/ntc132/eclipse-workspace/VoroLite++/outputLight/
 ```
 
-- `numRays`: Number of rays to trace.
+- `cosmo`: Set to false or 0 if simulation is not cosmological, or true or 1 for a cosmological simulation.
+- `numOutputs`: Number of outputs.
+- `HIionisationCrossSection': Ionisation cross-section for neutral hydrogen.
+- `HeIionisationCrossSection': Ionisation cross-section for neutral helium.
+- `HeIIionisationCrossSection': Ionisation cross-section for singly ionised helium.
 - `maxRadius`: Maximum radius for ray tracing.
 - `sourceLocation`: The starting point of the rays (in x, y, z coordinates).
-- `flowFilter`: Mask to include only outflow (set to 1), only inflow (set to -1) or all gas (set to 0).
-- `maxColumn`: Rays stop being traversed when cumulative column density becomes equal to or exceeds this critical value.
+- `lumTotal`: Photon injection rate.
+- `timeMax`: Final time in code units.
+- `dtime`: Time step
 - `meshFile`: Path to the Voronoi mesh file (typically `.dat`).
 - `snapFile`: Path to the snapshot file (typically `.hdf5`).
-- `outputFile`: Path to the output file.
+- `outputDirectory`: Path to the output file.
 
 2. **Run the ray tracing**:
 - `./vorolite rays_param.txt`
