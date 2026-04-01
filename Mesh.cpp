@@ -8,17 +8,27 @@
 #include "common_includes.h"
 #include "Mesh.h"
 #include <filesystem>
+#include <unordered_map>
 
-Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition, bool cosmo) : fileMeshIndices(fileMeshIndices), snapshot(snapshot), maxRadius(maxRadius), sourcePosition(sourcePosition), cosmo(cosmo) {
+Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition, bool cosmo, const std::string& initHIIFile) : fileMeshIndices(fileMeshIndices), snapshot(snapshot), maxRadius(maxRadius), sourcePosition(sourcePosition), cosmo(cosmo) {
 
     readSnapshot(snapshot);
 
     for (int dim = 0; dim < 3; ++dim) {
-        sourcePosition[dim] *= scaleFactor / HubbleParam;
+        this->sourcePosition[dim] *= scaleFactor / HubbleParam;
     }
-    maxRadius *= scaleFactor / HubbleParam;
+    this->maxRadius *= scaleFactor / HubbleParam;
 
-	getNumCellsInRegion();
+    for (int iCell = 0; iCell < numCells; ++iCell) {
+        cellDensity[iCell] *= 1.0 / (scaleFactor * scaleFactor * scaleFactor) * HubbleParam * HubbleParam;
+        cellMass[iCell] *= 1.0 / HubbleParam;
+
+        for (int dim = 0; dim < 3; ++dim) {
+            cellCoordinates[iCell][dim] *= scaleFactor / HubbleParam;
+        }
+    }
+
+    getNumCellsInRegion();
 
 	cellVisitsByRay.resize(numCells, 0);
     cellIncomingPhotonRate.resize(numCells, 0.0);
@@ -27,7 +37,52 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     cellPhotonAbsorptionRateHeI.resize(numCells, 0.0);
     cellPhotonAbsorptionRateHeII.resize(numCells, 0.0);
 
-	cellHIIFraction.resize(numCells, 1.e-10);
+	cellHIIFraction.assign(numCells, 1.e-10);
+	if (!initHIIFile.empty()) {
+		std::unordered_map<long long, double> xhiiById;
+		xhiiById.reserve(numCells);
+
+		std::ifstream inFile(initHIIFile);
+		if (!inFile.is_open()) {
+			std::cerr << "Unable to open initHIIFile: " << initHIIFile << std::endl;
+		} else {
+			std::string line;
+			while (std::getline(inFile, line)) {
+				if (line.empty() || line[0] == '#') {
+					continue;
+				}
+				std::stringstream ss(line);
+				long long cellId = 0;
+				int snapIndex = 0;
+				double xHII = 0.0;
+				if (!(ss >> cellId >> snapIndex >> xHII)) {
+					continue;
+				}
+				xhiiById[cellId] = xHII;
+			}
+		}
+
+		int matched = 0;
+		for (int iCell = 0; iCell < numCells; ++iCell) {
+			auto it = xhiiById.find(static_cast<long long>(cellIDs[iCell]));
+			if (it != xhiiById.end()) {
+				double xHII = it->second;
+				if (xHII < 0.0) xHII = 0.0;
+				if (xHII > 1.0) xHII = 1.0;
+				cellHIIFraction[iCell] = xHII;
+				++matched;
+			}
+		}
+		double minX = 1.0;
+		double maxX = 0.0;
+		for (int iCell = 0; iCell < numCells; ++iCell) {
+			if (cellHIIFraction[iCell] < minX) minX = cellHIIFraction[iCell];
+			if (cellHIIFraction[iCell] > maxX) maxX = cellHIIFraction[iCell];
+		}
+		std::cout << "Initialized HII fraction from " << initHIIFile
+		          << " (matched " << matched << " / " << numCells << ")"
+		          << " min=" << minX << " max=" << maxX << std::endl;
+	}
 	cellHeIIFraction.resize(numCells, 0.0);
 	cellHeIIIFraction.resize(numCells, 0.0);
 
@@ -35,16 +90,7 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     xH_pred.resize(numCells, 0.0);
 
 	fluxOfRayInCell.resize(numCells);
-
-	for (int iCell = 0; iCell < numCells; iCell++) {
-		cellDensity[iCell] *= 1.0 / (scaleFactor * scaleFactor * scaleFactor) * HubbleParam * HubbleParam;
-		cellMass[iCell] *= 1.0 / HubbleParam;
-
-	    for (int dim = 0; dim < 3; dim++) {
-	        cellCoordinates[iCell][dim] *= scaleFactor / HubbleParam;
-	    }
-	}
-
+    
     //doSelfShieldingCorrection();
 
 	IdPairs       = readVoronoiIndices(fileMeshIndices);

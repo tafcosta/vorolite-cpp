@@ -12,7 +12,7 @@
 
 class Mesh {
 public:
-	Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition, bool cosmo);
+	Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition, bool cosmo, const std::string& initHIIFile);
 	virtual ~Mesh();
 
 	const double boltzmannConstant = 1.380649e-16;
