@@ -9,7 +9,7 @@ VoroLite++ is a C++ tool designed for ray tracing on a Voronoi grid. It performs
 
 ## File Structure
 
-- **rays_param.txt**: Parameter file that configures the ray tracing process.
+- **rayParam.txt**: Parameter file that configures the ray tracing process.
 - **meshFile**: Mesh file containing the Voronoi tessellation indices.
 - **snapFile**: Snapshot file containing the data for ray tracing.
 - **rays_output.txt**: Output file containing list of rays, ray directions and column densities.
@@ -53,9 +53,9 @@ outputDirectory = /Users/ntc132/eclipse-workspace/VoroLite++/outputLight/
 
 - `cosmo`: Set to false or 0 if simulation is not cosmological, or true or 1 for a cosmological simulation.
 - `numOutputs`: Number of outputs.
-- `HIionisationCrossSection': Ionisation cross-section for neutral hydrogen.
-- `HeIionisationCrossSection': Ionisation cross-section for neutral helium.
-- `HeIIionisationCrossSection': Ionisation cross-section for singly ionised helium.
+- `HIionisationCrossSection`: Ionisation cross-section for neutral hydrogen.
+- `HeIionisationCrossSection`: Ionisation cross-section for neutral helium.
+- `HeIIionisationCrossSection`: Ionisation cross-section for singly ionised helium.
 - `maxRadius`: Maximum radius for ray tracing.
 - `sourceLocation`: The starting point of the rays (in x, y, z coordinates).
 - `lumTotal`: Photon injection rate.
@@ -64,9 +64,10 @@ outputDirectory = /Users/ntc132/eclipse-workspace/VoroLite++/outputLight/
 - `meshFile`: Path to the Voronoi mesh file (typically `.dat`).
 - `snapFile`: Path to the snapshot file (typically `.hdf5`).
 - `outputDirectory`: Path to the output file.
+- `initHIIFile` : (optional) Path to HII initialisation file,
 
 2. **Run the ray tracing**:
-- `./vorolite rays_param.txt`
+- `./vorolite rayParam.txt`
 
 3. **Output**: The program will generate an output file based on the one given as an input parameter in `rays_param.txt` (`outputFile`), which contains various results, including column densities, line of sight velocity along rays (weighted by column density), total distance travelled by rays, ray directions and number of cells traversed by each ray.
 
