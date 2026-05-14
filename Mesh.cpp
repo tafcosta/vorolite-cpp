@@ -27,7 +27,6 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 
     xH_old.resize(numCells, 0.0);
     xH_pred.resize(numCells, 0.0);
-
 	fluxOfRayInCell.resize(numCells);
 
 	for (int iCell = 0; iCell < numCells; iCell++) {
@@ -62,7 +61,7 @@ double Mesh::getSpecificInternalEnergy(int iCell){
 }
 
 double Mesh::getHNumberDensity_in_cgs(int iCell){
-	return xHydrogen * cellDensity[iCell] / protonMass * unitMass / std::pow(unitLength, 3.0);
+	return 30.;//xHydrogen * cellDensity[iCell] / protonMass * unitMass / std::pow(unitLength, 3.0);
 }
 
 double Mesh::getHeNumberDensity_in_cgs(int iCell) {
@@ -84,8 +83,8 @@ double Mesh::getMeanMolecularWeight(int iCell){
 }
 
 double Mesh::getTemperature_in_K(int iCell){
-	return getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
-			(adiabaticIndex - 1.0) * getMeanMolecularWeight(iCell) * protonMass / boltzmannConstant;
+	return 1.e4;//getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
+			//(adiabaticIndex - 1.0) * getMeanMolecularWeight(iCell) * protonMass / boltzmannConstant;
 }
 
 double Mesh::getMetallicityInSolar(int iCell){
