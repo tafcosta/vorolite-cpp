@@ -10,15 +10,15 @@
 #include "Mesh.h"
 
 Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, double ionisationCrossSectionHeII,
-		double maxRadius, int64_t Nside, Mesh& mesh, Source& source) :
-		ionisationCrossSectionHI(ionisationCrossSectionHI), ionisationCrossSectionHeI(ionisationCrossSectionHeI), ionisationCrossSectionHeII(ionisationCrossSectionHeII), maxRadius(maxRadius), Nside(Nside), mesh(mesh), source(source) {
+		double maxRadius, int64_t Nside, Mesh& mesh) :
+		ionisationCrossSectionHI(ionisationCrossSectionHI), ionisationCrossSectionHeI(ionisationCrossSectionHeI), ionisationCrossSectionHeII(ionisationCrossSectionHeII), maxRadius(maxRadius), Nside(Nside), mesh(mesh) {
 
 	ionisationCrossSectionHI_inInternalUnits   = ionisationCrossSectionHI / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 	ionisationCrossSectionHeI_inInternalUnits  = ionisationCrossSectionHeI / 4.0 / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 	ionisationCrossSectionHeII_inInternalUnits = ionisationCrossSectionHeII / 4.0/ mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 	dustAbsorptionOpacity_inInternalUnits      = dustAbsorptionOpacity  * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 
-	sourcePosition = source.getPosition();
+	sourcePosition = std::vector<double>(3, 0.0);
 	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
 	std::cout << "Source host cell ID = " << startCell << std::endl;
 
@@ -406,119 +406,71 @@ double Rays::distanceSquared(std::vector<float>& a, std::vector<float>& b){
 	return (a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]);
 }
 
-void Rays::updateColumnAndFlux(int iRay, double time, double dtime, bool useAverageXH){
+void Rays::updateColumnAndFlux(int iRay){
 
-	if(timeDependent){
+	double NdotFinal  = rayWeight[iRay];
 
-		int j = 0;
-		double columnHIIindTime = 0.;
-		std::vector<double> fluxOfRay (visitedCells[iRay].size(), 0.0);
+	for (int i = 0; i < visitedCells[iRay].size(); i++){
+		int iCell        = visitedCells[iRay][i];
 
-		for (int i = 0; i < visitedCells[iRay].size(); i++){
+		double xHII = mesh.xH_old[iCell];
 
-			if(i > 0)
-				columnHIIindTime += visitedCellColumn[iRay][i] * (1 - mesh.getHIIFraction(visitedCells[iRay][i])) / 2.0
-					+ visitedCellColumn[iRay][i-1] * (1 - mesh.getHIIFraction(visitedCells[iRay][i-1])) / 2.0;
+		xHII = std::max(0.0, std::min(1.0, xHII));
+		double neutral = 1.0 - xHII;
 
-			//todo: should use linear interpolation instead
-			while((distanceSquared(mesh.cellCoordinates[visitedCells[iRay][j]], mesh.cellCoordinates[visitedCells[iRay][i]]) > speedOfLightInternal * speedOfLightInternal * dtime * dtime)
-					&& (j < visitedCells[iRay].size() - 2) && (j < i)){
+		double yHe       = mesh.getHeIIFraction(iCell);
+		double zHe       = mesh.getHeIIIFraction(iCell);
+		double neutralHe = 1.0 - yHe - zHe;
 
-				columnHIIindTime -= visitedCellColumn[iRay][j] * (1 - mesh.getHIIFraction(visitedCells[iRay][j])) / 2.0;
-						if(j < visitedCells[iRay].size() - 1)
-							columnHIIindTime -= visitedCellColumn[iRay][j+1] * (1 - mesh.getHIIFraction(visitedCells[iRay][j+1])) / 2.0;
+		double dColumnHI     = visitedCellColumn[iRay][i] * mesh.xHydrogen * neutral;
+		double dColumnHeI    = visitedCellColumn[iRay][i] * mesh.yHelium   * neutralHe;
+		double dColumnHeII   = visitedCellColumn[iRay][i] * mesh.yHelium   * yHe;
+		double dColumnDust   = visitedCellColumn[iRay][i]; //todo
 
-				j++;
-			}
+		const double tauHI   = ionisationCrossSectionHI_inInternalUnits    * dColumnHI;
+		const double tauHeI  = ionisationCrossSectionHeI_inInternalUnits   * dColumnHeI;
+		const double tauHeII = ionisationCrossSectionHeII_inInternalUnits  * dColumnHeII;
+		const double tauDust = dustAbsorptionOpacity_inInternalUnits       * dColumnDust;
 
-			fluxOfRay[i] = (j == 0? source.getLuminosity(time - dtime/2.0) * rayWeight[iRay]: mesh.getFluxOfRayInCell(iRay, j)) * std::exp(-ionisationCrossSectionHI_inInternalUnits * columnHIIindTime);
-			mesh.cellIncomingPhotonRate[visitedCells[iRay][i]] += fluxOfRay[i];
-		}
+		const double dtau = tauHI + tauHeI + tauHeII + tauDust;
+		const double fabs = 1.0 - std::exp(-dtau);
+		const double Nabs = fabs * NdotFinal;
 
-		for (int i = 0; i < visitedCells[iRay].size(); i++)
-			mesh.setFluxOfRayInCell(iRay, i, fluxOfRay[i]);
+		const double invTau = 1.0 / (dtau + 1e-99);
+		double NabsHI       = Nabs * tauHI   * invTau;
+		double NabsHeI      = Nabs * tauHeI  * invTau;
+		double NabsHeII     = Nabs * tauHeII * invTau;
+		double NabsDust     = Nabs * tauDust * invTau;
 
-	} else {
+		mesh.setPhotonAbsorptionRateHI(iCell,   mesh.getPhotonAbsorptionRateHI(iCell)   + NabsHI);
+		mesh.setPhotonAbsorptionRateHeI(iCell,  mesh.getPhotonAbsorptionRateHeI(iCell)  + NabsHeI);
+		mesh.setPhotonAbsorptionRateHeII(iCell, mesh.getPhotonAbsorptionRateHeII(iCell) + NabsHeII);
+		mesh.cellIncomingPhotonRate[iCell] += NdotFinal;
 
-	    double NdotFinal  = source.getLuminosity(time) * rayWeight[iRay];
+		columnHI[iRay]   += dColumnHI;
+		columnDust[iRay] += dColumnDust;
 
-		for (int i = 0; i < visitedCells[iRay].size(); i++){
-		    int iCell        = visitedCells[iRay][i];
-
-		    NdotFinal *= hasLightReachedThisCell(visitedCellDistance[iRay][i], time);
-
-		    double xHII = mesh.xH_old[iCell];
-		    if(useAverageXH)
-		    	xHII = mesh.xH_pred[iCell];
-
-		    xHII = std::max(0.0, std::min(1.0, xHII));
-		    double neutral = 1.0 - xHII;
-
-		    double yHe       = mesh.getHeIIFraction(iCell);
-		    double zHe       = mesh.getHeIIIFraction(iCell);
-		    double neutralHe = 1.0 - yHe - zHe;
-
-	        double dColumnHI     = visitedCellColumn[iRay][i] * mesh.xHydrogen * neutral;
-	        double dColumnHeI    = visitedCellColumn[iRay][i] * mesh.yHelium   * neutralHe;
-	        double dColumnHeII   = visitedCellColumn[iRay][i] * mesh.yHelium   * yHe;
-	        double dColumnDust   = visitedCellColumn[iRay][i]; //todo
-
-	        const double tauHI   = ionisationCrossSectionHI_inInternalUnits    * dColumnHI;
-	        const double tauHeI  = ionisationCrossSectionHeI_inInternalUnits   * dColumnHeI;
-	        const double tauHeII = ionisationCrossSectionHeII_inInternalUnits  * dColumnHeII;
-	        const double tauDust = dustAbsorptionOpacity_inInternalUnits       * dColumnDust;
-
-	        const double dtau = tauHI + tauHeI + tauHeII + tauDust;
-	        const double fabs = 1.0 - std::exp(-dtau);
-	        const double Nabs = fabs * NdotFinal;
-
-	        const double invTau = 1.0 / (dtau + 1e-99);
-	        double NabsHI       = Nabs * tauHI   * invTau;
-	        double NabsHeI      = Nabs * tauHeI  * invTau;
-	        double NabsHeII     = Nabs * tauHeII * invTau;
-	        double NabsDust     = Nabs * tauDust * invTau;
-
-	        mesh.setPhotonAbsorptionRateHI(iCell,   mesh.getPhotonAbsorptionRateHI(iCell)   + NabsHI);
-	        mesh.setPhotonAbsorptionRateHeI(iCell,  mesh.getPhotonAbsorptionRateHeI(iCell)  + NabsHeI);
-	        mesh.setPhotonAbsorptionRateHeII(iCell, mesh.getPhotonAbsorptionRateHeII(iCell) + NabsHeII);
-	        mesh.cellIncomingPhotonRate[iCell] += NdotFinal;
-
-		    columnHI[iRay]   += dColumnHI;
-		    columnDust[iRay] += dColumnDust;
-
-	        NdotFinal *= 1.0 - fabs;
-		}
-
-		finalLuminosity[iRay] = NdotFinal;
+		NdotFinal *= 1.0 - fabs;
 	}
 
-}
+	finalLuminosity[iRay] = NdotFinal;
 
-int Rays::hasLightReachedThisCell(double totalDistance, double time){
-	double lightTravelDistance  = speedOfLight  * time * mesh.unitLength/mesh.unitVelocity;
-	double totalDistance_in_cgs = totalDistance * mesh.unitLength;
-
-	if(lightTravelDistance >= totalDistance_in_cgs)
-		return 1;
-	else
-		return 0;
 }
 
 void Rays::calculateRays(){
-	for(int iRay = 0; iRay < nRays; iRay++){
-		int iCell = startCell;
-		while(insideDomain[iRay])
-			iCell = travelToNextCell(iCell, iRay, false);
-
-		mesh.resizeFluxOfRayInCell(iRay, visitedCells[iRay].size());
+	for(int iCell = 0; iCell < mesh.numCells; ++iCell)
+		for(int iRay = 0; iRay < nRays; iRay++){
+			int iCellCurrent = iCell;
+			while(insideDomain[iRay])
+				iCellCurrent = travelToNextCell(iCellCurrent, iRay, false);
 		}
 }
 
-void Rays::doRadiativeTransfer(double time, double dtime, bool useAverageXH){
+void Rays::doRadiativeTransfer(){
 	for(int iRay = 0; iRay < nRays; iRay++){
 		columnHI[iRay]   = 0.;
 		columnDust[iRay] = 0.;
-		updateColumnAndFlux(iRay, time, dtime, useAverageXH);
+		//updateColumnAndFlux(iRay, time, dtime, useAverageXH);
 	}
 }
 

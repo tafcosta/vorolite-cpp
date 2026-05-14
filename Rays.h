@@ -13,7 +13,7 @@
 
 class Rays {
 public:
-	Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, double ionisationCrossSectionHeII, double maxRadius, int64_t Nside, Mesh& mesh, Source& source);
+	Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, double ionisationCrossSectionHeII, double maxRadius, int64_t Nside, Mesh& mesh);
 	virtual ~Rays();
 
 	bool timeDependent = false;
@@ -54,13 +54,12 @@ public:
 
 	int nRays;
 	Mesh& mesh;
-	Source& source;
 
 	const double speedOfLight = 2.99792458e10;
 	double speedOfLightInternal = speedOfLight/mesh.unitVelocity;
 
 	void calculateRays();
-	void doRadiativeTransfer(double time, double dtime, bool useAverageXH);
+	void doRadiativeTransfer();
 	void outputResults(std::string& ofileName);
 
 protected:
@@ -70,13 +69,12 @@ protected:
 
 	void assignToHealpix(int64_t healpixNside);
 	void updateRayPosition(int iRay, double distance);
-	void updateColumnAndFlux(int iRay, double time, double dtime, bool useAverageXH);
+	void updateColumnAndFlux(int iRay);
 	int findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose);
 	int modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double distanceToExit, bool verbose);
 	bool updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit);
 	double getOvershootDistance(int exitCell, int iRay, double distanceToExit, bool verbose);
 	double distanceSquared(std::vector<float>& a, std::vector<float>& b);
-	int hasLightReachedThisCell(double totalDistance, double time);
 
 private:
     void initializeDirections();

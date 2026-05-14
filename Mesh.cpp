@@ -9,7 +9,7 @@
 #include "Mesh.h"
 #include <filesystem>
 
-Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition, bool cosmo) : fileMeshIndices(fileMeshIndices), snapshot(snapshot), maxRadius(maxRadius), sourcePosition(sourcePosition), cosmo(cosmo) {
+Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, bool cosmo) : fileMeshIndices(fileMeshIndices), snapshot(snapshot), maxRadius(maxRadius), cosmo(cosmo) {
 
     readSnapshot(snapshot);
 	getNumCellsInRegion();
@@ -42,10 +42,6 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 
 	IdPairs       = readVoronoiIndices(fileMeshIndices);
 	neighbourList = collectNeighbours(IdPairs, cellIDs);
-}
-
-void Mesh::resizeFluxOfRayInCell(int iRay, int numVisitedCells){
-	fluxOfRayInCell[iRay].resize(numVisitedCells, 0.0);
 }
 
 double Mesh::getMass(int iCell){

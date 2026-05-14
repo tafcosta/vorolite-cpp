@@ -1,6 +1,5 @@
 #include "common_includes.h"
 #include "Mesh.h"
-#include "Photochemistry.h"
 #include "Rays.h"
 #include "Source.h"
 #include "SourceVariable.h"
@@ -11,7 +10,7 @@ void parseRayParamFile(const std::string& fileName, bool& cosmo,
 		double& HeIionisationXsection,
 		double& HeIIionisationXsection,
 		double& dustAbsorptionOpacity,  double& maxRadius,
-        std::vector<double>& sourcePosition, double& lumTotal, double& timeMax, double& dtime, int64_t& Nside, std::string& meshFile,
+        int64_t& Nside, std::string& meshFile,
         std::string& snapFile, std::string& oDirectory);
 
 int main(int argc, char* argv[]) {
@@ -32,29 +31,22 @@ int main(int argc, char* argv[]) {
     double dustAbsorptionOpacity      = 0.0;
 
     double maxRadius = 0.0;
-    double lumTotal  = 0.0;
-    double timeMax   = 0.0;
-    double dtime     = 1.e-9;
 
     int64_t Nside = 4;
     bool cosmo = false;
-    std::vector<double> sourcePosition(3, 0.5);
     std::string meshFile, snapFile, oDirectory;
-    std::filesystem::path lightcurvefile = "data/Lion_basic_ref.txt";
 
     parseRayParamFile(paramFile, cosmo, nOutputs, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, dustAbsorptionOpacity,
-    		maxRadius, sourcePosition, lumTotal, timeMax, dtime, Nside, meshFile, snapFile, oDirectory);
+    		maxRadius, Nside, meshFile, snapFile, oDirectory);
 
     if (maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
         std::cerr << "Error: Missing or invalid parameters in rayParam.txt" << std::endl;
         return 1;
     }
 
-	std::cout << "Starting VoroLite++ RT (Version 1.0)!" << std::endl;
-    Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, sourcePosition, cosmo);
-    Source *source = new Source(sourcePosition, lumTotal); //Source* source = new SourceVariable(sourcePosition,lumTotal, lightcurvefile.string());
-    Rays *rays = new Rays(HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, maxRadius, Nside, *mesh, *source);
-    Photochemistry *photochemistry = new Photochemistry(*mesh, *rays, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection);
+	std::cout << "Starting HeatThatDust!" << std::endl;
+    Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, cosmo);
+    Rays *rays = new Rays(HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, maxRadius, Nside, *mesh);
 
     std::ostringstream filename;
     filename << oDirectory << "HIIfraction_init.txt";
@@ -73,10 +65,6 @@ int main(int argc, char* argv[]) {
         std::cerr << "Unable to open file " << filename.str() << " for writing." << std::endl;
     }
 
-    double time = 0;
-    double printInterval = timeMax/nOutputs;
-    double TimeNextOutput = printInterval;
-
     int snapshotIndex = 0;
     std::cout << "Setting up rays..." << std::endl;
     rays->calculateRays();
@@ -88,55 +76,29 @@ int main(int argc, char* argv[]) {
     rays->outputResults(ofileName);
 
     std::cout << "Starting radiative transfer" << std::endl;
-    while (time < timeMax) {
+    mesh->resetPhotons();
+    rays->doRadiativeTransfer();
 
-    	photochemistry->storeOldIonisation();
+    if (outFile.is_open()) {
 
-        mesh->resetPhotons();
-    	rays->doRadiativeTransfer(time, dtime, false);
-    	photochemistry->predictIonisation(dtime);
-
-        mesh->resetPhotons();
-    	rays->doRadiativeTransfer(time, dtime, true);
-    	photochemistry->evolveIonisation(dtime);
-
-        time += dtime;
-
-        if (time >= TimeNextOutput) {
-            std::cout << "time = " << time << std::endl;
-
-            std::ostringstream filename;
-            filename << oDirectory << "HIIfraction_" << snapshotIndex << ".txt";
-
-            std::ofstream outFile(filename.str());
-            if (outFile.is_open()) {
-
-                outFile << std::setprecision(15) << std::scientific;
-
-                for (int iCell = 0; iCell < mesh->numCells; ++iCell) {
-                    outFile << mesh->getIndex(iCell) << " ";
-                    for (float coord : mesh->cellCoordinates[iCell]) {
-                        outFile << coord << " ";
-                    }
-                    outFile << mesh->getHIIFraction(iCell) << " "
-                            << mesh->getHeIIFraction(iCell) << " "
-                            << mesh->getHeIIIFraction(iCell) << " "
-                            << mesh->cellIncomingPhotonRate[iCell] << " "
-							<< time << std::endl;
+    	outFile << std::setprecision(15) << std::scientific;
+    	for (int iCell = 0; iCell < mesh->numCells; ++iCell) {
+    		outFile << mesh->getIndex(iCell) << " ";
+    		for (float coord : mesh->cellCoordinates[iCell]) {
+    			outFile << coord << " ";
+    		}
+    		outFile << mesh->getHIIFraction(iCell) << " "
+    				<< mesh->getHeIIFraction(iCell) << " "
+					<< mesh->getHeIIIFraction(iCell) << " "
+					<< mesh->cellIncomingPhotonRate[iCell]
+					<< std::endl;
                 }
-            } else {
-                std::cerr << "Unable to open file " << filename.str() << " for writing." << std::endl;
-            }
-
-            ++snapshotIndex;
-            TimeNextOutput += printInterval;
-        }
+    } else {
+    	std::cerr << "Unable to open file " << filename.str() << " for writing." << std::endl;
     }
-  
+
 	delete mesh;
 	delete rays;
-	delete source;
-	delete photochemistry;
 
 	return 0;
 }
@@ -144,7 +106,7 @@ int main(int argc, char* argv[]) {
 void parseRayParamFile(const std::string& fileName, bool& cosmo, int& nOutputs,
 		double& HIionisationCrossSection, double& HeIionisationCrossSection, double& HeIIionisationCrossSection,
 		double& dustAbsorptionOpacity, double& maxRadius,
-        std::vector<double>& sourceLocation, double& lumTotal, double& timeMax, double& dtime, int64_t& Nside, std::string& meshFile,
+        int64_t& Nside, std::string& meshFile,
         std::string& snapFile, std::string& oDirectory) {
 
     std::ifstream inputFile(fileName);
@@ -198,22 +160,6 @@ void parseRayParamFile(const std::string& fileName, bool& cosmo, int& nOutputs,
         }
         else if (key == "maxRadius") {
             maxRadius = std::stod(value);
-        }
-        else if (key == "sourceLocation") {
-            std::stringstream locStream(value);
-            double x, y, z;
-            char comma;
-            locStream >> x >> comma >> y >> comma >> z;
-            sourceLocation = {x, y, z};
-        }
-        else if (key == "lumTotal") {
-            lumTotal = std::stod(value);
-        }
-        else if (key == "timeMax") {
-            timeMax = std::stod(value);
-        }
-        else if (key == "dtime") {
-        	dtime = std::stod(value);
         }
         else if (key == "meshFile") {
             meshFile = value;

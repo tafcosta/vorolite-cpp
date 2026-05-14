@@ -12,7 +12,7 @@
 
 class Mesh {
 public:
-	Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::vector<double> sourcePosition, bool cosmo);
+	Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, bool cosmo);
 	virtual ~Mesh();
 
 	const double boltzmannConstant = 1.380649e-16;
@@ -90,7 +90,6 @@ public:
 	void setHeIIIFraction(int iCell, double newValue);
 
     void resetPhotons();
-    void resizeFluxOfRayInCell(int iRay, int numVisitedCells);
 	void doSelfShieldingCorrection();
 
 private:
