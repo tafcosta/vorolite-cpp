@@ -11,32 +11,19 @@
 
 Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, double ionisationCrossSectionHeII,
 		double maxRadius, int64_t Nside, Mesh& mesh) :
-		ionisationCrossSectionHI(ionisationCrossSectionHI), ionisationCrossSectionHeI(ionisationCrossSectionHeI), ionisationCrossSectionHeII(ionisationCrossSectionHeII), maxRadius(maxRadius), Nside(Nside), mesh(mesh) {
+		ionisationCrossSectionHI(ionisationCrossSectionHI), ionisationCrossSectionHeI(ionisationCrossSectionHeI), ionisationCrossSectionHeII(ionisationCrossSectionHeII), maxRadius(maxRadius), Nside(Nside), nRays(12 * Nside * Nside), mesh(mesh) {
 
-	ionisationCrossSectionHI_inInternalUnits   = ionisationCrossSectionHI / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
-	ionisationCrossSectionHeI_inInternalUnits  = ionisationCrossSectionHeI / 4.0 / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
-	ionisationCrossSectionHeII_inInternalUnits = ionisationCrossSectionHeII / 4.0/ mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
+	ionisationCrossSectionHI_inInternalUnits   = ionisationCrossSectionHI   / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
+	ionisationCrossSectionHeI_inInternalUnits  = ionisationCrossSectionHeI  / 4.0 / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
+	ionisationCrossSectionHeII_inInternalUnits = ionisationCrossSectionHeII / 4.0 / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 	dustAbsorptionOpacity_inInternalUnits      = dustAbsorptionOpacity  * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 
-	sourcePosition = std::vector<double>(3, 0.0);
-	startCell = mesh.findHostCellID(sourcePosition, -1)[0];
-	std::cout << "Source host cell ID = " << startCell << std::endl;
+	rayDirection = std::vector<std::array<double,3>>(nRays);
+	rayPosition  = std::vector<std::array<double,3>>(nRays);
 
-	setNumRays();
-	rayTargetCell = std::vector<int> (nRays);
-    for (int iRay = 0; iRay < nRays; ++iRay)
-    	rayTargetCell[iRay] = iRay;
-
-	rayDirection = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
-	theta        = std::vector<double>(nRays, 0.0);
-	phi          = std::vector<double>(nRays, 0.0);
-	rayWeight    = std::vector<double>(nRays, 0.0);
-
-	initializeDirections();
-	assignToHealpix(Nside);
-
-	rayPosition = std::vector<std::vector<double>>(nRays, std::vector<double>(3, 0.0));
-	initializePositions();
+	theta     = std::vector<double>(nRays, 0.0);
+	phi       = std::vector<double>(nRays, 0.0);
+	rayWeight = std::vector<double>(nRays, 1.0 / nRays);
 
 	columnHI          = std::vector<double>(nRays, 0.0);
 	columnDust        = std::vector<double>(nRays, 0.0);
@@ -49,83 +36,31 @@ Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, do
 	visitedCellDistance = std::vector<std::vector<double>>(nRays);
 	visitedCells        = std::vector<std::vector<int>>(nRays);
 
+	initializeDirections();
 }
-
-void Rays::setNumRays(){
-	nRays = mesh.numCells;
-}
-
 
 void Rays::initializeDirections() {
-	std::vector<float> cellPos;
-    double xDistance, yDistance, zDistance;
-    double rDistance;
 
-    for (int iRay = 0; iRay < nRays; ++iRay) {
+    rayDirection.resize(nRays);
+    theta.resize(nRays);
+    phi.resize(nRays);
+    rayWeight.resize(nRays, 1.0 / nRays);
 
-    	cellPos   = mesh.cellCoordinates[iRay];
+    for(int iRay = 0; iRay < nRays; ++iRay){
 
-    	if(rayTargetCell[iRay] != startCell){
-    		xDistance = cellPos[0] - mesh.cellCoordinates[startCell][0];
-    		yDistance = cellPos[1] - mesh.cellCoordinates[startCell][1];
-    		zDistance = cellPos[2] - mesh.cellCoordinates[startCell][2];
-    	}
-    	else
-    	{
-    		xDistance = cellPos[0] - sourcePosition[0];
-    		yDistance = cellPos[1] - sourcePosition[1];
-    		zDistance = cellPos[2] - sourcePosition[2];
-    	}
+        double thetaTmp, phiTmp;
 
-    	rDistance = std::sqrt(xDistance*xDistance + yDistance*yDistance + zDistance*zDistance);
+        pix2ang_ring(Nside, iRay, &thetaTmp, &phiTmp);
 
-    	if(rDistance > 0.){
-    		rayDirection[iRay][0] = xDistance / rDistance;
-    		rayDirection[iRay][1] = yDistance / rDistance;
-    		rayDirection[iRay][2] = zDistance / rDistance;
+        theta[iRay] = thetaTmp;
+        phi[iRay]   = phiTmp;
 
-    		phi[iRay]   = std::atan2(yDistance, xDistance);
-    		theta[iRay] = std::acos(zDistance / rDistance);
-    	}
+        rayDirection[iRay][0] = std::sin(thetaTmp) * std::cos(phiTmp);
+        rayDirection[iRay][1] = std::sin(thetaTmp) * std::sin(phiTmp);
+        rayDirection[iRay][2] = std::cos(thetaTmp);
     }
 }
 
-void Rays::assignToHealpix(int64_t healpixNside) {
-	int64_t nPix = nside2npix(healpixNside);
-	std::vector<int> raysPerPixel(nPix, 0);
-
-	std::vector<int64_t> rayToPixel(nRays);
-	for (int i = 0; i < nRays; ++i) {
-		long iPix;
-		ang2pix_ring(healpixNside, theta[i], phi[i], &iPix);
-
-		rayToPixel[i] = static_cast<int64_t>(iPix);
-		raysPerPixel[iPix]++;
-	}
-
-	const double omegaPix = 4.0 * M_PI / static_cast<double>(nPix);
-
-	for (int i = 0; i < nRays; ++i) {
-		int64_t iPix = rayToPixel[i];
-		rayWeight[i] = 1./raysPerPixel[iPix] * omegaPix / (4.0 * M_PI) ;
-	}
-
-	double rayWeightTotal = 0.;
-	for (int i = 0; i < nRays; ++i) {
-		rayWeightTotal += rayWeight[i];
-	}
-
-	if (rayWeightTotal > 1 + 1.e-10 || rayWeightTotal < 1 - 1.e-10)
-		std::cout << "Total ray weights do not add up to " << rayWeightTotal << "! There is a problem with the source." << std::endl;
-}
-
-void Rays::initializePositions() {
-    for (int iRay = 0; iRay < nRays; ++iRay)
-        for (int i = 0; i < 3; ++i)
-        	rayPosition[iRay][i] = 	mesh.cellCoordinates[startCell][i];
-
-    std::cout << "Source Position changed to = " << mesh.cellCoordinates[startCell][0] << " " << mesh.cellCoordinates[startCell][1] << " " << mesh.cellCoordinates[startCell][2] << std::endl;
-}
 
 int Rays::travelToNextCell(int iCell, int iRay, bool verbose){
 	 double distanceToExit = std::numeric_limits<double>::max();
@@ -146,10 +81,8 @@ int Rays::travelToNextCell(int iCell, int iRay, bool verbose){
 	     std::cerr << "Warning: distanceToExit = " << distanceToExit
 	               << ". You seem to have ended up on an edge; how did you do that?!" << std::endl;
 
-	 if(exitCell == -1){
-	     std::cerr << "No exit cell found. You need a larger domain buffer size." << std::endl;
+	 if(exitCell == -1)
 		 insideDomain[iRay] = false;
-	 }
 
 	 if(insideDomain[iRay]){
 
@@ -222,7 +155,7 @@ double Rays::getOvershootDistance(int exitCell, int iRay, double distanceToExit,
 		return 0.0;
 
 	double distanceRayToExitCellCentre = mesh.getDistanceToCell(rayPosition[iRay], exitCell);
-	std::vector<double> positionTmp (3, 0.0);
+	std::array<double,3> positionTmp{0.0, 0.0, 0.0};
 
 	double overshoot = distanceRayToExitCellCentre / 10;
 
@@ -273,7 +206,7 @@ int Rays::modifyExitCellIfOnInterface(int iCell, int iRay, int exitCell, double 
 	std::vector<float> cellPos = mesh.cellCoordinates[iCell];
 	std::vector<double> normalVector (3, 0.0);
 	std::vector<double> pointOnInterface (3, 0.0);
-	std::vector<double> positionTmp (3, 0.0);
+	std::array<double,3> positionTmp{};
 
 	for (int i = 0; i < 3; i++)
 		 positionTmp[i] = rayPosition[iRay][i] + rayDirection[iRay][i] * distanceToExit;
@@ -432,19 +365,9 @@ void Rays::updateColumnAndFlux(int iRay){
 		const double tauHeII = ionisationCrossSectionHeII_inInternalUnits  * dColumnHeII;
 		const double tauDust = dustAbsorptionOpacity_inInternalUnits       * dColumnDust;
 
-		const double dtau = tauHI + tauHeI + tauHeII + tauDust;
+		const double dtau = 0.;//tauHI + tauHeI + tauHeII + tauDust;
 		const double fabs = 1.0 - std::exp(-dtau);
-		const double Nabs = fabs * NdotFinal;
 
-		const double invTau = 1.0 / (dtau + 1e-99);
-		double NabsHI       = Nabs * tauHI   * invTau;
-		double NabsHeI      = Nabs * tauHeI  * invTau;
-		double NabsHeII     = Nabs * tauHeII * invTau;
-		double NabsDust     = Nabs * tauDust * invTau;
-
-		mesh.setPhotonAbsorptionRateHI(iCell,   mesh.getPhotonAbsorptionRateHI(iCell)   + NabsHI);
-		mesh.setPhotonAbsorptionRateHeI(iCell,  mesh.getPhotonAbsorptionRateHeI(iCell)  + NabsHeI);
-		mesh.setPhotonAbsorptionRateHeII(iCell, mesh.getPhotonAbsorptionRateHeII(iCell) + NabsHeII);
 		mesh.cellIncomingPhotonRate[iCell] += NdotFinal;
 
 		columnHI[iRay]   += dColumnHI;
@@ -458,20 +381,39 @@ void Rays::updateColumnAndFlux(int iRay){
 }
 
 void Rays::calculateRays(){
-	for(int iCell = 0; iCell < mesh.numCells; ++iCell)
-		for(int iRay = 0; iRay < nRays; iRay++){
-			int iCellCurrent = iCell;
-			while(insideDomain[iRay])
-				iCellCurrent = travelToNextCell(iCellCurrent, iRay, false);
-		}
+
+    for(int iCell = 0; iCell < mesh.numCells; ++iCell){
+
+        for(int iRay = 0; iRay < nRays; ++iRay){
+
+            resetRay(iRay, iCell);
+
+            int iCellCurrent = iCell;
+
+            while(insideDomain[iRay])
+                iCellCurrent = travelToNextCell(iCellCurrent, iRay, false);
+
+            updateColumnAndFlux(iRay);
+        }
+    }
 }
 
-void Rays::doRadiativeTransfer(){
-	for(int iRay = 0; iRay < nRays; iRay++){
-		columnHI[iRay]   = 0.;
-		columnDust[iRay] = 0.;
-		//updateColumnAndFlux(iRay, time, dtime, useAverageXH);
-	}
+void Rays::resetRay(int iRay, int startCell){
+
+    insideDomain[iRay]      = true;
+    flagRay[iRay]           = false;
+
+    columnHI[iRay]          = 0.0;
+    columnDust[iRay]        = 0.0;
+    distanceTravelled[iRay] = 0.0;
+    finalLuminosity[iRay]   = 0.0;
+
+    visitedCellColumn[iRay].clear();
+    visitedCellDistance[iRay].clear();
+    visitedCells[iRay].clear();
+
+    for(int i = 0; i < 3; ++i)
+        rayPosition[iRay][i] = mesh.cellCoordinates[startCell][i];
 }
 
 Rays::~Rays() {

@@ -9,7 +9,6 @@
 #define RAYS_H_
 
 #include "Mesh.h"
-#include "Source.h"
 
 class Rays {
 public:
@@ -31,11 +30,10 @@ public:
 	double maxRadius;
 	int64_t Nside;
 
-	std::vector<double> sourcePosition;
 	std::vector<double> phi, theta;
 
-	std::vector<std::vector<double>> rayDirection;
-	std::vector<std::vector<double>> rayPosition;
+	std::vector<std::array<double,3>> rayDirection;
+	std::vector<std::array<double,3>> rayPosition;
 
 	std::vector<double> columnHI;
 	std::vector<double> columnDust;
@@ -59,7 +57,6 @@ public:
 	double speedOfLightInternal = speedOfLight/mesh.unitVelocity;
 
 	void calculateRays();
-	void doRadiativeTransfer();
 	void outputResults(std::string& ofileName);
 
 protected:
@@ -67,7 +64,7 @@ protected:
 	int travelToNextCell(int iCell, int iRay, bool verbose);
 	std::vector<int> rayTargetCell;
 
-	void assignToHealpix(int64_t healpixNside);
+	void resetRay(int iRay, int startCell);
 	void updateRayPosition(int iRay, double distance);
 	void updateColumnAndFlux(int iRay);
 	int findExitCellAndSetDistance(int iCell, int iRay, int& exitCell, double& distanceToExit, bool verbose);
@@ -78,7 +75,6 @@ protected:
 
 private:
     void initializeDirections();
-    void initializePositions();
 
     void setNumRays();
     bool warningIssued;

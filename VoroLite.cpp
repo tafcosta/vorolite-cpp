@@ -1,11 +1,8 @@
 #include "common_includes.h"
 #include "Mesh.h"
 #include "Rays.h"
-#include "Source.h"
-#include "SourceVariable.h"
 
 void parseRayParamFile(const std::string& fileName, bool& cosmo,
-		int& nOutputs,
 		double& HIionisationXsection,
 		double& HeIionisationXsection,
 		double& HeIIionisationXsection,
@@ -23,8 +20,6 @@ int main(int argc, char* argv[]) {
     std::string paramFile = argv[1];
     std::cout << "We are getting our parameters from \'" << paramFile << "\'" <<  std::endl;
 
-    int nOutputs = 100;
-
     double HIionisationCrossSection   = 0.0;
     double HeIionisationCrossSection  = 0.0;
     double HeIIionisationCrossSection = 0.0;
@@ -36,7 +31,7 @@ int main(int argc, char* argv[]) {
     bool cosmo = false;
     std::string meshFile, snapFile, oDirectory;
 
-    parseRayParamFile(paramFile, cosmo, nOutputs, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, dustAbsorptionOpacity,
+    parseRayParamFile(paramFile, cosmo, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, dustAbsorptionOpacity,
     		maxRadius, Nside, meshFile, snapFile, oDirectory);
 
     if (maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
@@ -44,57 +39,44 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+
 	std::cout << "Starting HeatThatDust!" << std::endl;
     Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, cosmo);
     Rays *rays = new Rays(HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, maxRadius, Nside, *mesh);
 
     std::ostringstream filename;
-    filename << oDirectory << "HIIfraction_init.txt";
+    filename << oDirectory << "CellFluxes.txt";
+
+    std::cout << "Radiative transfer..." << std::endl;
+    rays->calculateRays();
+    std::cout << "Radiative transfer done!" << std::endl;
 
     std::ofstream outFile(filename.str());
+
     if (outFile.is_open()) {
+
+        outFile << std::setprecision(15) << std::scientific;
+
         for (int iCell = 0; iCell < mesh->numCells; ++iCell) {
+
             outFile << mesh->getIndex(iCell) << " ";
+
             for (float coord : mesh->cellCoordinates[iCell]) {
                 outFile << coord << " ";
             }
-            outFile << mesh->getHIIFraction(iCell) << " " << mesh->cellIncomingPhotonRate[iCell] << std::endl;
+
+            outFile << mesh->cellIncomingPhotonRate[iCell]
+                    << std::endl;
         }
+
         outFile.close();
-    } else {
-        std::cerr << "Unable to open file " << filename.str() << " for writing." << std::endl;
     }
+    else {
 
-    int snapshotIndex = 0;
-    std::cout << "Setting up rays..." << std::endl;
-    rays->calculateRays();
-    std::cout << "Setting up rays OK." << std::endl;
-
-    std::ostringstream ofName;
-    ofName << oDirectory << "rays_output_" << snapshotIndex << ".txt";
-    std::string ofileName = ofName.str();
-    rays->outputResults(ofileName);
-
-    std::cout << "Starting radiative transfer" << std::endl;
-    mesh->resetPhotons();
-    rays->doRadiativeTransfer();
-
-    if (outFile.is_open()) {
-
-    	outFile << std::setprecision(15) << std::scientific;
-    	for (int iCell = 0; iCell < mesh->numCells; ++iCell) {
-    		outFile << mesh->getIndex(iCell) << " ";
-    		for (float coord : mesh->cellCoordinates[iCell]) {
-    			outFile << coord << " ";
-    		}
-    		outFile << mesh->getHIIFraction(iCell) << " "
-    				<< mesh->getHeIIFraction(iCell) << " "
-					<< mesh->getHeIIIFraction(iCell) << " "
-					<< mesh->cellIncomingPhotonRate[iCell]
-					<< std::endl;
-                }
-    } else {
-    	std::cerr << "Unable to open file " << filename.str() << " for writing." << std::endl;
+        std::cerr << "Unable to open file "
+                  << filename.str()
+                  << " for writing."
+                  << std::endl;
     }
 
 	delete mesh;
@@ -103,7 +85,7 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-void parseRayParamFile(const std::string& fileName, bool& cosmo, int& nOutputs,
+void parseRayParamFile(const std::string& fileName, bool& cosmo,
 		double& HIionisationCrossSection, double& HeIionisationCrossSection, double& HeIIionisationCrossSection,
 		double& dustAbsorptionOpacity, double& maxRadius,
         int64_t& Nside, std::string& meshFile,
@@ -142,9 +124,6 @@ void parseRayParamFile(const std::string& fileName, bool& cosmo, int& nOutputs,
             else {
                 throw std::runtime_error("Invalid value for cosmo: " + value);
             }
-        }
-        else if (key == "nOutputs") {
-        	nOutputs = std::stoi(value);
         }
         else if (key == "HIionisationCrossSection") {
         	HIionisationCrossSection = std::stod(value);

@@ -38,7 +38,6 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 	    }
 	}
 
-    //doSelfShieldingCorrection();
 
 	IdPairs       = readVoronoiIndices(fileMeshIndices);
 	neighbourList = collectNeighbours(IdPairs, cellIDs);
@@ -85,36 +84,6 @@ double Mesh::getTemperature_in_K(int iCell){
 
 double Mesh::getMetallicityInSolar(int iCell){
 	return cellMetallicity[iCell]/0.0127;
-}
-
-double Mesh::getSelfShieldingCorrection(int iCell) {
-    const double rho_s = 1.52e-2;
-    const double rho_u = 4.53e-3;
-    const double p     = 2.68;
-
-    double nH   = cellXH[iCell] * getHNumberDensity_in_cgs(iCell);
-    double f_hi = 1.0 - getHIIFraction(iCell);
-
-    double new_f_hi = f_hi;
-
-    if (nH >= rho_u && nH <= rho_s) {
-        double numerator   = f_hi * std::pow(rho_s - nH, p)
-                           + std::pow(nH - rho_u, p);
-        double denominator = std::pow(rho_s - rho_u, p);
-        new_f_hi = numerator / denominator;
-    } 
-    else if (nH > rho_s) {
-        new_f_hi = 1.0;
-    }
-
-    return new_f_hi;
-}
-
-void Mesh::doSelfShieldingCorrection() {
-    for (int iCell = 0; iCell < numCells; ++iCell) {
-        double newcellHIFraction = getSelfShieldingCorrection(iCell);
-        cellHIIFraction[iCell] = 1.0 - newcellHIFraction;
-    }
 }
 
 double Mesh::getFluxOfRayInCell(int iRay, int iCell){
@@ -195,13 +164,11 @@ void Mesh::getNumCellsInRegion(){
     std::vector<int> filteredCellIndices;
 	std::vector<float> cellPos;
 
-	int startCell = findHostCellID(sourcePosition, -1)[0];
-
 	for(int iCell = 0; iCell < numCells; iCell++){
 		cellPos   = cellCoordinates[iCell];
-        double dx = cellPos[0] - cellCoordinates[startCell][0]; //sourcePosition[0];
-        double dy = cellPos[1] - cellCoordinates[startCell][1]; //sourcePosition[1];
-        double dz = cellPos[2] - cellCoordinates[startCell][2]; //sourcePosition[2];
+        double dx = cellPos[0] - domainCentre[0];
+        double dy = cellPos[1] - domainCentre[1];
+        double dz = cellPos[2] - domainCentre[2];
         double rDistance = std::sqrt(dx*dx + dy*dy + dz*dz);
 
 		if(rDistance <= 1.2 * maxRadius){
@@ -227,17 +194,6 @@ void Mesh::getNumCellsInRegion(){
 
     std::cout << "Reduced to " << numCells << " cells within maxRadius = " << maxRadius << std::endl;
 }
-
-void Mesh::resetPhotons(){
-    for(int iCell = 0; iCell < numCells; iCell++){
-        cellIncomingPhotonRate[iCell] = 0.;
-        cellPhotonAbsorptionRateHI[iCell] = 0.;
-        cellPhotonAbsorptionRateHeI[iCell] = 0.;
-        cellPhotonAbsorptionRateHeII[iCell] = 0.;
-    }
-}
-
-
 
 void Mesh::readSnapshot(const std::string& snapshotBase) {
     try {
@@ -393,7 +349,7 @@ std::vector<std::vector<int>> Mesh::collectNeighbours(const std::vector<std::pai
 }
 
 
-double Mesh::squaredDistance(const std::vector<float>& point1, const std::vector<double>& point2) {
+double Mesh::squaredDistance(const std::vector<float>& point1, const std::array<double,3>& point2) {
     double dist = 0.0;
     for (size_t i = 0; i < point1.size(); ++i) {
         dist += (point1[i] - point2[i]) * (point1[i] - point2[i]);
@@ -401,7 +357,7 @@ double Mesh::squaredDistance(const std::vector<float>& point1, const std::vector
     return dist;
 }
 
-std::vector<int> Mesh::findHostCellID(const std::vector<double>& target, int cellGuess) {
+std::vector<int> Mesh::findHostCellID(const std::array<double,3>& target, int cellGuess) {
     std::vector<int> closestCells;
     std::vector<int> possibleCells;
     closestCells.reserve(numCells);
@@ -449,7 +405,7 @@ bool Mesh::checkIfExitCellNeighboursCurrentCell(int iCell, int exitCell){
     return test;
 }
 
-double Mesh::getDistanceToCell(const std::vector<double>& target, int cellIndex) {
+double Mesh::getDistanceToCell(const std::array<double,3>& target, int cellIndex) {
     return sqrt(squaredDistance(cellCoordinates[cellIndex], target));
 
 }

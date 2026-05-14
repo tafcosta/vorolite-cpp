@@ -33,6 +33,7 @@ public:
 
 	double xHydrogen = 0.76;
 	double yHelium   = 0.24;
+	std::array<double,3> domainCentre = {0.5, 0.5, 0.5};
 
     std::vector<int> cellVisitsByRay;
 
@@ -48,10 +49,10 @@ public:
     std::vector<double> xH_pred;
 
 	std::vector<std::vector<int>> neighbourList;
-	std::vector<int> findHostCellID(const std::vector<double>& target, int cellGuess);
+	std::vector<int> findHostCellID(const std::array<double,3>& target, int cellGuess);
 	bool checkIfExitCellNeighboursCurrentCell(int iCell, int exitCell);
 
-	double getDistanceToCell(const std::vector<double>& target, int cellIndex);
+	double getDistanceToCell(const std::array<double,3>& target, int cellIndex);
 	double getDistanceBetweenCells(int iCell, int jCell);
 
 	double getFluxOfRayInCell(int iRay, int iCell);
@@ -89,8 +90,7 @@ public:
 	void setHeIIFraction(int iCell, double newValue);
 	void setHeIIIFraction(int iCell, double newValue);
 
-    void resetPhotons();
-	void doSelfShieldingCorrection();
+	double squaredDistance(const std::vector<float>& point1, const std::array<double,3>& point2);
 
 private:
 	std::vector<int> cellIndices;
@@ -127,7 +127,6 @@ private:
 	void getNumCellsInRegion();
 	void saveVoronoiIndices(const std::string& filename, const std::vector<std::pair<int, int>>& IdPairs);
 	void readSnapshot(const std::string& snapshot);
-	double squaredDistance(const std::vector<float>& point1, const std::vector<double>& point2);
 
 protected:
 	std::string fileMeshIndices;
