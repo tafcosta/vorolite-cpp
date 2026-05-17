@@ -7,7 +7,8 @@ void parseRayParamFile(const std::string& fileName, bool& cosmo,
 		double& HeIionisationXsection,
 		double& HeIIionisationXsection,
 		double& dustAbsorptionOpacity,  double& maxRadius,
-        int64_t& Nside, std::string& meshFile,
+		std::array<double,3>& domainCentre,
+		int64_t& Nside, std::string& meshFile,
         std::string& snapFile, std::string& oDirectory);
 
 int main(int argc, char* argv[]) {
@@ -26,13 +27,14 @@ int main(int argc, char* argv[]) {
     double dustAbsorptionOpacity      = 0.0;
 
     double maxRadius = 0.0;
+    std::array<double,3> domainCentre = {0.5, 0.5, 0.5};
 
     int64_t Nside = 4;
     bool cosmo = false;
     std::string meshFile, snapFile, oDirectory;
 
     parseRayParamFile(paramFile, cosmo, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, dustAbsorptionOpacity,
-    		maxRadius, Nside, meshFile, snapFile, oDirectory);
+    		maxRadius, domainCentre, Nside, meshFile, snapFile, oDirectory);
 
     if (maxRadius == 0.0 || meshFile.empty() || snapFile.empty()) {
         std::cerr << "Error: Missing or invalid parameters in rayParam.txt" << std::endl;
@@ -41,7 +43,7 @@ int main(int argc, char* argv[]) {
 
 
 	std::cout << "Starting HeatThatDust!" << std::endl;
-    Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, cosmo);
+    Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, domainCentre, cosmo);
     Rays *rays = new Rays(HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, maxRadius, Nside, *mesh);
 
     std::ostringstream filename;
@@ -87,7 +89,7 @@ int main(int argc, char* argv[]) {
 
 void parseRayParamFile(const std::string& fileName, bool& cosmo,
 		double& HIionisationCrossSection, double& HeIionisationCrossSection, double& HeIIionisationCrossSection,
-		double& dustAbsorptionOpacity, double& maxRadius,
+		double& dustAbsorptionOpacity, double& maxRadius, std::array<double,3>& domainCentre,
         int64_t& Nside, std::string& meshFile,
         std::string& snapFile, std::string& oDirectory) {
 
@@ -139,6 +141,16 @@ void parseRayParamFile(const std::string& fileName, bool& cosmo,
         }
         else if (key == "maxRadius") {
             maxRadius = std::stod(value);
+        }
+        else if (key == "domainCentre") {
+            std::stringstream ss(value);
+            std::string item;
+
+            for (int i = 0; i < 3; ++i) {
+                if (std::getline(ss, item, ',')) {
+                    domainCentre[i] = std::stod(item);
+                }
+            }
         }
         else if (key == "meshFile") {
             meshFile = value;

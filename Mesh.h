@@ -12,7 +12,7 @@
 
 class Mesh {
 public:
-	Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, bool cosmo);
+	Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::array<double,3> domainCentre, bool cosmo);
 	virtual ~Mesh();
 
 	const double boltzmannConstant = 1.380649e-16;
@@ -23,7 +23,7 @@ public:
 	int numCells;
 	double boxSize;
 	double maxRadius;
-    std::vector<double> sourcePosition;
+	std::array<double,3> domainCentre = {0.5, 0.5, 0.5};
 
     double unitLength;
     double unitMass;
@@ -33,7 +33,6 @@ public:
 
 	double xHydrogen = 0.76;
 	double yHelium   = 0.24;
-	std::array<double,3> domainCentre = {0.5, 0.5, 0.5};
 
     std::vector<int> cellVisitsByRay;
 

@@ -9,7 +9,7 @@
 #include "Mesh.h"
 #include <filesystem>
 
-Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, bool cosmo) : fileMeshIndices(fileMeshIndices), snapshot(snapshot), maxRadius(maxRadius), cosmo(cosmo) {
+Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, std::array<double,3> domainCentre, bool cosmo) : fileMeshIndices(fileMeshIndices), snapshot(snapshot), maxRadius(maxRadius), domainCentre(domainCentre), cosmo(cosmo) {
 
     readSnapshot(snapshot);
 	getNumCellsInRegion();

@@ -384,6 +384,9 @@ void Rays::calculateRays(){
 
     for(int iCell = 0; iCell < mesh.numCells; ++iCell){
 
+    	if(mesh.squaredDistance(mesh.cellCoordinates[iCell], mesh.domainCentre) > 0.75 * 0.75 * mesh.maxRadius)
+    		continue;
+
         for(int iRay = 0; iRay < nRays; ++iRay){
 
             resetRay(iRay, iCell);
