@@ -23,7 +23,7 @@ Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, do
 
 	theta     = std::vector<double>(nRays, 0.0);
 	phi       = std::vector<double>(nRays, 0.0);
-	rayWeight = std::vector<double>(nRays, 1.0 / nRays);
+	rayWeight = std::vector<double>(nRays, 0.0);
 
 	columnHI          = std::vector<double>(nRays, 0.0);
 	columnDust        = std::vector<double>(nRays, 0.0);
@@ -386,6 +386,8 @@ void Rays::calculateRays(){
 
     	if(mesh.squaredDistance(mesh.cellCoordinates[iCell], mesh.domainCentre) > 0.75 * 0.75 * mesh.maxRadius)
     		continue;
+
+    	rayWeight = std::vector<double>(nRays, mesh.getCoolingRate_in_erg_per_s(iCell) / nRays);
 
         for(int iRay = 0; iRay < nRays; ++iRay){
 

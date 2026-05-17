@@ -61,6 +61,7 @@ public:
 	double getHeIIFraction(int iCell);
 	double getHeIIIFraction(int iCell);
 
+	double getCoolingRate_in_erg_per_s(int iCell);
 	double getMass(int iCell);
 	double getDensity(int iCell);
 	double getHNumberDensity_in_cgs(int iCell);
@@ -96,6 +97,7 @@ private:
 	std::vector<int> cellIDs;
     std::vector<double> cellMass;
     std::vector<double> cellDensity;
+	std::vector<double> cellCoolingRate;
 
     std::vector<double> cellHIIFraction;
     std::vector<double> cellHeIIFraction;
@@ -113,6 +115,7 @@ private:
     void appendIDs(H5::H5File& file);
     void appendCoordinates(H5::H5File& file);
     void appendVelocities(H5::H5File& file);
+    void appendCoolingRate(H5::H5File& file);
 	void appendElectronFraction(H5::H5File& file);
 	void appendXH(H5::H5File& file);
     void appendMetallicity(H5::H5File& file);

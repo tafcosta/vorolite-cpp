@@ -27,7 +27,6 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 
     xH_old.resize(numCells, 0.0);
     xH_pred.resize(numCells, 0.0);
-	fluxOfRayInCell.resize(numCells);
 
 	for (int iCell = 0; iCell < numCells; iCell++) {
 		cellDensity[iCell] *= 1.0 / (scaleFactor * scaleFactor * scaleFactor) * HubbleParam * HubbleParam;
@@ -45,6 +44,11 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
 
 double Mesh::getMass(int iCell){
 	return cellMass[iCell];
+}
+
+double Mesh::getCoolingRate_in_erg_per_s(int iCell){
+	return - cellCoolingRate[iCell] * std::pow(getHNumberDensity_in_cgs(iCell),2)
+			* getMass(iCell) / getDensity(iCell) * std::pow(unitLength, 3);
 }
 
 double Mesh::getDensity(int iCell){
@@ -78,8 +82,8 @@ double Mesh::getMeanMolecularWeight(int iCell){
 }
 
 double Mesh::getTemperature_in_K(int iCell){
-	return 1.e4;//getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
-			//(adiabaticIndex - 1.0) * getMeanMolecularWeight(iCell) * protonMass / boltzmannConstant;
+	return getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
+			(adiabaticIndex - 1.0) * getMeanMolecularWeight(iCell) * protonMass / boltzmannConstant;
 }
 
 double Mesh::getMetallicityInSolar(int iCell){
@@ -160,6 +164,7 @@ void Mesh::getNumCellsInRegion(){
     std::vector<double> filteredDensity;
     std::vector<double> filteredSpecificInternalEnergy;
     std::vector<double> filteredMasses;
+    std::vector<double> filteredCoolingRate;
     std::vector<int> filteredIDs;
     std::vector<int> filteredCellIndices;
 	std::vector<float> cellPos;
@@ -179,6 +184,7 @@ void Mesh::getNumCellsInRegion(){
             filteredMasses.push_back(cellMass[iCell]);
             filteredIDs.push_back(cellIDs[iCell]);
             filteredCellIndices.push_back(cellIndices[iCell]);
+            filteredCoolingRate.push_back(cellCoolingRate[iCell]);
 		}
 	}
 
@@ -189,6 +195,7 @@ void Mesh::getNumCellsInRegion(){
     cellIDs = std::move(filteredIDs);
     cellIndices = std::move(filteredCellIndices);
     cellMass = std::move(filteredMasses);
+    cellCoolingRate = std::move(filteredCoolingRate);
 
     numCells = cellDensity.size();
 
@@ -243,6 +250,7 @@ void Mesh::readSnapshot(const std::string& snapshotBase) {
         appendIDs(file);
         appendCoordinates(file);
         appendVelocities(file);
+        appendCoolingRate(file);
         //appendMetallicity(file);
         //appendElectronFraction(file);
         //appendXH(file);
@@ -476,6 +484,18 @@ void Mesh::appendMass(H5::H5File& file) {
     std::vector<double> buffer(numElements);
     dataset.read(buffer.data(), H5::PredType::NATIVE_DOUBLE);
     cellMass.insert(cellMass.end(), buffer.begin(), buffer.end());
+}
+
+void Mesh::appendCoolingRate(H5::H5File& file) {
+    H5::DataSet dataset = file.openDataSet("/PartType0/GFM_CoolingRate");
+    H5::DataSpace space = dataset.getSpace();
+
+    hsize_t numElements;
+    space.getSimpleExtentDims(&numElements);
+
+    std::vector<double> buffer(numElements);
+    dataset.read(buffer.data(), H5::PredType::NATIVE_DOUBLE);
+    cellCoolingRate.insert(cellCoolingRate.end(), buffer.begin(), buffer.end());
 }
 
 /*
