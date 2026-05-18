@@ -188,8 +188,11 @@ bool Rays::updateRayAndIsMaxReached(int iCell, int iRay, double& distanceToExit)
 		distanceToExit *= fractionalDistance;
 
 		distanceTravelled[iRay] += distanceToExit;
-		visitedCellDistance[iRay].back() += distanceToExit;
 
+        if (visitedCellDistance[iRay].empty())
+            visitedCellDistance[iRay].push_back(distanceToExit);
+        else
+            visitedCellDistance[iRay].back() += distanceToExit;
 		return true;
 	}
 
