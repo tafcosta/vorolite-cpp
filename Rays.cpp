@@ -16,7 +16,7 @@ Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, do
 	ionisationCrossSectionHI_inInternalUnits   = ionisationCrossSectionHI   / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 	ionisationCrossSectionHeI_inInternalUnits  = ionisationCrossSectionHeI  / 4.0 / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 	ionisationCrossSectionHeII_inInternalUnits = ionisationCrossSectionHeII / 4.0 / mesh.protonMass * mesh.unitMass / mesh.unitLength / mesh.unitLength;
-	dustAbsorptionOpacity_inInternalUnits      = dustAbsorptionOpacity  * mesh.unitMass / mesh.unitLength / mesh.unitLength;
+	dustAbsorptionOpacity_inInternalUnits      = 1000  * mesh.unitMass / mesh.unitLength / mesh.unitLength;
 
 	rayDirection = std::vector<std::array<double,3>>(nRays);
 	rayPosition  = std::vector<std::array<double,3>>(nRays);
