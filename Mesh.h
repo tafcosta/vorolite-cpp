@@ -80,6 +80,7 @@ public:
     double getPhotonAbsorptionRateHI(int iCell);
     double getPhotonAbsorptionRateHeI(int iCell);
     double getPhotonAbsorptionRateHeII(int iCell);
+    double getPhotonAbsorptionRateDust(int iCell);
 
     void setPhotonAbsorptionRateHI(int iCell, double newValue);
     void setPhotonAbsorptionRateHeI(int iCell, double newValue);

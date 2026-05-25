@@ -117,6 +117,10 @@ double Mesh::getPhotonAbsorptionRateHeII(int iCell){
 	return cellPhotonAbsorptionRateHeII[iCell];
 }
 
+double Mesh::getPhotonAbsorptionRateDust(int iCell){
+	return cellPhotonAbsorptionRateDust[iCell];
+}
+
 double Mesh::getHIIFraction(int iCell){
 	return cellHIIFraction[iCell];
 }

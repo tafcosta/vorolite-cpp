@@ -67,8 +67,10 @@ int main(int argc, char* argv[]) {
                 outFile << coord << " ";
             }
 
-            outFile << mesh->cellIncomingPhotonRate[iCell]
-                    << std::endl;
+            outFile << mesh->cellIncomingPhotonRate[iCell] << " "
+            		<< mesh->getPhotonAbsorptionRateDust(iCell) << " "
+                    << mesh->getHNumberDensity_in_cgs(iCell)
+	            	<< std::endl;
         }
 
         outFile.close();

@@ -35,6 +35,7 @@ Rays::Rays(double ionisationCrossSectionHI, double ionisationCrossSectionHeI, do
 	visitedCellColumn   = std::vector<std::vector<double>>(nRays);
 	visitedCellDistance = std::vector<std::vector<double>>(nRays);
 	visitedCells        = std::vector<std::vector<int>>(nRays);
+	visitedCellDustColumn = std::vector<std::vector<double>>(nRays);
 
 	initializeDirections();
 }
@@ -90,6 +91,8 @@ int Rays::travelToNextCell(int iCell, int iRay, bool verbose){
 			 insideDomain[iRay] = false;
 
 		 visitedCellColumn[iRay].push_back(distanceToExit * mesh.getDensity(iCell));
+		 visitedCellDustColumn[iRay].push_back(distanceToExit * mesh.getDensity(iCell) * mesh.getDustToGasRatio(iCell)/0.01);
+
 		 visitedCells[iRay].push_back(iCell);
 
 		 mesh.cellVisitsByRay[iCell] += 1;
@@ -361,7 +364,7 @@ void Rays::updateColumnAndFlux(int iRay){
 		double dColumnHI     = visitedCellColumn[iRay][i] * mesh.xHydrogen * neutral;
 		double dColumnHeI    = visitedCellColumn[iRay][i] * mesh.yHelium   * neutralHe;
 		double dColumnHeII   = visitedCellColumn[iRay][i] * mesh.yHelium   * yHe;
-		double dColumnDust   = visitedCellColumn[iRay][i] * mesh.getDustToGasRatio(iCell)/0.01;
+		double dColumnDust   = visitedCellDustColumn[iRay][i];
 
 		const double tauHI   = ionisationCrossSectionHI_inInternalUnits    * dColumnHI;
 		const double tauHeI  = ionisationCrossSectionHeI_inInternalUnits   * dColumnHeI;
@@ -418,6 +421,7 @@ void Rays::resetRay(int iRay, int startCell){
     distanceTravelled[iRay] = 0.0;
     finalLuminosity[iRay]   = 0.0;
 
+    visitedCellDustColumn[iRay].clear();
     visitedCellColumn[iRay].clear();
     visitedCellDistance[iRay].clear();
     visitedCells[iRay].clear();

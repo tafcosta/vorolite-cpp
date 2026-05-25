@@ -42,6 +42,7 @@ public:
 	std::vector<double> distanceTravelled;
 	std::vector<double> finalLuminosity;
 
+	std::vector<std::vector<double>> visitedCellDustColumn;
 	std::vector<std::vector<double>> visitedCellColumn;
 	std::vector<std::vector<double>> visitedCellDistance;
 
