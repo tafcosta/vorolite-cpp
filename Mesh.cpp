@@ -20,6 +20,7 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     cellPhotonAbsorptionRateHI.resize(numCells, 0.0);
     cellPhotonAbsorptionRateHeI.resize(numCells, 0.0);
     cellPhotonAbsorptionRateHeII.resize(numCells, 0.0);
+    cellPhotonAbsorptionRateDust.resize(numCells, 0.0);
 
 	cellHIIFraction.resize(numCells, 1.e-10);
 	cellHeIIFraction.resize(numCells, 0.0);
@@ -46,7 +47,13 @@ double Mesh::getMass(int iCell){
 	return cellMass[iCell];
 }
 
+double Mesh::getDustToGasRatio(int iCell){
+	return cellDustToGasRatio[iCell];
+}
+
 double Mesh::getCoolingRate_in_erg_per_s(int iCell){
+
+
 	return - cellCoolingRate[iCell] * std::pow(getHNumberDensity_in_cgs(iCell),2)
 			* getMass(iCell) / getDensity(iCell) * std::pow(unitLength, 3);
 }
@@ -60,7 +67,7 @@ double Mesh::getSpecificInternalEnergy(int iCell){
 }
 
 double Mesh::getHNumberDensity_in_cgs(int iCell){
-	return 30.;//xHydrogen * cellDensity[iCell] / protonMass * unitMass / std::pow(unitLength, 3.0);
+	return xHydrogen * cellDensity[iCell] / protonMass * unitMass / std::pow(unitLength, 3.0);
 }
 
 double Mesh::getHeNumberDensity_in_cgs(int iCell) {
@@ -144,6 +151,10 @@ void Mesh::setPhotonAbsorptionRateHeI(int iCell, double newValue){
 
 void Mesh::setPhotonAbsorptionRateHeII(int iCell, double newValue){
 	cellPhotonAbsorptionRateHeII[iCell] = newValue;
+}
+
+void Mesh::setPhotonAbsorptionRateDust(int iCell, double newValue){
+	cellPhotonAbsorptionRateDust[iCell] = newValue;
 }
 
 void Mesh::setHIIFraction(int iCell, double newValue){
@@ -251,6 +262,7 @@ void Mesh::readSnapshot(const std::string& snapshotBase) {
         appendCoordinates(file);
         appendVelocities(file);
         appendCoolingRate(file);
+        appendDustToGasRatio(file);
         //appendMetallicity(file);
         //appendElectronFraction(file);
         //appendXH(file);
@@ -497,6 +509,19 @@ void Mesh::appendCoolingRate(H5::H5File& file) {
     dataset.read(buffer.data(), H5::PredType::NATIVE_DOUBLE);
     cellCoolingRate.insert(cellCoolingRate.end(), buffer.begin(), buffer.end());
 }
+
+void Mesh::appendDustToGasRatio(H5::H5File& file) {
+    H5::DataSet dataset = file.openDataSet("/PartType0/DGR");
+    H5::DataSpace space = dataset.getSpace();
+
+    hsize_t numElements;
+    space.getSimpleExtentDims(&numElements);
+
+    std::vector<double> buffer(numElements);
+    dataset.read(buffer.data(), H5::PredType::NATIVE_DOUBLE);
+    cellDustToGasRatio.insert(cellDustToGasRatio.end(), buffer.begin(), buffer.end());
+}
+
 
 /*
 void Mesh::appendMetallicity(H5::H5File& file) {

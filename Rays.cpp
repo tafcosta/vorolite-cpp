@@ -361,16 +361,18 @@ void Rays::updateColumnAndFlux(int iRay){
 		double dColumnHI     = visitedCellColumn[iRay][i] * mesh.xHydrogen * neutral;
 		double dColumnHeI    = visitedCellColumn[iRay][i] * mesh.yHelium   * neutralHe;
 		double dColumnHeII   = visitedCellColumn[iRay][i] * mesh.yHelium   * yHe;
-		double dColumnDust   = visitedCellColumn[iRay][i]; //todo
+		double dColumnDust   = visitedCellColumn[iRay][i] * mesh.getDustToGasRatio(iCell)/0.01;
 
 		const double tauHI   = ionisationCrossSectionHI_inInternalUnits    * dColumnHI;
 		const double tauHeI  = ionisationCrossSectionHeI_inInternalUnits   * dColumnHeI;
 		const double tauHeII = ionisationCrossSectionHeII_inInternalUnits  * dColumnHeII;
 		const double tauDust = dustAbsorptionOpacity_inInternalUnits       * dColumnDust;
 
-		const double dtau = 0.;//tauHI + tauHeI + tauHeII + tauDust;
+
+		const double dtau = tauDust;//tauHI + tauHeI + tauHeII;
 		const double fabs = 1.0 - std::exp(-dtau);
 
+		mesh.setPhotonAbsorptionRateDust(iCell, fabs * NdotFinal);
 		mesh.cellIncomingPhotonRate[iCell] += NdotFinal;
 
 		columnHI[iRay]   += dColumnHI;

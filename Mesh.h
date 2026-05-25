@@ -61,6 +61,7 @@ public:
 	double getHeIIFraction(int iCell);
 	double getHeIIIFraction(int iCell);
 
+	double getDustToGasRatio(int iCell);
 	double getCoolingRate_in_erg_per_s(int iCell);
 	double getMass(int iCell);
 	double getDensity(int iCell);
@@ -83,6 +84,7 @@ public:
     void setPhotonAbsorptionRateHI(int iCell, double newValue);
     void setPhotonAbsorptionRateHeI(int iCell, double newValue);
     void setPhotonAbsorptionRateHeII(int iCell, double newValue);
+    void setPhotonAbsorptionRateDust(int iCell, double newValue);
 
 	int getIndex(int iCell);
 
@@ -98,6 +100,7 @@ private:
     std::vector<double> cellMass;
     std::vector<double> cellDensity;
 	std::vector<double> cellCoolingRate;
+	std::vector<double> cellDustToGasRatio;
 
     std::vector<double> cellHIIFraction;
     std::vector<double> cellHeIIFraction;
@@ -106,6 +109,9 @@ private:
     std::vector<double> cellPhotonAbsorptionRateHI;
     std::vector<double> cellPhotonAbsorptionRateHeI;
     std::vector<double> cellPhotonAbsorptionRateHeII;
+
+    std::vector<double> cellPhotonAbsorptionRateDust;
+
 
     std::vector<std::vector<double>> fluxOfRayInCell;
 
@@ -116,6 +122,8 @@ private:
     void appendCoordinates(H5::H5File& file);
     void appendVelocities(H5::H5File& file);
     void appendCoolingRate(H5::H5File& file);
+    void appendDustToGasRatio(H5::H5File& file);
+
 	void appendElectronFraction(H5::H5File& file);
 	void appendXH(H5::H5File& file);
     void appendMetallicity(H5::H5File& file);
