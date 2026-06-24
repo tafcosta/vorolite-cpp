@@ -21,6 +21,7 @@ void Photochemistry::evolveIonisation(double dtime) {
     const double dtime_in_cgs = dtime * mesh.unitLength / mesh.unitVelocity;
     for (int iCell = 0; iCell < mesh.numCells; ++iCell) {
 
+        const double xH_init = mesh.getHIIFraction_init(iCell);
     	const double oldxH = mesh.xH_old[iCell];
     	const double avgxH = mesh.xH_pred[iCell];
     	const double yHe   = mesh.getHeIIFraction(iCell);
@@ -40,7 +41,10 @@ void Photochemistry::evolveIonisation(double dtime) {
     	const double equilibriumTime = 1.0 / (Gamma + getHIIrecombinationCoefficient(temperature) * electronDensity + getHIcollisionalIonisationCoefficient(temperature) * electronDensity);
     	const double equilibriumXH   = (Gamma + getHIcollisionalIonisationCoefficient(temperature) * electronDensity) / (Gamma + getHIIrecombinationCoefficient(temperature) * electronDensity + getHIcollisionalIonisationCoefficient(temperature) * electronDensity);
 
-    	double xHnew = equilibriumXH + (oldxH - equilibriumXH) * std::exp(-dtime_in_cgs / equilibriumTime);
+        // double xHnew = equilibriumXH + (oldxH - equilibriumXH) * std::exp(-dtime_in_cgs / equilibriumTime);
+
+    	double xHnew_tmp = equilibriumXH + (oldxH - equilibriumXH) * std::exp(-dtime_in_cgs / equilibriumTime);
+        double xHnew = std::max(xH_init, xHnew_tmp);
 
     	mesh.setHIIFraction(iCell, xHnew);
 
@@ -152,6 +156,7 @@ double Photochemistry::getHIcollisionalIonisationCoefficient(double temperature)
 
     return 5.85e-11 * sqrtT / (1.0 + std::sqrt(T5))
          * std::exp(-157809.1 / temperature);
+    // return 0.; // Assume no collisional ionisation for simplicity [DIAG.]
 }
 
 double Photochemistry::getHeIcollisionalIonisationCoefficient(double T)
