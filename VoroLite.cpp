@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     bool cosmo = false;
     std::vector<double> sourcePosition(3, 0.5);
     std::string meshFile, snapFile, oDirectory, initHIIFile;
-    std::filesystem::path lightcurvefile = "data/Lion_basic_ref.txt";
+    std::filesystem::path lightcurvefile = "/home/lt589/Lion_ref_snap_112.txt";
 
     parseRayParamFile(paramFile, cosmo, nOutputs, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, dustAbsorptionOpacity,
     		maxRadius, sourcePosition, lumTotal, timeMax, dtime, Nside, initHIIFile, meshFile, snapFile, oDirectory);
@@ -54,7 +54,8 @@ int main(int argc, char* argv[]) {
     Mesh *mesh = new Mesh(meshFile, snapFile, maxRadius, sourcePosition, cosmo, initHIIFile);
     maxRadius = mesh->maxRadius;
     sourcePosition = mesh->sourcePosition;
-    Source *source = new Source(sourcePosition, lumTotal); //Source* source = new SourceVariable(sourcePosition,lumTotal, lightcurvefile.string());
+    // Source *source = new Source(sourcePosition, lumTotal); //Source* source = new SourceVariable(sourcePosition,lumTotal, lightcurvefile.string());
+    Source* source = new SourceVariable(sourcePosition, lumTotal, lightcurvefile.string());
     Rays *rays = new Rays(HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection, maxRadius, Nside, *mesh, *source);
     Photochemistry *photochemistry = new Photochemistry(*mesh, *rays, HIionisationCrossSection, HeIionisationCrossSection, HeIIionisationCrossSection);
 
