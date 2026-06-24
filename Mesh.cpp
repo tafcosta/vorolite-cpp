@@ -38,6 +38,7 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
     cellPhotonAbsorptionRateHeII.resize(numCells, 0.0);
 
     cellHIIFraction.resize(numCells, 1.e-10);
+    cellHIIFraction_init.resize(numCells, 1.e-10);
     if (!initHIIFile.empty()) {
         std::unordered_map<long long, double> xhiiById;
         xhiiById.reserve(numCells);
@@ -70,6 +71,7 @@ Mesh::Mesh(std::string fileMeshIndices, std::string snapshot, double maxRadius, 
                 if (xHII <= 0.0) xHII = 1.e-10;
                 if (xHII > 1.0) xHII = 1.0;
                 cellHIIFraction[iCell] = xHII;
+                cellHIIFraction_init[iCell] = xHII;
                 ++matched;
             }
         }
@@ -111,6 +113,10 @@ double Mesh::getSpecificInternalEnergy(int iCell){
 	return cellSpecificInternalEnergy[iCell];
 }
 
+double Mesh::getStarFormationRate(int iCell){
+	return cellStarFormationRate[iCell];
+}
+
 double Mesh::getHNumberDensity_in_cgs(int iCell){
 	return xHydrogen * cellDensity[iCell] / protonMass * unitMass / std::pow(unitLength, 3.0);
 }
@@ -134,42 +140,20 @@ double Mesh::getMeanMolecularWeight(int iCell){
 }
 
 double Mesh::getTemperature_in_K(int iCell){
-	return getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity *
-			(adiabaticIndex - 1.0) * getMeanMolecularWeight(iCell) * protonMass / boltzmannConstant;
+    double SFR = getStarFormationRate(iCell);
+
+    double temperature = 0.;
+    if (SFR > 0.0) {
+        temperature = 1.e4; // Assume 1e4 K for star-forming cells
+    }
+	else {
+        temperature = getSpecificInternalEnergy(iCell) * unitVelocity * unitVelocity * (adiabaticIndex - 1.0) * getMeanMolecularWeight(iCell) * protonMass / boltzmannConstant;
+    }
+    return temperature;
 }
 
 double Mesh::getMetallicityInSolar(int iCell){
 	return cellMetallicity[iCell]/0.0127;
-}
-
-double Mesh::getSelfShieldingCorrection(int iCell) {
-    const double rho_s = 1.52e-2;
-    const double rho_u = 4.53e-3;
-    const double p     = 2.68;
-
-    double nH   = cellXH[iCell] * getHNumberDensity_in_cgs(iCell);
-    double f_hi = 1.0 - getHIIFraction(iCell);
-
-    double new_f_hi = f_hi;
-
-    if (nH >= rho_u && nH <= rho_s) {
-        double numerator   = f_hi * std::pow(rho_s - nH, p)
-                           + std::pow(nH - rho_u, p);
-        double denominator = std::pow(rho_s - rho_u, p);
-        new_f_hi = numerator / denominator;
-    } 
-    else if (nH > rho_s) {
-        new_f_hi = 1.0;
-    }
-
-    return new_f_hi;
-}
-
-void Mesh::doSelfShieldingCorrection() {
-    for (int iCell = 0; iCell < numCells; ++iCell) {
-        double newcellHIFraction = getSelfShieldingCorrection(iCell);
-        cellHIIFraction[iCell] = 1.0 - newcellHIFraction;
-    }
 }
 
 double Mesh::getFluxOfRayInCell(int iRay, int iCell){
@@ -190,6 +174,10 @@ double Mesh::getPhotonAbsorptionRateHeI(int iCell){
 
 double Mesh::getPhotonAbsorptionRateHeII(int iCell){
 	return cellPhotonAbsorptionRateHeII[iCell];
+}
+
+double Mesh::getHIIFraction_init(int iCell){
+    return cellHIIFraction_init[iCell];
 }
 
 double Mesh::getHIIFraction(int iCell){
@@ -344,6 +332,7 @@ void Mesh::readSnapshot(const std::string& snapshotBase) {
         appendIDs(file);
         appendCoordinates(file);
         appendVelocities(file);
+        appendStarFormationRate(file);
         //appendMetallicity(file);
         //appendElectronFraction(file);
         //appendXH(file);
@@ -642,6 +631,18 @@ void Mesh::appendVelocities(H5::H5File& file) {
         }
         cellVelocities.push_back(std::move(row));
     }
+}
+
+void Mesh::appendStarFormationRate(H5::H5File& file) {
+    H5::DataSet dataset = file.openDataSet("/PartType0/StarFormationRate");
+    H5::DataSpace space = dataset.getSpace();
+
+    hsize_t numElements;
+    space.getSimpleExtentDims(&numElements);
+
+    std::vector<double> buffer(numElements);
+    dataset.read(buffer.data(), H5::PredType::NATIVE_DOUBLE);
+    cellStarFormationRate.insert(cellStarFormationRate.end(), buffer.begin(), buffer.end());
 }
 
 /*
