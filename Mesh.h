@@ -41,6 +41,7 @@ public:
 	std::vector<double> cellXH;
 	std::vector<double> cellSpecificInternalEnergy;
 	std::vector<double> cellMetallicity;
+	std::vector<double> cellStarFormationRate;
     std::vector<std::vector<float>> cellVelocities;
     std::vector<std::vector<float>> cellCoordinates;
 
@@ -57,6 +58,7 @@ public:
 	double getFluxOfRayInCell(int iRay, int iCell);
 	void setFluxOfRayInCell(int iRay, int iCell, double newValue);
 
+	double getHIIFraction_init(int iCell);
 	double getHIIFraction(int iCell);
 	double getHeIIFraction(int iCell);
 	double getHeIIIFraction(int iCell);
@@ -72,6 +74,7 @@ public:
 	double getMetallicityInSolar(int iCell);
 	double getSelfShieldingCorrection(int iCell);
 	double getSpecificInternalEnergy(int iCell);
+	double getStarFormationRate(int iCell);
 	double getTemperature_in_K(int iCell);
     double getIncomingPhotonRate(int iCell);
 
@@ -99,6 +102,7 @@ private:
     std::vector<double> cellMass;
     std::vector<double> cellDensity;
 
+	std::vector<double> cellHIIFraction_init;
     std::vector<double> cellHIIFraction;
     std::vector<double> cellHeIIFraction;
     std::vector<double> cellHeIIIFraction;
@@ -115,6 +119,7 @@ private:
     void appendIDs(H5::H5File& file);
     void appendCoordinates(H5::H5File& file);
     void appendVelocities(H5::H5File& file);
+	void appendStarFormationRate(H5::H5File& file);
 	void appendElectronFraction(H5::H5File& file);
 	void appendXH(H5::H5File& file);
     void appendMetallicity(H5::H5File& file);
