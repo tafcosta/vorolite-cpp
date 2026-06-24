@@ -24,11 +24,38 @@ void SourceVariable::loadLightcurve_()
         throw std::runtime_error("Cannot open light-curve file: " + lightcurveFile_);
     }
 
-    double t, L;
-    while (in >> t >> L) {
+    std::cout << "Loading light-curve from file: " << lightcurveFile_ << std::endl;
+
+    std::string line;
+    while (std::getline(in, line)) {
+        if (line.empty() || line[0] == '#') {
+            continue;
+        }
+
+        // Accept headers like "Time, Lion" and mixed comma/space separators.
+        std::replace(line.begin(), line.end(), ',', ' ');
+        std::stringstream ss(line);
+        double t, L;
+        if (!(ss >> t >> L)) {
+            continue;
+        }
+ 
         times_.push_back(t);
         luminosities_.push_back(L);
     }
+
+    if (times_.empty() || luminosities_.empty()) {
+        throw std::runtime_error(
+            "Light-curve file contains no valid numeric (time, luminosity) pairs: " + lightcurveFile_);
+    }
+
+    if (times_.size() != luminosities_.size()) {
+        throw std::runtime_error(
+            "Light-curve parsing produced mismatched time/luminosity lengths: " + lightcurveFile_);
+    }
+
+    std::cout << "First time " << times_.front() << ", first luminosity " << luminosities_.front() << std::endl;
+    std::cout << "Last time " << times_.back() << ", last luminosity " << luminosities_.back() << std::endl;
 }
 
 double SourceVariable::getLuminosity(double time) {
@@ -53,4 +80,3 @@ double SourceVariable::getLuminosity(double time) {
 SourceVariable::~SourceVariable() {
 	// TODO Auto-generated destructor stub
 }
-
